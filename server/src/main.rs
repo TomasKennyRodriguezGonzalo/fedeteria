@@ -1,7 +1,7 @@
 
 use axum::body::{Body};
 use axum::http::{Response, StatusCode};
-use axum::Extension;
+use axum::extract::Query;
 use axum::{response::IntoResponse, routing::get, Router};
 use clap::Parser;
 use tokio::fs;
@@ -12,8 +12,7 @@ use std::str::FromStr;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
-use serde::{Serialize,Deserialize};
-use axum::extract::Query;
+use serde::{Serialize, Deserialize};
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
@@ -121,14 +120,17 @@ struct DatosLogin {
     password: String,
 }
 
-//  fedeteria.com//api/check_login?username=algo&password=otracosa
+//  fedeteria.com/api/check_login?username=algo&password=otracosa
 
 async fn check_login(datos_login: Query<DatosLogin>) -> impl IntoResponse {
     let datos_login = datos_login.0;
     let username = datos_login.username;
     let password = datos_login.password;
     if &username == "nico" && &password == &"beiser" {
+        log::info!("TRUE!!!!!!!!!!!!!!!!!");
+
         return "true"
     }
+    log::info!("FALSE!");
     return "false"
 }

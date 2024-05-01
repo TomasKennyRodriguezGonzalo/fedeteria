@@ -25,36 +25,48 @@ pub fn log_in_molecule()-> Html{
         cloned_password_state.set(password);
     });
 
-    let button_clicked = use_state(|| {
-        let username = &*username_state;
-        let password = &*password_state;
+    let login_response = use_state(|| "false".to_string());
+    let login_response_c = login_response.clone();
+    let cloned_username_state = username_state.clone();
+    let cloned_password_state = password_state.clone();
+    let submit_clicked = Callback::from(move |_| {
+        let login_response_c = login_response_c.clone();
         {
-            let username = username.clone();
-            let password = password.clone();
-            use_effect(move || {
-                spawn_local(async move {
-                    let resp = Request::get("/api/check_login").send().await.unwrap();
-                    if resp.text().await.unwrap() == "true"{
-                        html!{<div>{"login passed"}</div>}
-                    } else{
-                        html!{<div>{"login failed"}</div>}
-                    }
-
-                })
-            })
+            let username = &*cloned_username_state;
+            let password = &*cloned_password_state;
+            {
+                let username = username.clone();
+                let password = password.clone();
+                // use_effect(move || {
+                    spawn_local(async move {
+                        let mut url = "/api/check_login".to_string();
+                        url += &format!("?username={username}&password={password}");
+                        let resp = Request::get(&url).send().await.unwrap();
+                        if resp.text().await.unwrap() == "true"{
+                            login_response_c.set("true".to_string());
+                            // html!{<div>{"login passed"}</div>}
+                        } else{
+                            login_response_c.set("false".to_string());
+                            // html!{<div>{"login failed"}</div>}
+                        }
+                        
+                    })
+                // })
+            }
         }
     });
 
 
     html! {
         <>
-            <form>
+            // <form>
                 <LogInInputField name = "username" handle_on_change = {username_changed} />
                 <PasswordTextInput name = "password" handle_on_change = {password_changed} />
-                <LogInButton text = "submit" />
-            </form>
+                <LogInButton text = "submit" onclick_event = {submit_clicked} />
+            // </form>
             <p>{"your username is:"} {&*username_state}</p>
             <p>{"your password is:"} {&*password_state}</p>
+            <p>{"login response:"} {&*login_response} </p>
         </>
     }
 
