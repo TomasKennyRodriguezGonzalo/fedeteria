@@ -1,6 +1,7 @@
 
 use axum::body::{Body};
 use axum::http::{Response, StatusCode};
+use axum::Extension;
 use axum::{response::IntoResponse, routing::get, Router};
 use clap::Parser;
 use tokio::fs;
@@ -11,6 +12,8 @@ use std::str::FromStr;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
+use serde::{Serialize,Deserialize};
+use axum::extract::Query;
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
@@ -46,6 +49,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/api/hello", get(hello))
+        .route("/api/check_login", get(check_login))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -109,4 +113,22 @@ async fn main() {
 
 async fn hello() -> impl IntoResponse {
     "hello from server!"
+}
+
+#[derive(Deserialize)]
+struct DatosLogin {
+    username: String,
+    password: String,
+}
+
+//  fedeteria.com//api/check_login?username=algo&password=otracosa
+
+async fn check_login(datos_login: Query<DatosLogin>) -> impl IntoResponse {
+    let datos_login = datos_login.0;
+    let username = datos_login.username;
+    let password = datos_login.password;
+    if &username == "nico" && &password == &"beiser" {
+        return "true"
+    }
+    return "false"
 }

@@ -5,6 +5,9 @@ use yew::prelude::*;
 use crate::Components::boton_log_in::LogInButton;
 use crate::Components::text_input_login::LogInInputField;
 use crate::Components::password_input_login::PasswordTextInput;
+use gloo_net::http::Request;
+use wasm_bindgen_futures::spawn_local;
+
 
 
 #[function_component(LogInMolecule)]
@@ -21,6 +24,27 @@ pub fn log_in_molecule()-> Html{
     let password_changed = Callback::from(move |password|{
         cloned_password_state.set(password);
     });
+
+    let button_clicked = use_state(|| {
+        let username = &*username_state;
+        let password = &*password_state;
+        {
+            let username = username.clone();
+            let password = password.clone();
+            use_effect(move || {
+                spawn_local(async move {
+                    let resp = Request::get("/api/check_login").send().await.unwrap();
+                    if resp.text().await.unwrap() == "true"{
+                        html!{<div>{"login passed"}</div>}
+                    } else{
+                        html!{<div>{"login failed"}</div>}
+                    }
+
+                })
+            })
+        }
+    });
+
 
     html! {
         <>
