@@ -23,7 +23,7 @@ pub fn password_text_input(props: &Props)-> Html{
     });
 
     html! {
-        <input type = "text" name = {props.name.clone()} onchange={onchange} />
+        <input type = "password" name = {props.name.clone()} onchange={onchange} />
     }
 
 }
