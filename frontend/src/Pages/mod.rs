@@ -1,1 +1,1 @@
-pub mod LogInPage;
+pub mod log_in_page;

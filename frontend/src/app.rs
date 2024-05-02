@@ -1,8 +1,8 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::Molecules::HelloServer::HelloServer;
-use crate::Components::botonLogIn;
-use crate::Pages::LogInPage::LogInPage;
+use crate::Components::boton_log_in;
+use crate::Pages::log_in_page::LogInPage;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
