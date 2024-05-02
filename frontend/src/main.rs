@@ -6,6 +6,7 @@ pub mod app;
 pub mod Molecules;
 pub mod Components;
 pub mod Pages;
+pub mod router;
 use crate::app::App;
 
 

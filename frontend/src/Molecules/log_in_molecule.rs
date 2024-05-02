@@ -8,8 +8,6 @@ use crate::Components::password_input_login::PasswordTextInput;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
-
-
 #[function_component(LogInMolecule)]
 pub fn log_in_molecule()-> Html{
     let username_state = use_state(|| "no username yet".to_owned());
@@ -58,16 +56,17 @@ pub fn log_in_molecule()-> Html{
 
 
     html! {
-        <>
-            // <form>
+        <div class="login-box">
+            <h1>{"Login"}</h1>
+            <div>
                 <LogInInputField name = "username" handle_on_change = {username_changed} />
                 <PasswordTextInput name = "password" handle_on_change = {password_changed} />
                 <LogInButton text = "submit" onclick_event = {submit_clicked} />
-            // </form>
+            </div>
             <p>{"your username is:"} {&*username_state}</p>
             <p>{"your password is:"} {&*password_state}</p>
             <p>{"login response:"} {&*login_response} </p>
-        </>
+        </div>
     }
 
 }
