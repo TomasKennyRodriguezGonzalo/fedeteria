@@ -13,6 +13,7 @@ use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use serde::{Serialize, Deserialize};
+mod database;
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
