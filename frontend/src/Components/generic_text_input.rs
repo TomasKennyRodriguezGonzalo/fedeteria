@@ -5,6 +5,7 @@ use web_sys::HtmlInputElement;
 #[derive(Properties,PartialEq)]
 pub struct Props{
     pub name:String,
+    pub label:String,
     pub tipo:String,
     pub handle_on_change:Callback<String>,
 
@@ -22,8 +23,17 @@ pub fn log_in_input_field(props: &Props)-> Html{
         handle_on_change.emit(input_value);
     });
 
+    let id= props.label.to_lowercase().replace(" ", "-");
+
     html! {
-        <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+        <>
+            <div>
+                <label for={id.clone()}>{&props.label}</label>
+            </div>
+            <div>
+                <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+            </div>
+        </>
     }
 
 }

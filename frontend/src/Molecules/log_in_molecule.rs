@@ -46,15 +46,22 @@ pub fn log_in_molecule()-> Html{
         }
     });
 
+    let onsubmit = Callback::from(|event:SubmitEvent|{
+        event.prevent_default();
+    });
 
     html! {
         <div class="login-box">
             <h1>{"Login"}</h1>
-            <div>
-                <GenericInputField name = "username" tipo = "text" handle_on_change = {username_changed} />
-                <GenericInputField name = "password" tipo = "password" handle_on_change = {password_changed} />
-                <LogInButton text = "submit" onclick_event = {submit_clicked} />
-            </div>
+            <section>
+                <div>
+                    <form {onsubmit}>
+                        <GenericInputField name = "username" label="Username" tipo = "text" handle_on_change = {username_changed} />
+                        <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
+                        <LogInButton text = "submit" onclick_event = {submit_clicked} />
+                    </form>
+                </div>
+            </section>
             <p>{"your username is:"} {&*username_state}</p>
             <p>{"your password is:"} {&*password_state}</p>
             <p>{"login response:"} {&*login_response} </p>
