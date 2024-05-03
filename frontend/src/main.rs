@@ -3,6 +3,7 @@ pub mod Molecules;
 pub mod Components;
 pub mod Pages;
 pub mod router;
+pub mod store;
 use crate::app::App;
 
 
