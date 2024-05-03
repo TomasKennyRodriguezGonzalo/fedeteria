@@ -10,7 +10,7 @@ use crate::Molecules::log_in_molecule::LogInMolecule;
 
 
 #[function_component(LogInPage)]
-pub fn log_in_Page()-> Html{
+pub fn log_in_page()-> Html{
     html!{
         <>
             <div>
