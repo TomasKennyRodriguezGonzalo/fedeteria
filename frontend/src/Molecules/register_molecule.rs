@@ -1,8 +1,8 @@
 use yew::prelude::*;
 
 
-#[function_component(RegistrarMolecule)]
-pub fn registrar_molecule()-> Html{
+#[function_component(RegisterMolecule)]
+pub fn register_molecule()-> Html{
     html! {
         <>
             <h1> {"Registrarse"} </h1>

@@ -12,11 +12,6 @@ use crate::router::Route;
 use yew_router::prelude::*;
 use yew_hooks::prelude::*;
 
-
-
-
-
-
 #[derive(Default)]
 pub struct State{
     pub username:String,
@@ -35,24 +30,16 @@ pub struct User{
     pub token:String,
 }
 
-
-
-
 #[function_component(LogInMolecule)]
 pub fn log_in_molecule()-> Html{
 
     let state = use_state(State::default);
-
-
 
     let username_state = use_state(|| "no username yet".to_owned());
     let cloned_username_state = username_state.clone();
     let username_changed = Callback::from(move |username:String|{
             cloned_username_state.set(username.clone());
     });
-
-
-
     
     let password_state = use_state(|| "no password yet".to_owned());
     let cloned_password_state = password_state.clone();
@@ -65,7 +52,6 @@ pub fn log_in_molecule()-> Html{
     let cloned_username_state = username_state.clone();
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
-
 
     let storage = use_local_storage::<UserStore>("UserStore".to_string());
     let storage_cloned = storage.clone();
