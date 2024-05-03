@@ -1,10 +1,6 @@
-use std::clone;
-
-use gloo::console::log;
 use yew::prelude::*;
-use crate::Components::boton_log_in::LogInButton;
-use crate::Components::text_input_login::LogInInputField;
-use crate::Components::password_input_login::PasswordTextInput;
+use crate::Components::generic_button::LogInButton;
+use crate::Components::generic_text_input::GenericInputField;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
@@ -35,21 +31,17 @@ pub fn log_in_molecule()-> Html{
             {
                 let username = username.clone();
                 let password = password.clone();
-                // use_effect(move || {
                     spawn_local(async move {
                         let mut url = "/api/check_login".to_string();
                         url += &format!("?username={username}&password={password}");
                         let resp = Request::get(&url).send().await.unwrap();
                         if resp.text().await.unwrap() == "true"{
                             login_response_c.set("true".to_string());
-                            // html!{<div>{"login passed"}</div>}
                         } else{
                             login_response_c.set("false".to_string());
-                            // html!{<div>{"login failed"}</div>}
                         }
                         
                     })
-                // })
             }
         }
     });
@@ -59,8 +51,8 @@ pub fn log_in_molecule()-> Html{
         <div class="login-box">
             <h1>{"Login"}</h1>
             <div>
-                <LogInInputField name = "username" handle_on_change = {username_changed} />
-                <PasswordTextInput name = "password" handle_on_change = {password_changed} />
+                <GenericInputField name = "username" tipo = "text" handle_on_change = {username_changed} />
+                <GenericInputField name = "password" tipo = "password" handle_on_change = {password_changed} />
                 <LogInButton text = "submit" onclick_event = {submit_clicked} />
             </div>
             <p>{"your username is:"} {&*username_state}</p>

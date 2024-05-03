@@ -1,5 +1,4 @@
 use yew::prelude::*;
-use gloo::console::log;
 
 
 #[derive(Properties,PartialEq)]

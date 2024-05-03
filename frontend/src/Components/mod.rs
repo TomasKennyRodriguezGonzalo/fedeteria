@@ -1,3 +1,2 @@
-pub mod boton_log_in;
-pub mod text_input_login;
-pub mod password_input_login;
+pub mod generic_button;
+pub mod generic_text_input;
