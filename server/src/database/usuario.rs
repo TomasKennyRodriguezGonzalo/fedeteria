@@ -7,6 +7,7 @@ use super::sucursal::Sucursal;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Usuario {
+    pub nombre_y_apellido: String,
     pub dni: u64,
     pub email: String,
     pub contraseña: u64,
@@ -29,9 +30,10 @@ enum EstadoCuenta {
 }
 
 impl Usuario {
-    pub fn new(dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Self {
+    pub fn new(nombre_y_apellido: String, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Self {
         let contraseña = hash_str(&contraseña);
         Usuario {
+            nombre_y_apellido,
             dni,
             email,
             contraseña,

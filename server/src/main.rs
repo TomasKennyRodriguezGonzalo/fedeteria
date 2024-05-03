@@ -2,6 +2,7 @@
 use axum::body::{Body};
 use axum::http::{Response, StatusCode};
 use axum::extract::{Query, State};
+use axum::routing::post;
 use axum::{response::IntoResponse, routing::get, Router};
 use chrono::{DateTime, Local, TimeZone};
 use clap::Parser;
@@ -62,7 +63,7 @@ async fn main() {
         .route("/api/hello", get(hello))
         .route("/api/check_login", get(check_login))
         .route("/api/usuario_existe", get(usuario_existe))
-        .route("/api/registrar_usuario", get(registrar_usuario))
+        .route("/api/registrar_usuario", post(registrar_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -155,6 +156,7 @@ async fn usuario_existe(
 
 #[derive(Deserialize)]
 struct QueryRegistrarUsuario {
+    nombre_y_apellido: String,
     dni: u64,
     email: String,
     contraseña: String,
@@ -166,14 +168,21 @@ async fn registrar_usuario(
 ) -> impl IntoResponse {
     let mut state = state.write().await;
     let query = query.0;
-    let res = state.db.agregar_usuario(query.dni, query.email, query.contraseña, query.nacimiento);
+    let res = state.db.agregar_usuario(
+        query.nombre_y_apellido, query.dni, query.email, query.contraseña, query.nacimiento);
     if res.is_ok() {
+        log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
         log::error!("FALTA ENVIAR MAIL");
     }
-    if let Ok(res) = serde_json::to_string(&res) {
-        log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
-        res
-    } else {
-        "ERROR".to_string()
+    match res {
+        Ok(()) => "OK",
+        Err(err) => {
+            match err {
+                database::CrearUsuarioError::ErrorIndeterminado => "ERROR: Ha ocurrido un error desconocido.",
+                database::CrearUsuarioError::DNIExistente => "ERROR: Ya existe un usuario con ese DNI.",
+                database::CrearUsuarioError::EmailExistente => "ERROR: Ya existe un usuario con ese correo.",
+                database::CrearUsuarioError::MenorA18 => "ERROR: Sólo las personas de 18 años o más pueden registrarse.",
+            }
+        },
     }
 }

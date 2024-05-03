@@ -54,17 +54,17 @@ impl Database {
     }
 
 
-    pub fn agregar_usuario(&mut self, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Result<(), CrearUsuarioError> {
+    pub fn agregar_usuario(&mut self, nombre_y_apellido: String, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Result<(), CrearUsuarioError> {
+        if !Self::nacimiento_valido(nacimiento) {
+            return Err(CrearUsuarioError::MenorA18)
+        }
         if self.encontrar_dni(dni).is_some() {
             return Err(CrearUsuarioError::DNIExistente)
         }
         if self.encontrar_email(&email).is_some() {
             return Err(CrearUsuarioError::EmailExistente)
         }
-        if !Self::nacimiento_valido(nacimiento) {
-            return Err(CrearUsuarioError::MenorA18)
-        }
-        let u = Usuario::new(dni, email, contraseña, nacimiento);
+        let u = Usuario::new(nombre_y_apellido, dni, email, contraseña, nacimiento);
         self.usuarios.push(u);
         self.guardar();
         Ok(())
