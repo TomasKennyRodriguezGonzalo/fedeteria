@@ -1,5 +1,4 @@
 use yew::prelude::*;
-use yew_router::prelude::*;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 

@@ -1,6 +1,8 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::Pages::{home::Home, log_in_page::LogInPage, registrar_page::RegistrarPage};
+use crate::Pages::{log_in_page::LogInPage, home::Home};
+use crate::Components::button_storage::Prueba;
+
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
@@ -10,8 +12,12 @@ pub enum Route {
     HelloServer,
     #[at("/login-page")]
     LogInPage,
-    #[at("/register")]
-    RegistrarPage,
+    #[at("/mis-publicaciones")]
+    MyPublications,
+    #[at("/perfil")]
+    Profile,
+    #[at("/boton")]
+    Button,
     #[at("/404")]
     NotFound,
 }
@@ -21,7 +27,9 @@ pub fn switch(routes: Route) -> Html {
         Route::Home => html! { <Home/> },
         Route::HelloServer => html! { <p>{"Hello Server"}</p> },
         Route::LogInPage => html! { <LogInPage /> },
-        Route::RegistrarPage => html! { <RegistrarPage /> },
+        Route::MyPublications => html! { <p>{"MIS PUBLICACIONES!!"}</p> },
+        Route::Profile => html! { <p>{"MI PERFIL"}</p> },
+        Route::Button => html! { <Prueba/> },
         Route::NotFound => html! { <h1>{"Error 404 not found!"}</h1>}, 
     }
 }

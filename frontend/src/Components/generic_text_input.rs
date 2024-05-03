@@ -1,17 +1,18 @@
 use yew::prelude::*;
-use gloo::console::log;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 
 #[derive(Properties,PartialEq)]
 pub struct Props{
     pub name:String,
+    pub label:String,
+    pub tipo:String,
     pub handle_on_change:Callback<String>,
 
 }
 
 
-#[function_component(LogInInputField)]
+#[function_component(GenericInputField)]
 pub fn log_in_input_field(props: &Props)-> Html{
     let handle_on_change = props.handle_on_change.clone();
 
@@ -22,8 +23,17 @@ pub fn log_in_input_field(props: &Props)-> Html{
         handle_on_change.emit(input_value);
     });
 
+    let id= props.label.to_lowercase().replace(" ", "-");
+
     html! {
-        <input type = "text" name = {props.name.clone()} onchange={onchange} />
+        <>
+            <div>
+                <label for={id.clone()}>{&props.label}</label>
+            </div>
+            <div>
+                <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+            </div>
+        </>
     }
 
 }
