@@ -18,3 +18,5 @@ serde = {version = "1.0.200", features = ["derive"]}
 serde_json = "1.0.116"
 chrono = {version = "0.4.38", features = ["now", "serde"]}
 date_component = "0.4.1"
+
+datos_comunes = { path = "../datos_comunes" }
