@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 use std::hash::{Hash, Hasher, DefaultHasher};
 
-=======
-use std::hash::{Hash, Hasher};
-use std::collections::hash_map::DefaultHasher;
->>>>>>> 7c0ba59a9f1606f5fa8c40d762ca8cad1fc4d335
 
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
