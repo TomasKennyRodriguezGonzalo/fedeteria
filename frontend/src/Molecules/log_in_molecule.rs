@@ -35,21 +35,18 @@ pub fn log_in_molecule()-> Html{
             {
                 let username = username.clone();
                 let password = password.clone();
-                // use_effect(move || {
                     spawn_local(async move {
                         let mut url = "/api/check_login".to_string();
                         url += &format!("?username={username}&password={password}");
                         let resp = Request::get(&url).send().await.unwrap();
                         if resp.text().await.unwrap() == "true"{
                             login_response_c.set("true".to_string());
-                            // html!{<div>{"login passed"}</div>}
                         } else{
                             login_response_c.set("false".to_string());
-                            // html!{<div>{"login failed"}</div>}
+
                         }
                         
                     })
-                // })
             }
         }
     });
@@ -63,9 +60,13 @@ pub fn log_in_molecule()-> Html{
                 <PasswordTextInput name = "password" handle_on_change = {password_changed} />
                 <LogInButton text = "submit" onclick_event = {submit_clicked} />
             </div>
+            if  &*login_response == "true"{
+                <p>{"login response: IS TRUE"} </p>
+            } else{
+                <p>{"login response: IS FALSE"} </p>
+            }
             <p>{"your username is:"} {&*username_state}</p>
             <p>{"your password is:"} {&*password_state}</p>
-            <p>{"login response:"} {&*login_response} </p>
         </div>
     }
 
