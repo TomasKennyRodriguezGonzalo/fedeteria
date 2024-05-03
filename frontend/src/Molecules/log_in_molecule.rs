@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use yew::prelude::*;
 use crate::store::UserStore;
-use crate::Components::generic_button::LogInButton;
-use crate::Components::generic_text_input::GenericInputField;
+use crate::Components::generic_button::GenericButton;
+use crate::Components::generic_input_field::GenericInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
@@ -168,7 +168,7 @@ pub fn log_in_molecule()-> Html{
                     <form {onsubmit}>
                         <GenericInputField name = "username" label="Username" tipo = "text" handle_on_change = {username_changed} />
                         <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
-                        <LogInButton text = "submit" onclick_event = {submit_clicked_example} />
+                        <GenericButton text = "submit" onclick_event = {submit_clicked_example} />
                     </form>
                 </div>
             </section>

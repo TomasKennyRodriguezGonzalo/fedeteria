@@ -8,7 +8,7 @@ pub struct Props{
 }
 
 
-#[function_component(LogInButton)]
+#[function_component(GenericButton)]
 pub fn log_in_button(props: &Props)-> Html{
  
     let button_clicked = props.onclick_event.clone();

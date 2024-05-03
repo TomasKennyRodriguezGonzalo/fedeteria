@@ -11,9 +11,8 @@ pub struct Props{
 
 }
 
-
 #[function_component(GenericInputField)]
-pub fn log_in_input_field(props: &Props)-> Html{
+pub fn generic_field(props: &Props)-> Html{
     let handle_on_change = props.handle_on_change.clone();
 
     let onchange: Callback<Event> = Callback::from(move |event:Event|{
