@@ -300,6 +300,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets 0.52.5",
 ]
@@ -1660,6 +1661,7 @@ dependencies = [
  "date_component",
  "log",
  "serde",
+ "serde_json",
  "tokio",
  "tower",
  "tower-http",

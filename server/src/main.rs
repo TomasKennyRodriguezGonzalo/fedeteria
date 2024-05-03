@@ -1,19 +1,26 @@
 
 use axum::body::{Body};
 use axum::http::{Response, StatusCode};
-use axum::extract::Query;
+use axum::extract::{Query, State};
 use axum::{response::IntoResponse, routing::get, Router};
+use chrono::TimeZone;
 use clap::Parser;
+use database::Database;
 use tokio::fs;
 use tokio::net::TcpListener;
+use tokio::sync::{Mutex, RwLock};
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use serde::{Serialize, Deserialize};
+
+use crate::state::ServerState;
 mod database;
+mod state;
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
@@ -36,6 +43,8 @@ struct Opt {
     static_dir: String,
 }
 
+type SharedState = Arc<RwLock<ServerState>>;
+
 #[tokio::main]
 async fn main() {
     let opt = Opt::parse();
@@ -47,9 +56,12 @@ async fn main() {
     // enable console logging
     tracing_subscriber::fmt::init();
 
-    let app = Router::new()
+    let db = Database::cargar();
+    let state = Arc::new(RwLock::new(ServerState::new(db)));
+    let router = Router::new()
         .route("/api/hello", get(hello))
         .route("/api/check_login", get(check_login))
+        .route("/api/usuario_existe", get(usuario_existe))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -81,20 +93,6 @@ async fn main() {
                 Err(_) => panic!(),
             }
         }))
-        // .route("/", get(|req| async move {
-        //     ServeDir::new(opt.static_dir).oneshot(req).await.unwrap()
-        // }))
-        // .fallback_service(ServeDir::new("public").not_found_service(ServeFile::new("public/index.html")),
-        // )
-        // .fallback_service(get(|req| async move {
-        //     match ServeDir::new(opt.static_dir).oneshot(req).await {
-        //         Ok(res) => res.map(boxed),
-        //         Err(err) => Response::builder()
-        //             .status(StatusCode::INTERNAL_SERVER_ERROR)
-        //             .body(Body::from(format!("error: {err}")))
-        //             .expect("error response"),
-        //     }
-        // }))
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()));
 
 
@@ -106,7 +104,7 @@ async fn main() {
 
     log::info!("listening on http://{}", sock_addr);
 
-    axum::serve(listener, app.into_make_service())
+    axum::serve(listener, router.with_state(state).into_make_service())
         .await
         .expect("Unable to start server");
 }
@@ -116,14 +114,14 @@ async fn hello() -> impl IntoResponse {
 }
 
 #[derive(Deserialize)]
-struct DatosLogin {
+struct QueryLogin {
     username: String,
     password: String,
 }
 
 //  fedeteria.com/api/check_login?username=algo&password=otracosa
 
-async fn check_login(datos_login: Query<DatosLogin>) -> impl IntoResponse {
+async fn check_login(datos_login: Query<QueryLogin>) -> impl IntoResponse {
     let datos_login = datos_login.0;
     let username = datos_login.username;
     let password = datos_login.password;
@@ -134,4 +132,22 @@ async fn check_login(datos_login: Query<DatosLogin>) -> impl IntoResponse {
     }
     log::info!("FALSE!");
     return "false"
+}
+
+#[derive(Deserialize)]
+struct QueryDNI {
+    dni: u64,
+}
+async fn usuario_existe(
+    State(state): State<SharedState>,
+    query: Query<QueryDNI>
+) -> impl IntoResponse {
+    let state = state.read().await;
+    let dni = query.0.dni;
+    let res = state.db.encontrar_dni(dni);
+    if res.is_some() {
+        "El usuario existe"
+    } else {
+        "El usuario no existe"
+    }
 }

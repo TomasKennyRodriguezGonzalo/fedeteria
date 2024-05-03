@@ -1,12 +1,31 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 
+use super::sucursal::Sucursal;
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Usuario {
     pub dni: u64,
     pub email: String,
     pub contraseña: u64,
     pub nacimiento: DateTime<Local>,
+    pub rol: RolDeUsuario,
+    pub estado: EstadoCuenta,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+enum RolDeUsuario {
+    Normal,
+    Dueño,
+    Empleado{sucursal: usize},
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+enum EstadoCuenta {
+    Activa{intentos: u8},
+    Bloqueada,
 }
 
 impl Usuario {
@@ -17,6 +36,8 @@ impl Usuario {
             email,
             contraseña,
             nacimiento,
+            rol: RolDeUsuario::Normal,
+            estado: EstadoCuenta::Activa { intentos: 0 }
         }
     }
 }
