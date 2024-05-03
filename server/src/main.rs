@@ -3,7 +3,7 @@ use axum::body::{Body};
 use axum::http::{Response, StatusCode};
 use axum::extract::{Query, State};
 use axum::{response::IntoResponse, routing::get, Router};
-use chrono::TimeZone;
+use chrono::{DateTime, Local, TimeZone};
 use clap::Parser;
 use database::Database;
 use tokio::fs;
@@ -62,6 +62,7 @@ async fn main() {
         .route("/api/hello", get(hello))
         .route("/api/check_login", get(check_login))
         .route("/api/usuario_existe", get(usuario_existe))
+        .route("/api/registrar_usuario", get(registrar_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -149,5 +150,30 @@ async fn usuario_existe(
         "El usuario existe"
     } else {
         "El usuario no existe"
+    }
+}
+
+#[derive(Deserialize)]
+struct QueryRegistrarUsuario {
+    dni: u64,
+    email: String,
+    contraseña: String,
+    nacimiento: DateTime<Local>,
+}
+async fn registrar_usuario(
+    State(state): State<SharedState>,
+    query: Query<QueryRegistrarUsuario>
+) -> impl IntoResponse {
+    let mut state = state.write().await;
+    let query = query.0;
+    let res = state.db.agregar_usuario(query.dni, query.email, query.contraseña, query.nacimiento);
+    if res.is_ok() {
+        log::error!("FALTA ENVIAR MAIL");
+    }
+    if let Ok(res) = serde_json::to_string(&res) {
+        log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
+        res
+    } else {
+        "ERROR".to_string()
     }
 }

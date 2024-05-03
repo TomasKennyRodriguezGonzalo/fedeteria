@@ -69,6 +69,10 @@ impl Database {
         self.guardar();
         Ok(())
     }
+    pub fn get_ultimo_usuario(&self) -> &Usuario {
+        &self.usuarios[self.usuarios.len() - 1]
+    }
+
     pub fn encontrar_dni(&self, dni: u64) -> Option<usize> {
         self.usuarios.iter()
             // Asociar cada elemento con su id
@@ -94,7 +98,7 @@ impl Database {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum CrearUsuarioError {
     ErrorIndeterminado,
     DNIExistente,
