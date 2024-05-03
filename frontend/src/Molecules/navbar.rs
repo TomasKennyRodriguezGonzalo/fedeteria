@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use crate::router::Route;
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{

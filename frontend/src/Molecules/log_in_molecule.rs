@@ -189,7 +189,6 @@ pub fn log_in_molecule()-> Html{
             <p>{"your username is:"} {&*username_state}</p>
             <p>{"your username from storage is:"} {username}</p>
             <p>{"your password is:"} {&*password_state}</p>
-            <p>{"login response:"} {&*login_response} </p>
         </div>
     }
 
