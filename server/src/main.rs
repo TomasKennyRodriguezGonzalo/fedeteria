@@ -3,10 +3,12 @@ use axum::body::{Body};
 use axum::http::{Response, StatusCode};
 use axum::extract::{Query, State};
 use axum::routing::post;
+use axum::Json;
 use axum::{response::IntoResponse, routing::get, Router};
 use chrono::{DateTime, Local, TimeZone};
 use clap::Parser;
 use database::Database;
+use datos_comunes::*;
 use tokio::fs;
 use tokio::net::TcpListener;
 use tokio::sync::{Mutex, RwLock};
@@ -154,35 +156,16 @@ async fn usuario_existe(
     }
 }
 
-#[derive(Deserialize)]
-struct QueryRegistrarUsuario {
-    nombre_y_apellido: String,
-    dni: u64,
-    email: String,
-    contraseña: String,
-    nacimiento: DateTime<Local>,
-}
+
 async fn registrar_usuario(
     State(state): State<SharedState>,
-    query: Query<QueryRegistrarUsuario>
-) -> impl IntoResponse {
+    Json(query): Json<QueryRegistrarUsuario>
+) -> Json<ResponseRegistrarUsuario> {
     let mut state = state.write().await;
-    let query = query.0;
-    let res = state.db.agregar_usuario(
-        query.nombre_y_apellido, query.dni, query.email, query.contraseña, query.nacimiento);
+    let res = state.db.agregar_usuario(query);
     if res.is_ok() {
         log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
         log::error!("FALTA ENVIAR MAIL");
     }
-    match res {
-        Ok(()) => "OK",
-        Err(err) => {
-            match err {
-                database::CrearUsuarioError::ErrorIndeterminado => "ERROR: Ha ocurrido un error desconocido.",
-                database::CrearUsuarioError::DNIExistente => "ERROR: Ya existe un usuario con ese DNI.",
-                database::CrearUsuarioError::EmailExistente => "ERROR: Ya existe un usuario con ese correo.",
-                database::CrearUsuarioError::MenorA18 => "ERROR: Sólo las personas de 18 años o más pueden registrarse.",
-            }
-        },
-    }
+    Json(res)
 }

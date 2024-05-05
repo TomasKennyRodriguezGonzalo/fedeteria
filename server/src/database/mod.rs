@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 
 use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
+use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
 use serde::{Deserialize, Serialize};
 
 use self::{sucursal::Sucursal, usuario::Usuario};
@@ -54,17 +55,17 @@ impl Database {
     }
 
 
-    pub fn agregar_usuario(&mut self, nombre_y_apellido: String, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Result<(), CrearUsuarioError> {
-        if !Self::nacimiento_valido(nacimiento) {
+    pub fn agregar_usuario(&mut self, datos: QueryRegistrarUsuario) -> ResponseRegistrarUsuario {
+        if !Self::nacimiento_valido(datos.nacimiento) {
             return Err(CrearUsuarioError::MenorA18)
         }
-        if self.encontrar_dni(dni).is_some() {
+        if self.encontrar_dni(datos.dni).is_some() {
             return Err(CrearUsuarioError::DNIExistente)
         }
-        if self.encontrar_email(&email).is_some() {
+        if self.encontrar_email(&datos.email).is_some() {
             return Err(CrearUsuarioError::EmailExistente)
         }
-        let u = Usuario::new(nombre_y_apellido, dni, email, contraseña, nacimiento);
+        let u = Usuario::new(datos.nombre_y_apellido, datos.dni, datos.email, datos.contraseña, datos.nacimiento);
         self.usuarios.push(u);
         self.guardar();
         Ok(())
@@ -97,12 +98,3 @@ impl Database {
         diff.year >= 18
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum CrearUsuarioError {
-    ErrorIndeterminado,
-    DNIExistente,
-    EmailExistente,
-    MenorA18,
-}
-
