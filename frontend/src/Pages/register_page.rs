@@ -6,7 +6,7 @@ use crate::Molecules::register_molecule::RegisterMolecule;
 pub fn register_page()-> Html{
     html!{
         <>
-            <RegisterMolecule />
+            <RegisterMolecule/>
         </>
     }
 

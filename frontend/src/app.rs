@@ -7,8 +7,8 @@ use crate::router::{Route, switch};
 pub fn app() -> Html {
     html! {
         <div>
-            <Navbar />
             <BrowserRouter>
+                <Navbar/>
                 <Switch<Route> render={switch} />
             </BrowserRouter>
         </div>

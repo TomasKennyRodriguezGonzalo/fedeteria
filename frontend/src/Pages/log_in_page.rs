@@ -1,5 +1,7 @@
+use yew_router::prelude::Link;
 use yew::prelude::*;
 use crate::Molecules::log_in_molecule::LogInMolecule;
+use crate::router::Route::{Register, self};
 
 #[function_component(LogInPage)]
 pub fn log_in_page()-> Html{
@@ -7,7 +9,7 @@ pub fn log_in_page()-> Html{
         <>
             <LogInMolecule />
             <div>
-                <span> {"¿No tienes usuario? "} </span> <a href="/register" value="Redirect"> {"Create una cuenta."} </a>
+                <span> {"¿No tienes usuario? "} </span> <Link<Route> to={Route::Register}>{"Registrate"}</Link<Route>>
             </div>
         </>
     }
