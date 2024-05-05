@@ -6,21 +6,27 @@ use crate::router::Route;
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{
+    let auth = use_state(|| false);
+    let auth_clone = auth.clone();
+    
     let my_store = use_local_storage::<UserStore>("UserStore".to_string());
+    let my_store_clone = my_store.clone();
     let mut username = "".to_string();
-    if !my_store.as_ref().is_none(){
-        let user_store = my_store.as_ref().unwrap();
-        username = user_store.user.clone();
-    }
+
+
+    use_effect(move || {
+        // Acá agregar la funcionalidad que detecta el login y cambia la página desplegada
+        
+    });
 
     html!{
         <header class="navbar">
             <div class="logo">
                 <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
             </div>
-            if !username.is_empty(){
+            if *auth{
                 <div>
-                    <h2>{"Estás loggeado como: " }{username}</h2>
+                    <h2>{"Hola " }{username}{"!"}</h2>
                 </div>
                 <nav>
                     <ul class="option_list">
