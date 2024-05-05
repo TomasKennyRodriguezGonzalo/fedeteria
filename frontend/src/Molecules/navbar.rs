@@ -1,22 +1,25 @@
+use yew_router::hooks::use_navigator;
+use yew_router::navigator;
+use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
-use yew_hooks::use_local_storage;
 use crate::store::UserStore;
 use crate::router::Route;
+
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{
     let auth = use_state(|| false);
     let auth_clone = auth.clone();
+
+    let navigator = use_navigator().unwrap();
     
-    let my_store = use_local_storage::<UserStore>("UserStore".to_string());
-    let my_store_clone = my_store.clone();
-    let mut username = "".to_string();
+    let (store, dispatch) = use_store::<UserStore>();
+    let mut username = store.user.clone();
 
-
-    use_effect(move || {
-        // Acá agregar la funcionalidad que detecta el login y cambia la página desplegada
-        
+    let logout = Callback::from(move|_event| {
+        dispatch.reduce_mut(|store| store.user = "".to_string());
+        navigator.push(&Route::Home);
     });
 
     html!{
@@ -24,15 +27,15 @@ pub fn navbar() -> Html{
             <div class="logo">
                 <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
             </div>
-            if *auth{
+            if !username.is_empty(){
                 <div>
                     <h2>{"Hola " }{username}{"!"}</h2>
                 </div>
                 <nav>
                     <ul class="option_list">
                         <li><Link<Route> to={Route::MyPublications}>{"Mis publicaciones"}</Link<Route>></li>
-                        <li><Link<Route> to={Route::Profile}>{"Mis publicaciones"}</Link<Route>></li>
-                        <li><a>{"Cerrar Sesion"}</a></li>
+                        <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                        <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
                     </ul>
                 </nav>
             } else {

@@ -155,8 +155,6 @@ pub fn log_in_molecule()-> Html{
 
     let username = store.user.clone();
 
-
-
     html! {
         <div class="login-box">
             <h1>{"Login"}</h1>
@@ -169,9 +167,6 @@ pub fn log_in_molecule()-> Html{
                     </form>
                 </div>
             </section>
-            <p>{"your username is:"} {&*username_state}</p>
-            <p>{"your username from storage is:"} {username}</p>
-            <p>{"your password is:"} {&*password_state}</p>
         </div>
     }
 

@@ -1,3 +1,5 @@
+use yewdux::use_store;
+use crate::store::UserStore;
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use yew_hooks::use_local_storage;
@@ -7,17 +9,18 @@ use crate::router::Route::{self};
 pub fn home_page() -> Html {
     let auth = use_state(|| false);
     let auth_clone = auth.clone();
-    use_effect(move || {
-        // Acá agregar la funcionalidad que detecta el login y cambia la página desplegada
-    });
-
+    
+    let (store, dispatch) = use_store::<UserStore>();
+    let mut username = store.user.clone();
+    
     html!{
         <div class="home-page">
             <div class= "completed-trades">
-                <h2>{"Próximamente..."}</h2>
+                <h2 class="title">{"Próximamente..."}</h2>
             </div>
             <div class= "publication-list">
-                if *auth {
+                <h1 class="title">{"Publicaciones..."}</h1>
+                if !username.is_empty() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
                 } else {
                     <Link<Route> to={Route::LogInPage}>{"Publicar"}</Link<Route>>

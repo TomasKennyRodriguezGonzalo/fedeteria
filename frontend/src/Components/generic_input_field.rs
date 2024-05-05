@@ -14,11 +14,13 @@ pub struct Props{
 #[function_component(GenericInputField)]
 pub fn generic_field(props: &Props)-> Html{
     let handle_on_change = props.handle_on_change.clone();
+    let name = props.name.clone();
 
     let onchange: Callback<Event> = Callback::from(move |event:Event|{
         let target = event.target().unwrap();
         let input:HtmlInputElement = target.unchecked_into();
         let input_value = input.value();
+        log::info!("Onchange: name=[{}] input_value=[{}]", name, input_value);
         handle_on_change.emit(input_value);
     });
 

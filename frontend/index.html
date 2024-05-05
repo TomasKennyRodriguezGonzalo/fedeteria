@@ -14,39 +14,31 @@
             font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         }
 
-        button {
+        button, a{
             font-weight: bold;   
             text-decoration: none;
             font-size: 500;
             color: #D9D9D9;
+            max-width: max-content;
             background-color: #12492f;
             padding: 6px 10px;
+            text-align: center;
             border: none;
             border-radius: 5px;
-            transition: all 0.3s
+            transition: all 0.3s;
+            cursor : pointer;
         }
 
         button:hover {
             background-color: rgba(255, 82, 51, 0.926);
-            transform: scale(1.1);
-        }
-        
-        a {
-            font-weight: bold;   
-            text-decoration: none;
-            font-size: 500;
-            color: #D9D9D9;
-            background-color: #12492f;
-            padding: 6px 10px;
-            border: none;
-            border-radius: 5px;
-            transition: all 0.3s
+            transform: scale(1.05);
         }
 
         a:hover {
             background-color: rgba(255, 82, 51, 0.926);
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
+        
 
         body {
             background-color: #F7F6BB;
@@ -76,6 +68,7 @@
         
         .navbar .logo a{
             all: initial;
+            cursor: pointer;
         }
 
         .navbar .logo img:hover{
@@ -96,21 +89,6 @@
             transform: scale(1.1);
         }
         
-        .navbar .option_list a {
-            font-weight: bold;   
-            text-decoration: none;
-            font-size: 500;
-            color: #D9D9D9;
-            background-color: #12492f;
-            padding: 6px 10px;
-            border: none;
-            border-radius: 5px;
-        }
-
-        .navbar .option_list a:hover {
-            background-color: rgba(255, 82, 51, 0.926);
-        }
-
         /* -- Publication -- */
         .publication_link {
             text-decoration: none;
@@ -172,7 +150,7 @@
         .create-publication {
             background-color: #114232;
             display: grid;
-            color : white;
+            color : #D9D9D9;
             justify-content: center;
             align-items: center;
             border-radius: 10px;
@@ -191,12 +169,22 @@
             height: 100vh;
         }
 
-        .home-page * {
+        .home-page > * {
             background-color: #114232;
             border-radius: 10px;
             margin: 1%;
+            padding : 15px;
+            display: block;
         }
 
+        .home-page * .title {
+            background-color: #e7ab12;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-decoration: wavy;
+            color: beige;
+        }
     </style>
   </head>
   <body>loading...</body>

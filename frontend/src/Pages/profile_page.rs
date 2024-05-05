@@ -11,9 +11,7 @@ pub fn profile_page() -> Html {
 
     html! (
         <>
-            <h1>{"PROFILE"}</h1>
-            <div>{"your username is: "} {username}</div>
-
+            <h1>{"PERFIL"}</h1>
         </>
     )
 }
