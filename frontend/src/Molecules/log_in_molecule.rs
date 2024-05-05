@@ -1,4 +1,5 @@
 use std::default;
+use std::ops::Deref;
 
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,7 @@ use crate::Components::generic_input_field::GenericInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
-use yew_hooks::prelude::*;
+use yewdux::prelude::*;
 
 #[derive(Default)]
 pub struct State{
@@ -53,8 +54,8 @@ pub fn log_in_molecule()-> Html{
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
 
-    let storage = use_local_storage::<UserStore>("UserStore".to_string());
-    let storage_cloned = storage.clone();
+    let (store, dispatch) = use_store::<UserStore>();
+    let dispatch_cloned = dispatch.clone();
 
     let submit_clicked_example = Callback::from(move |()| {
         let login_response_c = login_response_c.clone();
@@ -64,22 +65,20 @@ pub fn log_in_molecule()-> Html{
             {
                 let username = username.clone();
                 let password = password.clone();
-                //let navigator = navigator.clone();
-                let storage = storage_cloned.clone();
+             //   let navigator = navigator.clone();
+                let dispatch_cloned = dispatch_cloned.clone();
                     spawn_local(async move {
                         let mut url = "/api/check_login".to_string();
-                        url += &format!("?username={username}&password={password}");
+                        let cloned_username = username.clone();
+                        url += &format!("?username={cloned_username}&password={password}");
                         let resp = Request::get(&url).send().await.unwrap();
                         if resp.text().await.unwrap() == "true"{
                             login_response_c.set("true".to_string());
-                            let storage = storage.clone();
-                            let _datos=Callback::from(move |()| {
-                                    storage.set(UserStore {
-                                    user: String::from("beiserman".to_string()),
-                                    token: String::from("RECIBIR-DE-BACKEND".to_string()),
-                                });
-                             });
-                         //   navigator.push(&Route::Home);
+                            let dispatch_cloned = dispatch_cloned.clone();
+                            dispatch_cloned.reduce_mut(|store|{
+                                store.user = username;
+                            });
+                          //  navigator.push(&Route::Home);
                         } else{
                             login_response_c.set("false".to_string());
                         }
@@ -152,13 +151,11 @@ pub fn log_in_molecule()-> Html{
         event.prevent_default();
     });
 
+    let (store, dispatch) = use_store::<UserStore>();
 
-    let my_store = use_local_storage::<UserStore>("UserStore".to_string());
-    let mut username = "no estas logeado pa".to_string();
-    if (*storage).as_ref().is_some(){
-        let user_store = storage.as_ref().unwrap();
-        username = storage.as_ref().unwrap().user.clone();
-    }
+    let username = store.user.clone();
+
+
 
     html! {
         <div class="login-box">
