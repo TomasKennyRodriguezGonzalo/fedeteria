@@ -1,11 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::Pages::{home_page::HomePage, 
-    log_in_page::LogInPage, 
-    register_page::RegisterPage, 
-    create_publication_page::CreatePublicationPage,
-    publication_page::PublicationPage,
-    profile_page::ProfilePage
+use crate::Pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage
 };
 
 
@@ -21,6 +16,8 @@ pub enum Route {
     CreatePublication,
     #[at("/perfil")]
     Profile,
+    #[at("/agregar-sucursal")]
+    CreateOffice,
     #[at("/publicacion:id")]
     Publication {id: String},
     #[at("/register")]
@@ -38,6 +35,7 @@ pub fn switch(routes: Route) -> Html {
         Route::Publication { id } => html! { <PublicationPage id={id}/>},
         Route::Profile => html! { <ProfilePage/> },
         Route::Register => html! {<RegisterPage/>},
+        Route::CreateOffice => html! { <CreateOfficePage/> },
         Route::CreatePublication => html! { <CreatePublicationPage/> },
         Route::NotFound => html! { <h1>{":( Error 404 página no existente!"}</h1>}, 
     }

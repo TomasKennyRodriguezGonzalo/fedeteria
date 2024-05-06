@@ -4,7 +4,6 @@ use reqwasm::http::Request;
 use yew::{platform::spawn_local, prelude::*};
 use serde_json::json;
 
-
 #[function_component(RegisterMolecule)]
 pub fn register_molecule()-> Html {
     let respuesta = use_state(|| "false".to_string());
