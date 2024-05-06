@@ -1,5 +1,5 @@
 use chrono::{Local, TimeZone};
-use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario};
+use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
 use reqwasm::http::Request;
 use yew::{platform::spawn_local, prelude::*};
 use serde_json::json;
@@ -25,6 +25,7 @@ pub fn register_molecule()-> Html {
                     .body(serde_json::to_string(&query).unwrap())
                     .send().await;
 
+<<<<<<< HEAD
                     let respuesta = match respuesta {
                         Ok(resp) => {
                             log::info!("llegue al match ok, {:?}",resp);
@@ -40,6 +41,22 @@ pub fn register_molecule()-> Html {
                         Err(_) => CrearUsuarioError::ErrorIndeterminado,
                     };
                     log::info!("Respuesta: {respuesta:?}");
+=======
+                let respuesta: ResponseRegistrarUsuario = match respuesta {
+                    Ok(resp) => {
+                        let resp = serde_json::from_str(&resp.text().await.unwrap());
+                        match resp {
+                            Ok(resp) => resp,
+                            Err(_) => {
+                                log::error!("Error al deserializar");
+                                Err(CrearUsuarioError::ErrorIndeterminado)
+                            },
+                        }
+                    },
+                    Err(_) => Err(CrearUsuarioError::ErrorIndeterminado),
+                };
+                log::info!("Respuesta: {respuesta:?}");
+>>>>>>> 7d864092a387f69f1f3105a787ed1986d00da421
                 // if resp.text().await.unwrap() == "true"{
                 //     respuesta_c.set("true".to_string());
                 //     let storage = storage.clone();

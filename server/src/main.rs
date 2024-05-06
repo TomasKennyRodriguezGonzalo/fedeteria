@@ -168,22 +168,8 @@ async fn registrar_usuario(
         log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
         log::error!("FALTA ENVIAR MAIL");
     }
-    Json(res)
-}
-
-
-
-async fn retornar_usuario(
-    State(state): State<SharedState>,
-    Json(query): Json<QueryObtenerUsuario>
-) -> Json<Option<ResponseObtenerUsuario>> {
-    let mut state = state.write().await;
-    let res = state.db.encontrar_dni(query.dni);
-    if let Some(res) = res {
-       let usuario = state.db.obtener_usuario(res);
-       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
-       Json(Some(response))
-    } else{
-        Json(None)
-    }
+    
+    let res = Json(res);
+    log::info!("{res:?}");
+    res
 }
