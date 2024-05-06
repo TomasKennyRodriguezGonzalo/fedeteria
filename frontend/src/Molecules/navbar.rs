@@ -15,10 +15,11 @@ pub fn navbar() -> Html{
     let navigator = use_navigator().unwrap();
     
     let (store, dispatch) = use_store::<UserStore>();
-    let mut username = store.user.clone();
+    //let mut username = store.user.clone();
+    let mut dni = store.dni.clone();
 
     let logout = Callback::from(move|_event| {
-        dispatch.reduce_mut(|store| store.user = "".to_string());
+        dispatch.reduce_mut(|store| store.dni = None);
         navigator.push(&Route::Home);
     });
 
@@ -27,9 +28,9 @@ pub fn navbar() -> Html{
             <div class="logo">
                 <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
             </div>
-            if !username.is_empty(){
+            if !dni.is_none(){
                 <div>
-                    <h2>{"Hola " }{username}{"!"}</h2>
+               //     <h2>{"Hola " }{username}{"!"} {"tu dni es: "} {dni.unwrap()}</h2>
                 </div>
                 <nav>
                     <ul class="option_list">

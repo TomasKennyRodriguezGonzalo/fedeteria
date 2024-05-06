@@ -97,4 +97,8 @@ impl Database {
         let diff = date_component::calculate(&fecha, &now);
         diff.year >= 18
     }
+    pub fn obtener_usuario(&self, indice:usize) -> &Usuario {
+        &self.usuarios[indice]
+    }
+
 }

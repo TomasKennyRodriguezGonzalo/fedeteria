@@ -20,3 +20,12 @@ pub enum CrearUsuarioError {
     EmailExistente,
     MenorA18,
 }
+
+pub struct QueryObtenerUsuario {
+    pub dni:u64
+}
+
+pub struct ResponseObtenerUsuario {
+    pub nombre:String
+}
+

@@ -27,9 +27,13 @@ pub fn register_molecule()-> Html {
 
                     let respuesta = match respuesta {
                         Ok(resp) => {
+                            log::info!("llegue al match ok, {:?}",resp);
                             let resp = serde_json::from_str(&resp.text().await.unwrap());
-                            match resp {
-                                Ok(resp) => resp,
+                            match resp {    
+                                Ok(resp) =>{
+                                    log::info!("llegue al match ok");
+                                    resp
+                                },
                                 Err(_) => CrearUsuarioError::ErrorIndeterminado,
                             }
                         },

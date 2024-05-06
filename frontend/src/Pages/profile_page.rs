@@ -7,7 +7,7 @@ pub fn profile_page() -> Html {
 
 
     let (store, dispatch) = use_store::<UserStore>();
-    let username = store.user.clone();
+  //  let username = store.user.clone();
 
     html! (
         <>

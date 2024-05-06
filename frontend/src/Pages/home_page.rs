@@ -11,7 +11,7 @@ pub fn home_page() -> Html {
     let auth_clone = auth.clone();
     
     let (store, dispatch) = use_store::<UserStore>();
-    let mut username = store.user.clone();
+    let mut dni = store.dni.clone();
     
     html!{
         <div class="home-page">
@@ -20,7 +20,7 @@ pub fn home_page() -> Html {
             </div>
             <div class= "publication-list">
                 <h1 class="title">{"Publicaciones..."}</h1>
-                if !username.is_empty() {
+                if !dni.is_none() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
                 } else {
                     <Link<Route> to={Route::LogInPage}>{"Publicar"}</Link<Route>>

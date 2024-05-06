@@ -20,6 +20,7 @@ use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use serde::{Serialize, Deserialize};
+use crate::database::usuario::Usuario;
 
 use crate::state::ServerState;
 mod database;
@@ -119,7 +120,7 @@ async fn hello() -> impl IntoResponse {
 
 #[derive(Deserialize)]
 struct QueryLogin {
-    username: String,
+    dni: u32,
     password: String,
 }
 
@@ -127,9 +128,9 @@ struct QueryLogin {
 
 async fn check_login(datos_login: Query<QueryLogin>) -> impl IntoResponse {
     let datos_login = datos_login.0;
-    let username = datos_login.username;
+    let username = datos_login.dni;
     let password = datos_login.password;
-    if &username == "nico" && &password == &"beiser" {
+    if username == 44933855 && &password == &"beiser" {
         log::info!("TRUE!!!!!!!!!!!!!!!!!");
 
         return "true"
@@ -168,4 +169,21 @@ async fn registrar_usuario(
         log::error!("FALTA ENVIAR MAIL");
     }
     Json(res)
+}
+
+
+
+async fn retornar_usuario(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerUsuario>
+) -> Json<Option<ResponseObtenerUsuario>> {
+    let mut state = state.write().await;
+    let res = state.db.encontrar_dni(query.dni);
+    if let Some(res) = res {
+       let usuario = state.db.obtener_usuario(res);
+       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
+       Json(Some(response))
+    } else{
+        Json(None)
+    }
 }
