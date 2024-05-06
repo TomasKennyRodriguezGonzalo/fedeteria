@@ -167,5 +167,8 @@ async fn registrar_usuario(
         log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
         log::error!("FALTA ENVIAR MAIL");
     }
-    Json(res)
+    
+    let res = Json(res);
+    log::info!("{res:?}");
+    res
 }
