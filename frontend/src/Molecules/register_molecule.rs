@@ -14,7 +14,7 @@ pub fn register_molecule()-> Html {
         {
             let query = QueryRegistrarUsuario {
                 nombre_y_apellido: "Juan Pérez".to_string(),
-                dni: 1234321,
+                dni: 44933856,
                 email: "JuanPerez@mail.com".to_string(),
                 contraseña: "barraespaciadOOra".to_string(),
                 nacimiento: Local.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap(),

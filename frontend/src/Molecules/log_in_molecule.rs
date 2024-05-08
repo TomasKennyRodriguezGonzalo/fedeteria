@@ -91,10 +91,15 @@ pub fn log_in_molecule()-> Html{
                             let dispatch_cloned = dispatch_cloned.clone();
                             dispatch_cloned.reduce_mut(|store|{
                                 store.dni = Some(dni);
+                                store.login_fail = false;
+                                store.login_faliures=0;
                             });
                             navigator.push(&Route::Home);
                         } else{
-                            login_response_c.set("false".to_string());
+                            dispatch_cloned.reduce_mut(|store|{
+                                store.login_fail = true;
+                                store.login_faliures+=1;
+                            });
                         }
                         
                     })     
@@ -108,12 +113,24 @@ pub fn log_in_molecule()-> Html{
     });
 
 
+    let (store, dispatch) = use_store::<UserStore>();
+
+    let intentos_restantes = 3 - store.clone().login_faliures;
+
     html! {
         <div class="login-box">
             <h1>{"Login"}</h1>
             <section>
                 <div>
                     <form {onsubmit}>
+                        if store.login_fail == true{
+                            <div>
+                                {"Error al iniciar sesion, datos incorrectos"}
+                            </div>
+                            <div>
+                                {"intentos restantes: "} {intentos_restantes}
+                            </div>
+                        }
                         <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
                         <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
                         <GenericButton text = "submit" onclick_event = {submit_clicked_example} />
