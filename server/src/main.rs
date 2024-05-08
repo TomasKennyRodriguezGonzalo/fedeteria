@@ -26,6 +26,7 @@ use serde::Deserialize;
 use crate::state::ServerState;
 mod database;
 mod state;
+mod mail;
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
