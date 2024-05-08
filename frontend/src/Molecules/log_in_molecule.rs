@@ -1,3 +1,4 @@
+use datos_comunes::{LogInError, QueryLogin, ResponseLogIn};
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
@@ -39,6 +40,11 @@ pub fn log_in_molecule()-> Html{
             cloned_dni_state.set(dni.parse::<u64>().unwrap());
     });
     
+
+    let error_state = use_state(|| "".to_string());
+    let cloned_error_state = error_state.clone();
+
+
     let password_state = use_state(|| "no password yet".to_owned());
     let cloned_password_state = password_state.clone();
     let password_changed = Callback::from(move |password|{
@@ -60,37 +66,78 @@ pub fn log_in_molecule()-> Html{
 
     let submit_clicked_example = Callback::from(move |()| {
 
+        let cloned_error_state = cloned_error_state.clone();
+
         let dispatch_cloned = dispatch_cloned.clone();
         let login_response_c = login_response_c.clone();
         {
+            let cloned_error_state = cloned_error_state.clone();
             let dni = &*cloned_dni_state;
             let password = &*cloned_password_state;
             {
+                let cloned_error_state = cloned_error_state.clone();
                 let dni = dni.clone();
                 let password = password.clone();
                 let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
                 spawn_local(async move {
-                        let mut url = "/api/check_login".to_string();
+                        log::info!("entre al spawn local");
+                        let cloned_error_state = cloned_error_state.clone();
+                        let query = QueryLogin{dni:dni.clone(), password: password.clone()};
+                        let respuesta = Request::post("/api/check_login").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
                         let cloned_dni = dni.clone();
-                        url += &format!("?dni={cloned_dni}&password={password}");
-                        let resp = Request::get(&url).send().await.unwrap();
-                        if resp.text().await.unwrap() == "true"{
-                            login_response_c.set("true".to_string());
-                            let dispatch_cloned = dispatch_cloned.clone();
-                            dispatch_cloned.reduce_mut(|store|{
-                                store.dni = Some(dni);
-                                store.login_fail = false;
-                                store.login_faliures=0;
-                            });
-                            navigator.push(&Route::Home);
-                        } else{
-                            dispatch_cloned.reduce_mut(|store|{
-                                store.login_fail = true;
-                                store.login_faliures+=1;
-                            });
+                        match respuesta{
+                            Ok(respuesta) =>{
+                                let response:Result<ResponseLogIn, reqwasm::Error> = respuesta.json().await;
+                                log::info!("deserailice la respuesta {:?}",response);
+                                match response{
+                                    Ok(respuesta) => {
+                                        match respuesta{
+                                            Ok(respuesta) => {
+                                                let status = respuesta.status;
+                                                if status == true{
+                                                    dispatch_cloned.reduce_mut(|store|{
+                                                        store.dni = Some(dni);
+                                                        store.login_fail = false;
+                                                    });
+                                                    navigator.push(&Route::Home);
+
+                                                } else{
+                                                    log::error!("UNREACHABLE CODE");
+                                                }
+                                                
+                                            }
+                                            Err(error) => {
+                                                match error{
+                                                    LogInError::UserNotFound => {
+                                                        let cloned_error_state = cloned_error_state.clone();
+                                                        cloned_error_state.set("El usuario ingresado no existe, si no tienes cuenta registrate.".to_string());
+                                                        
+                                                    }
+                                                    LogInError::BlockedUser => {
+                                                        let cloned_error_state = cloned_error_state.clone();
+                                                        cloned_error_state.set("Usuario bloqueado, comunicarse con personal.".to_string());
+                                                    }
+                                                    LogInError::IncorrectPassword{intentos} => {
+                                                        let cloned_error_state  = cloned_error_state.clone();
+                                                        let intentos_restantes = intentos;
+                                                        cloned_error_state.set(format!("Contraseña incorrecta, intentos restantes: {}", intentos_restantes));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Err(error)=>{
+                                        log::error!("Error en deserializacion: {}", error);
+                                    }
+                                }
+                            }
+                            Err(error)=>{
+                                log::error!("Error en llamada al backend: {}", error);
+
+                            }
                         }
-                        
+  
                     })     
             }
         }
@@ -104,7 +151,6 @@ pub fn log_in_molecule()-> Html{
 
     let (store, _dispatch) = use_store::<UserStore>();
 
-    let intentos_restantes = 3 - store.clone().login_faliures;
 
     html! {
         <div class="login-box">
@@ -112,17 +158,14 @@ pub fn log_in_molecule()-> Html{
             <section>
                 <div>
                     <form {onsubmit}>
-                        if store.login_fail == true{
-                            <div>
-                                {"Error al iniciar sesion, datos incorrectos"}
-                            </div>
-                            <div>
-                                {"intentos restantes: "} {intentos_restantes}
-                            </div>
-                        }
                         <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
                         <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
                         <GenericButton text = "submit" onclick_event = {submit_clicked_example} />
+                        if !(&*error_state).is_empty(){
+                            <div class="error-text">
+                                <h2>{&*error_state}</h2>
+                            </div>
+                        }
                     </form>
                 </div>
             </section>

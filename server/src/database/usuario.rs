@@ -1,7 +1,7 @@
-use std::hash::{Hash, Hasher, DefaultHasher};
-
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 use chrono::{DateTime, Local};
+use datos_comunes::LogInError;
 use serde::{Deserialize, Serialize};
 
 use super::sucursal::Sucursal;
@@ -18,16 +18,41 @@ pub struct Usuario {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-enum RolDeUsuario {
+pub enum RolDeUsuario {
     Normal,
     Dueño,
     Empleado{sucursal: usize},
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-enum EstadoCuenta {
+#[derive(Debug, Deserialize, Serialize,Clone,PartialEq)]
+pub enum EstadoCuenta {
     Activa{intentos: u8},
     Bloqueada,
+}
+
+impl EstadoCuenta{
+    pub fn decrementar_intentos(&mut self)->Result<u8,LogInError>{
+        match self {
+            EstadoCuenta::Activa { ref mut intentos } => {
+                if *intentos > 0 {
+                    *intentos -= 1;              
+                }
+                if *intentos == 0 {
+                    *self = EstadoCuenta::Bloqueada;     
+                    return Err(LogInError::BlockedUser)         
+                }
+                return Ok(*intentos)
+            }
+            EstadoCuenta::Bloqueada => {
+                return Err(LogInError::BlockedUser)
+            }
+        }
+    }
+
+    pub fn resetear_intentos(&mut self){
+        *self = EstadoCuenta::Activa { intentos: 3 }
+    }
+
 }
 
 impl Usuario {

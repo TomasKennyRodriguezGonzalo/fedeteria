@@ -1,8 +1,8 @@
 use std::{fs, path::Path};
 
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
+use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
 use serde::{Deserialize, Serialize};
 
 use self::{sucursal::Sucursal, usuario::Usuario};
@@ -99,6 +99,15 @@ impl Database {
     }
     pub fn obtener_datos_usuario(&self, indice:usize) -> &Usuario {
         &self.usuarios[indice]
+    }
+
+    pub fn decrementar_intentos(&mut self, indice:usize)-> Result<u8, LogInError>{
+        let res = &self.usuarios[indice].estado.decrementar_intentos();
+        res.clone()
+    }
+
+    pub fn resetear_intentos(&mut self, indice:usize){
+        self.usuarios[indice].estado.resetear_intentos();
     }
 
 }

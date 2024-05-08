@@ -14,7 +14,6 @@ pub struct UserStore{
     pub nombre:String,
     pub token:String,
     pub login_fail:bool,
-    pub login_faliures:u8,
 }
 
 
