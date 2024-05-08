@@ -6,13 +6,18 @@ use wasm_bindgen::JsCast;
 use yew::{platform::spawn_local, prelude::*};
 use serde_json::json;
 use yew_router::components::Link;
+use yew_router::prelude::use_navigator;
 
 use crate::router::Route;
 
 #[function_component(RegisterMolecule)]
 pub fn register_molecule()-> Html {
-
+    let navigator = use_navigator().unwrap();
+    let error_state = use_state(|| {"".to_string()});
+    let cloned_error_state = error_state.clone();
+    
     let onsubmit = Callback::from(move |event:SubmitEvent|{
+        let navigator = navigator.clone();
         event.prevent_default();
         let target = event.target();
         let form = target.and_then(|t| t.dyn_into::<HtmlFormElement>().ok()).unwrap();
@@ -32,10 +37,64 @@ pub fn register_molecule()-> Html {
             contraseña: form_data.get("contraseña").try_into().unwrap(),
             nacimiento,
         };
+        let cloned_error_state = cloned_error_state.clone();
+        spawn_local(async move {
+            log::info!("query de registro: {query:?}");
+            let respuesta = Request::post("/api/registrar_usuario")
+                .header("Content-Type", "application/json")
+                .body(serde_json::to_string(&query).unwrap())
+                .send().await;
+        
+            match respuesta {
+                Ok(resp) => {
+                    let resp:Result<ResponseRegistrarUsuario, reqwasm::Error> = resp.json().await;
+                    match resp {
+                        Ok(resp) => {
+                            match resp {
+                                Ok(resp)=>{
+                                    navigator.push(&Route::LogInPage)
+                                }
+                                Err(CrearUsuarioError::DNIExistente)=>{
+                                    let cloned_error_state = cloned_error_state.clone();
+                                    cloned_error_state.set("El DNI ingresado ya se encuentra registrado.".to_string());
+                                }
+                                Err(CrearUsuarioError::EmailExistente)=>{
+                                    let cloned_error_state = cloned_error_state.clone();
+                                    cloned_error_state.set("El correo electrónico ingresado ya se encuentra registrado.".to_string());
+                                    
+                                }
+                                Err(CrearUsuarioError::ErrorIndeterminado)=>{
+                                    let cloned_error_state = cloned_error_state.clone();
+                                    cloned_error_state.set("ERROR INDETERMINADO".to_string());
+                                    
+                                }
+                                Err(CrearUsuarioError::MenorA18)=>{
+                                    let cloned_error_state = cloned_error_state.clone();
+                                    cloned_error_state.set("Para registrarte debes ser mayor de edad.".to_string());
+                                }
+                            }
+                        }
+                        Err(error) => {
+                            log::error!("error en deserializacion{:?}",error);
+                            ()
+                        },
+                    }
+                },
+                Err(_) =>{
+                    log::error!("error en llamada al backend");
+                    ()
+                } 
+            };
 
-        let respuesta = get_respuesta(query);
+            
+        });
+
+
 
     });
+
+
+
     html! {
         <>
         <div class = "login-box">
@@ -63,33 +122,15 @@ pub fn register_molecule()-> Html {
             
                 <input type="submit" value="Confirmar" />
             </form>
-            // <div>
+            if !(&*error_state).is_empty(){
+                <h2 class="error-text">
+                    {&*error_state}
+                </h2>
+            }
             
             <span> {"¿Ya tienes usuario? "} </span>
             <Link<Route> to={Route::LogInPage}>{"Iniciar Sesion"}</Link<Route>>
-            </div>
+        </div>
         </>
     }
-}
-
-async fn get_respuesta(query: QueryRegistrarUsuario) -> ResponseRegistrarUsuario {
-    log::info!("query de registro: {query:?}");
-    let respuesta = Request::post("/api/registrar_usuario")
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&query).unwrap())
-        .send().await;
-
-    let respuesta: ResponseRegistrarUsuario = match respuesta {
-        Ok(resp) => {
-            let resp = serde_json::from_str(&resp.text().await.unwrap());
-            match resp {
-                Ok(resp) => resp,
-                Err(_) => {
-                    Err(CrearUsuarioError::ErrorIndeterminado)
-                },
-            }
-        },
-        Err(_) => Err(CrearUsuarioError::ErrorIndeterminado),
-    };
-    respuesta   
 }
