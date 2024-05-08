@@ -2,7 +2,6 @@ use yewdux::use_store;
 use crate::store::UserStore;
 use yew_router::prelude::Link;
 use yew::prelude::*;
-use yew_hooks::use_local_storage;
 use crate::router::Route::{self};
 use wasm_bindgen_futures::spawn_local;
 use datos_comunes::{QueryObtenerUsuario, ResponseObtenerUsuario};
@@ -63,10 +62,9 @@ pub fn home_page() -> Html {
 
 
 
-    let auth = use_state(|| false);
-    let auth_clone = auth.clone();
+
     
-    let (store, dispatch) = use_store::<UserStore>();
+    let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni.clone();
 
 

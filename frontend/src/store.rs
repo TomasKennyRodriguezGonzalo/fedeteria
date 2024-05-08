@@ -1,11 +1,9 @@
 use serde::{Deserialize, Serialize};
-use yew::{prelude::*, functional::*};
 use yewdux::prelude::*;
-use yewdux_functional::*;
 use std::rc::Rc;
 use yewdux::{
     log::{log, Level},
-    prelude::*, Context,
+    Context,
 };
 
 

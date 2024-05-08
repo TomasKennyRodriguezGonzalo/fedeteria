@@ -1,22 +1,14 @@
-use std::default;
-use std::ops::Deref;
-
-use datos_comunes::{QueryObtenerUsuario, ResponseObtenerUsuario};
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use yew::prelude::*;
-use crate::store::{UserStore};
+use crate::store::UserStore;
 use crate::Components::generic_button::GenericButton;
 use crate::Components::generic_input_field::GenericInputField;
 use crate::Components::dni_input_field::DniInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
-use yewdux::{
-    log::{log, Level},
-    prelude::*, Context,
-};
+use yewdux::prelude::*;
 
 
 #[derive(Default)]
@@ -40,7 +32,6 @@ pub struct User{
 #[function_component(LogInMolecule)]
 pub fn log_in_molecule()-> Html{
 
-    let state = use_state(State::default);
 
     let dni_state:UseStateHandle<u64> = use_state(|| 0);
     let cloned_dni_state = dni_state.clone();
@@ -60,10 +51,8 @@ pub fn log_in_molecule()-> Html{
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
 
-    let (store, dispatch) = use_store::<UserStore>();
-    let dispatch_cloned = dispatch.clone();
 
-
+    let (_store, dispatch) = use_store::<UserStore>();
 
 
     let dispatch_cloned = dispatch.clone();
@@ -113,7 +102,7 @@ pub fn log_in_molecule()-> Html{
     });
 
 
-    let (store, dispatch) = use_store::<UserStore>();
+    let (store, _dispatch) = use_store::<UserStore>();
 
     let intentos_restantes = 3 - store.clone().login_faliures;
 

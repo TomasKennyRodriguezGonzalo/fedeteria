@@ -1,5 +1,4 @@
 use yew_router::hooks::use_navigator;
-use yew_router::navigator;
 use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
@@ -9,14 +8,11 @@ use crate::router::Route;
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{
-    let auth = use_state(|| false);
-    let auth_clone = auth.clone();
 
     let navigator = use_navigator().unwrap();
     
     let (store, dispatch) = use_store::<UserStore>();
-    //let mut username = store.user.clone();
-    let mut dni = store.dni.clone();
+    let dni = store.dni.clone();
 
     let logout = Callback::from(move|_event| {
         dispatch.reduce_mut(|store| store.dni = None);
