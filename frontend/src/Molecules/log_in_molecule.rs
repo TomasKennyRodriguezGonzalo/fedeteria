@@ -1,17 +1,16 @@
-use std::default;
-use std::ops::Deref;
-
+use datos_comunes::{LogInError, QueryLogin, ResponseLogIn};
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use yew::prelude::*;
 use crate::store::UserStore;
 use crate::Components::generic_button::GenericButton;
 use crate::Components::generic_input_field::GenericInputField;
+use crate::Components::dni_input_field::DniInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
+
 
 #[derive(Default)]
 pub struct State{
@@ -34,14 +33,18 @@ pub struct User{
 #[function_component(LogInMolecule)]
 pub fn log_in_molecule()-> Html{
 
-    let state = use_state(State::default);
 
-    let username_state = use_state(|| "no username yet".to_owned());
-    let cloned_username_state = username_state.clone();
-    let username_changed = Callback::from(move |username:String|{
-            cloned_username_state.set(username.clone());
+    let dni_state:UseStateHandle<u64> = use_state(|| 0);
+    let cloned_dni_state = dni_state.clone();
+    let dni_changed = Callback::from(move |dni:String|{
+            cloned_dni_state.set(dni.parse::<u64>().unwrap());
     });
     
+
+    let error_state = use_state(|| "".to_string());
+    let cloned_error_state = error_state.clone();
+
+
     let password_state = use_state(|| "no password yet".to_owned());
     let cloned_password_state = password_state.clone();
     let password_changed = Callback::from(move |password|{
@@ -50,110 +53,104 @@ pub fn log_in_molecule()-> Html{
 
     let login_response = use_state(|| "false".to_string());
     let login_response_c = login_response.clone();
-    let cloned_username_state = username_state.clone();
+    let cloned_dni_state = dni_state.clone();
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
 
-    let (store, dispatch) = use_store::<UserStore>();
+
+    let (_store, dispatch) = use_store::<UserStore>();
+
+
     let dispatch_cloned = dispatch.clone();
 
+
     let submit_clicked_example = Callback::from(move |()| {
+
+        let cloned_error_state = cloned_error_state.clone();
+
+        let dispatch_cloned = dispatch_cloned.clone();
         let login_response_c = login_response_c.clone();
         {
-            let username = &*cloned_username_state;
+            let cloned_error_state = cloned_error_state.clone();
+            let dni = &*cloned_dni_state;
             let password = &*cloned_password_state;
             {
-                let username = username.clone();
+                let cloned_error_state = cloned_error_state.clone();
+                let dni = dni.clone();
                 let password = password.clone();
-             //   let navigator = navigator.clone();
+                let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
-                    spawn_local(async move {
-                        let mut url = "/api/check_login".to_string();
-                        let cloned_username = username.clone();
-                        url += &format!("?username={cloned_username}&password={password}");
-                        let resp = Request::get(&url).send().await.unwrap();
-                        if resp.text().await.unwrap() == "true"{
-                            login_response_c.set("true".to_string());
-                            let dispatch_cloned = dispatch_cloned.clone();
-                            dispatch_cloned.reduce_mut(|store|{
-                                store.user = username;
-                            });
-                          //  navigator.push(&Route::Home);
-                        } else{
-                            login_response_c.set("false".to_string());
+                spawn_local(async move {
+                        log::info!("entre al spawn local");
+                        let cloned_error_state = cloned_error_state.clone();
+                        let query = QueryLogin{dni:dni.clone(), password: password.clone()};
+                        let respuesta = Request::post("/api/check_login").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
+                        let cloned_dni = dni.clone();
+                        match respuesta{
+                            Ok(respuesta) =>{
+                                let response:Result<ResponseLogIn, reqwasm::Error> = respuesta.json().await;
+                                log::info!("deserailice la respuesta {:?}",response);
+                                match response{
+                                    Ok(respuesta) => {
+                                        match respuesta{
+                                            Ok(respuesta) => {
+                                                let status = respuesta.status;
+                                                if status == true{
+                                                    dispatch_cloned.reduce_mut(|store|{
+                                                        store.dni = Some(dni);
+                                                        store.login_fail = false;
+                                                    });
+                                                    navigator.push(&Route::Home);
+
+                                                } else{
+                                                    log::error!("UNREACHABLE CODE");
+                                                }
+                                                
+                                            }
+                                            Err(error) => {
+                                                match error{
+                                                    LogInError::UserNotFound => {
+                                                        let cloned_error_state = cloned_error_state.clone();
+                                                        cloned_error_state.set("El usuario ingresado no existe, si no tienes cuenta registrate.".to_string());
+                                                        
+                                                    }
+                                                    LogInError::BlockedUser => {
+                                                        let cloned_error_state = cloned_error_state.clone();
+                                                        cloned_error_state.set("Usuario bloqueado, comunicarse con personal.".to_string());
+                                                    }
+                                                    LogInError::IncorrectPassword{intentos} => {
+                                                        let cloned_error_state  = cloned_error_state.clone();
+                                                        let intentos_restantes = intentos;
+                                                        cloned_error_state.set(format!("Contraseña incorrecta, intentos restantes: {}", intentos_restantes));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Err(error)=>{
+                                        log::error!("Error en deserializacion: {}", error);
+                                    }
+                                }
+                            }
+                            Err(error)=>{
+                                log::error!("Error en llamada al backend: {}", error);
+
+                            }
                         }
-                        
-                    })
+  
+                    })     
             }
         }
     });
 
-    /* 
-
-    POSIBLE FUNCION DE RESPUESTA DE LOGIN
-
-    let login_response = use_state(|| "false".to_string());
-    let cloned_username_state = username_state.clone();
-    let cloned_password_state = password_state.clone();
-    let submit_clicked_real = call_backend_for_auth_response(cloned_username_state.clone(), cloned_password_state.clone(), login_response.clone());
-    let submit_clicked_real = Callback::from(move |_| {
-        let login_response_c = login_response_c.clone();
-        {
-            let username = &*cloned_username_state;
-            let password = &*cloned_password_state;
-            {
-                let username = username.clone();
-                let password = password.clone();
-                    spawn_local(async move {
-                        let mut url = "/api/check_login".to_string();
-                        url += &format!("?username={username}&password={password}");
-                        let resp:AuthResponse = Request::get(&url)
-                        .send()
-                        .await
-                        .unwrap()
-                        .json()
-                        .await
-                        .unwrap();
-
-                    })
-            }
-        }
-    });
-
-     esta funcion retorna un usuario con un id unico, el nombre de usuario, la contraseña y el token
-
-
-        let onsubmit = Callback::from(move |event:SubmitEvent|{
-            event.prevent_default();
-            let username_state = username_state.clone();
-            let password_state = password_state.clone();
-            spawn_local(async move {
-                let result:AuthResponse = Request::post("http://localhost:8080/")
-                .header("Content-Type", "application/json")
-                .body(json!({
-                    "username": *username_state.clone(),
-                    "password": *password_state.clone()
-                })
-                .to_string(),
-            )
-            .send()
-            .await
-            .unwrap()
-            .json()
-            .await
-            .unwrap();
-
-            });
-        });
-    */
 
     let onsubmit = Callback::from(move |event:SubmitEvent|{
         event.prevent_default();
     });
 
-    let (store, dispatch) = use_store::<UserStore>();
 
-    let username = store.user.clone();
+    let (store, _dispatch) = use_store::<UserStore>();
+
 
     html! {
         <div class="login-box">
@@ -161,9 +158,14 @@ pub fn log_in_molecule()-> Html{
             <section>
                 <div>
                     <form {onsubmit}>
-                        <GenericInputField name = "username" label="Username" tipo = "text" handle_on_change = {username_changed} />
+                        <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
                         <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
                         <GenericButton text = "submit" onclick_event = {submit_clicked_example} />
+                        if !(&*error_state).is_empty(){
+                            <div class="error-text">
+                                <h2>{&*error_state}</h2>
+                            </div>
+                        }
                     </form>
                 </div>
             </section>
@@ -171,5 +173,4 @@ pub fn log_in_molecule()-> Html{
     }
 
 }
-
 

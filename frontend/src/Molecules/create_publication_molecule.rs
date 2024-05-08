@@ -1,9 +1,4 @@
-use std::borrow::Borrow;
-use std::clone;
-use std::ops::Deref;
-
 use crate::Components::{generic_input_field::GenericInputField, generic_button::GenericButton};
-use yew::html::IntoPropValue;
 use yew::prelude::*;
 use web_sys::FileReader;
 use wasm_bindgen::closure::Closure;
@@ -36,12 +31,12 @@ pub fn create_publication_molecule() -> Html {
     
     let image_path_clone = image_path.clone();
         
-    let oninput = move |Event : InputEvent| {
-        Event.prevent_default();
+    let oninput = move |event : InputEvent| {
+        event.prevent_default();
 
         let image_path_clone = image_path_clone.clone();
         
-        let data_transfer = Event.data_transfer().unwrap();
+        let data_transfer = event.data_transfer().unwrap();
             
         let file_list = data_transfer.files().unwrap();
 

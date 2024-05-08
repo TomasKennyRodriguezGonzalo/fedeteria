@@ -1,7 +1,7 @@
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use crate::Molecules::log_in_molecule::LogInMolecule;
-use crate::router::Route::{Register, self};
+use crate::router::Route;
 
 #[function_component(LogInPage)]
 pub fn log_in_page()-> Html{

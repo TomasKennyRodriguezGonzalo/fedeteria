@@ -1,25 +1,27 @@
 
-use axum::body::{Body};
+use axum::body::Body;
 use axum::http::{Response, StatusCode};
 use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Json;
 use axum::{response::IntoResponse, routing::get, Router};
-use chrono::{DateTime, Local, TimeZone};
 use clap::Parser;
+//use axum::debug_handler;
+use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
 use tokio::fs;
 use tokio::net::TcpListener;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
+use std::hash::{Hash, Hasher, DefaultHasher};
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 use tower::{ServiceBuilder, ServiceExt};
-use tower_http::services::{ServeDir, ServeFile};
+use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 
 use crate::state::ServerState;
 mod database;
@@ -63,9 +65,10 @@ async fn main() {
     let state = Arc::new(RwLock::new(ServerState::new(db)));
     let router = Router::new()
         .route("/api/hello", get(hello))
-        .route("/api/check_login", get(check_login))
+        .route("/api/check_login", post(check_login))
         .route("/api/usuario_existe", get(usuario_existe))
         .route("/api/registrar_usuario", post(registrar_usuario))
+        .route("/api/retornar_usuario", post(retornar_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -117,25 +120,40 @@ async fn hello() -> impl IntoResponse {
     "hello from server!"
 }
 
-#[derive(Deserialize)]
-struct QueryLogin {
-    username: String,
-    password: String,
-}
-
 //  fedeteria.com/api/check_login?username=algo&password=otracosa
-
-async fn check_login(datos_login: Query<QueryLogin>) -> impl IntoResponse {
-    let datos_login = datos_login.0;
-    let username = datos_login.username;
-    let password = datos_login.password;
-    if &username == "nico" && &password == &"beiser" {
-        log::info!("TRUE!!!!!!!!!!!!!!!!!");
-
-        return "true"
+async fn check_login(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryLogin>,
+    ) -> Json<ResponseLogIn> {
+    let dni = query.dni;
+    let password = query.password;
+    let mut state = state.write().await;
+    let index = state.db.encontrar_dni(dni);
+    match index{
+        Some(index) =>{
+            let user = state.db.obtener_datos_usuario(index);
+            if user.estado == EstadoCuenta::Bloqueada{
+                return Json(Err(LogInError::BlockedUser ))
+            }
+            if user.contraseña == hash_str(&password){
+                state.db.resetear_intentos(index);
+                return Json(Ok(ResponseStatus{status : true}))
+            } else{
+                let res =state.db.decrementar_intentos(index);
+                match res{
+                    Ok(intentos) =>{
+                        return Json(Err(LogInError::IncorrectPassword {intentos: intentos}))
+                    }
+                    Err(_) => {
+                        return Json(Err(LogInError::BlockedUser ))
+                    }
+                }
+            }
+        }
+        None => { 
+            return Json(Err(LogInError::UserNotFound))
+        },
     }
-    log::info!("FALSE!");
-    return "false"
 }
 
 #[derive(Deserialize)]
@@ -156,7 +174,6 @@ async fn usuario_existe(
     }
 }
 
-
 async fn registrar_usuario(
     State(state): State<SharedState>,
     Json(query): Json<QueryRegistrarUsuario>
@@ -167,5 +184,34 @@ async fn registrar_usuario(
         log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
         log::error!("FALTA ENVIAR MAIL");
     }
-    Json(res)
+    
+    let res = Json(res);
+    log::info!("{res:?}");
+    res
 }
+
+async fn retornar_usuario(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerUsuario>
+) -> Json<Option<ResponseObtenerUsuario>> {
+    let mut state = state.write().await;
+    log::info!("we are checking with {} dni ",query.dni.clone()); 
+    let res = state.db.encontrar_dni(query.dni);
+    if let Some(res) = res {
+       let usuario = state.db.obtener_datos_usuario(res);
+       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
+       log::info!("username found "); 
+       Json(Some(response))
+    } else{
+        log::info!("username not found "); 
+        Json(None)
+    }
+}
+
+fn hash_str(s: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish()
+}
+
+
