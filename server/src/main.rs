@@ -67,6 +67,7 @@ async fn main() {
         .route("/api/check_login", get(check_login))
         .route("/api/usuario_existe", get(usuario_existe))
         .route("/api/registrar_usuario", post(registrar_usuario))
+        .route("/api/retornar_usuario", post(retornar_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -172,4 +173,22 @@ async fn registrar_usuario(
     let res = Json(res);
     log::info!("{res:?}");
     res
+}
+
+async fn retornar_usuario(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerUsuario>
+) -> Json<Option<ResponseObtenerUsuario>> {
+    let mut state = state.write().await;
+    log::info!("we are checking with {} dni ",query.dni.clone()); 
+    let res = state.db.encontrar_dni(query.dni);
+    if let Some(res) = res {
+       let usuario = state.db.obtener_datos_usuario(res);
+       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
+       log::info!("username found "); 
+       Json(Some(response))
+    } else{
+        log::info!("username not found "); 
+        Json(None)
+    }
 }

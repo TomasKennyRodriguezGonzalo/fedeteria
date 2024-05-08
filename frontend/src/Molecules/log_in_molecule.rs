@@ -1,18 +1,22 @@
 use std::default;
 use std::ops::Deref;
 
+use datos_comunes::{QueryObtenerUsuario, ResponseObtenerUsuario};
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use yew::prelude::*;
-use crate::store::UserStore;
+use crate::store::{UserStore};
 use crate::Components::generic_button::GenericButton;
 use crate::Components::generic_input_field::GenericInputField;
 use crate::Components::dni_input_field::DniInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
-use yewdux::prelude::*;
+use yewdux::{
+    log::{log, Level},
+    prelude::*, Context,
+};
 
 
 #[derive(Default)]
@@ -38,10 +42,10 @@ pub fn log_in_molecule()-> Html{
 
     let state = use_state(State::default);
 
-    let dni_state:UseStateHandle<u32> = use_state(|| 0);
+    let dni_state:UseStateHandle<u64> = use_state(|| 0);
     let cloned_dni_state = dni_state.clone();
     let dni_changed = Callback::from(move |dni:String|{
-            cloned_dni_state.set(dni.parse::<u32>().unwrap());
+            cloned_dni_state.set(dni.parse::<u64>().unwrap());
     });
     
     let password_state = use_state(|| "no password yet".to_owned());
@@ -59,7 +63,15 @@ pub fn log_in_molecule()-> Html{
     let (store, dispatch) = use_store::<UserStore>();
     let dispatch_cloned = dispatch.clone();
 
+
+
+
+    let dispatch_cloned = dispatch.clone();
+
+
     let submit_clicked_example = Callback::from(move |()| {
+
+        let dispatch_cloned = dispatch_cloned.clone();
         let login_response_c = login_response_c.clone();
         {
             let dni = &*cloned_dni_state;
@@ -69,10 +81,10 @@ pub fn log_in_molecule()-> Html{
                 let password = password.clone();
                 let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
-                    spawn_local(async move {
+                spawn_local(async move {
                         let mut url = "/api/check_login".to_string();
                         let cloned_dni = dni.clone();
-                        url += &format!("?dni={dni}&password={password}");
+                        url += &format!("?dni={cloned_dni}&password={password}");
                         let resp = Request::get(&url).send().await.unwrap();
                         if resp.text().await.unwrap() == "true"{
                             login_response_c.set("true".to_string());
@@ -85,7 +97,7 @@ pub fn log_in_molecule()-> Html{
                             login_response_c.set("false".to_string());
                         }
                         
-                    })
+                    })     
             }
         }
     });
@@ -112,5 +124,4 @@ pub fn log_in_molecule()-> Html{
     }
 
 }
-
 

@@ -12,10 +12,11 @@ use yewdux::{
 #[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq,Store)]
 #[store(storage = "local", listener(LogListener))]
 pub struct UserStore{
-    pub dni:Option<u32>,
+    pub dni:Option<u64>,
     pub nombre:String,
     pub token:String,
 }
+
 
 
 

@@ -21,10 +21,13 @@ pub enum CrearUsuarioError {
     MenorA18,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct QueryObtenerUsuario {
     pub dni:u64
 }
 
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseObtenerUsuario {
     pub nombre:String
 }
