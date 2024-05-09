@@ -1,7 +1,7 @@
 use chrono::{Local, NaiveDate, TimeZone};
 use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
 use reqwasm::http::Request;
-use web_sys::{FormData, HtmlFormElement};
+use web_sys::{FormData, HtmlFormElement, HtmlInputElement};
 use wasm_bindgen::JsCast;
 use yew::{platform::spawn_local, prelude::*};
 use serde_json::json;
@@ -9,11 +9,40 @@ use yew_router::components::Link;
 use yew_router::prelude::use_navigator;
 
 use crate::router::Route;
-
+use crate::Components::generic_input_field::GenericInputField;
 
 #[function_component(RegisterMolecule)]
 pub fn register_molecule()-> Html {
     let navigator = use_navigator().unwrap();
+
+    let name_state = use_state(|| {"".to_string()});
+    let dni_state = use_state(|| {0});
+    let mail_state = use_state(|| {"".to_string()});
+    let password_state = use_state(|| {"".to_string()});
+
+    let name_state_cloned = name_state.clone();
+    let name_changed = Callback::from(move |name| {
+        name_state_cloned.set(name);
+    });
+    
+    
+    let mail_state_cloned = mail_state.clone();
+    let mail_changed = Callback::from(move |mail| {
+        mail_state_cloned.set(mail);
+    });
+    
+    let password_state_cloned = password_state.clone();
+    let password_changed = Callback::from(move |password| {
+        password_state_cloned.set(password)
+    });
+    
+    let dni_state_cloned = dni_state.clone();
+    let dni_changed = Callback::from(move |event : Event| {
+        let target = event.target().unwrap();
+        let input: HtmlInputElement = target.unchecked_into();
+        dni_state_cloned.set(input.value().parse::<u64>().expect("error dni parse"));
+    });
+    
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
     
@@ -85,52 +114,42 @@ pub fn register_molecule()-> Html {
                     log::error!("error en llamada al backend");
                     ()
                 } 
-            };
-
-            
+            }; 
         });
-
-
-
     });
-
-
 
     html! {
         <>
         <div class = "login-box">
             <h1> {"Registrarse"} </h1>
             <form {onsubmit}>
-                <label> {"Nombre completo:"} </label>
-                <input type="text" name="nombre" />
-                <br />
+                <GenericInputField name = "nombre" label="Nombre:" tipo = "text" handle_on_change = {name_changed} />
                 
+                <div>
                 <label> {"DNI:"} </label>
-                <input type="number" name="dni" min="0"/>
-                <br />
+                </div>
+                <input type="number" name="dni" min="0" onchange={dni_changed}/>
                 
-                <label> {"Correo:"} </label>
-                <input type="email" name="email" />
-                <br />
-                
-                <label> {"Contraseña:"} </label>
-                <input type="password" name="contraseña" />
-                <br />
-                
-                <label> {"Fecha de nacimiento:"} </label>
-                <input type="date" name="nacimiento" />
-                <br />
-            
-                <input type="submit" value="Confirmar" />
+                <GenericInputField name = "email" label="Correo electrónico:" tipo = "email" handle_on_change = {mail_changed} />
+
+                <GenericInputField name = "contraseña" label="Contraseña:" tipo = "password" handle_on_change = {password_changed} />
+
+                <div>
+                    <label> {"Fecha de nacimiento:"} </label>
+                </div>
+                <input type="date" name="nacimiento"/>
+                <br/>
+                if !((&*name_state).is_empty()) && !((&*password_state).is_empty()) && (&*dni_state) != &0 && !((&*mail_state).is_empty()) {
+                    <input type="submit" value="Confirmar"/>
+                } else {
+                    <button class="disabled-dyn-element">{"Confirmar"}</button>
+                }
             </form>
             if !(&*error_state).is_empty(){
-                <h2 class="error-text">
-                    {&*error_state}
-                </h2>
+            <h2 class="error-text">
+                {&*error_state}
+            </h2>
             }
-            
-            <span> {"¿Ya tienes usuario? "} </span>
-            <Link<Route> to={Route::LogInPage}>{"Iniciar Sesion"}</Link<Route>>
         </div>
         </>
     }

@@ -13,6 +13,7 @@ pub fn navbar() -> Html{
     
     let (store, dispatch) = use_store::<UserStore>();
     let dni = store.dni.clone();
+    let username = store.nombre.clone();
 
     let logout = Callback::from(move|_event| {
         dispatch.reduce_mut(|store| store.dni = None);
@@ -26,7 +27,7 @@ pub fn navbar() -> Html{
             </div>
             if !dni.is_none(){
                 <div>
-               //     <h2>{"Hola " }{username}{"!"} {"tu dni es: "} {dni.unwrap()}</h2>
+                    <h2>{"Hola " }{username}{"!"}</h2>
                 </div>
                 <nav>
                     <ul class="option_list">
