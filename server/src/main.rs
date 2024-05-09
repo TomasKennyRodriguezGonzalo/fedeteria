@@ -23,9 +23,11 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 
+use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
 mod state;
+mod mail;
 
 // Setup the command line interface with clap.
 #[derive(Parser, Debug)]
@@ -181,8 +183,16 @@ async fn registrar_usuario(
     let mut state = state.write().await;
     let res = state.db.agregar_usuario(query);
     if res.is_ok() {
-        log::info!("Usuario creado: {:?}", state.db.get_ultimo_usuario());
-        log::error!("FALTA ENVIAR MAIL");
+        let usuario = state.db.get_ultimo_usuario();
+        log::info!("Usuario creado: {:?}", usuario);
+        match send_email(usuario.nombre_y_apellido.to_string(), usuario.email.to_string(),
+            "Registro en Fedeteria".to_string(),
+            format!("Hola {}!\nUsted ha creado una cuenta en la página https://fedeteria.com, con el DNI {}.\n
+Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, usuario.dni)
+        ).await {
+            Ok(_) => log::info!("Mail enviado al usuario."),
+            Err(_) => log::error!("Error al enviar mail."),
+        }
     }
     
     let res = Json(res);

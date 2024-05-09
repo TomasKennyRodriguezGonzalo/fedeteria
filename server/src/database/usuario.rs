@@ -65,7 +65,7 @@ impl Usuario {
             contraseña,
             nacimiento,
             rol: RolDeUsuario::Normal,
-            estado: EstadoCuenta::Activa { intentos: 0 }
+            estado: EstadoCuenta::Activa { intentos: 3 }
         }
     }
 }
