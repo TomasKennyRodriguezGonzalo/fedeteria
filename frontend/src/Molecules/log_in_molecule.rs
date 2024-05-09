@@ -45,7 +45,7 @@ pub fn log_in_molecule()-> Html{
     let cloned_error_state = error_state.clone();
 
 
-    let password_state = use_state(|| "no password yet".to_owned());
+    let password_state = use_state(|| "".to_owned());
     let cloned_password_state = password_state.clone();
     let password_changed = Callback::from(move |password|{
         cloned_password_state.set(password);
@@ -57,9 +57,7 @@ pub fn log_in_molecule()-> Html{
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
 
-
     let (_store, dispatch) = use_store::<UserStore>();
-
 
     let dispatch_cloned = dispatch.clone();
 
@@ -81,7 +79,6 @@ pub fn log_in_molecule()-> Html{
                 let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
                 spawn_local(async move {
-                        log::info!("entre al spawn local");
                         let cloned_error_state = cloned_error_state.clone();
                         let query = QueryLogin{dni:dni.clone(), password: password.clone()};
                         let respuesta = Request::post("/api/check_login").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
@@ -89,7 +86,6 @@ pub fn log_in_molecule()-> Html{
                         match respuesta{
                             Ok(respuesta) =>{
                                 let response:Result<ResponseLogIn, reqwasm::Error> = respuesta.json().await;
-                                log::info!("deserailice la respuesta {:?}",response);
                                 match response{
                                     Ok(respuesta) => {
                                         match respuesta{
@@ -159,8 +155,12 @@ pub fn log_in_molecule()-> Html{
                 <div>
                     <form {onsubmit}>
                         <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
-                        <GenericInputField name = "password" label="Password" tipo = "password" handle_on_change = {password_changed} />
-                        <GenericButton text = "submit" onclick_event = {submit_clicked_example} />
+                        <GenericInputField name = "password" label="Contraseña" tipo = "password" handle_on_change = {password_changed} />
+                        if !(&*password_state).is_empty() && (&*dni_state) != &0 {
+                            <GenericButton text="Iniciar Sesion" onclick_event={submit_clicked_example} />
+                        } else {
+                            <button class="disabled-dyn-element">{"Iniciar Sesion"}</button>
+                        }
                         if !(&*error_state).is_empty(){
                             <div class="error-text">
                                 <h2>{&*error_state}</h2>
