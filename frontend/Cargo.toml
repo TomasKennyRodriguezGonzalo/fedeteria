@@ -20,6 +20,7 @@ web-sys = {version = "0.3.69", features = [
     "InputEvent",
     "DataTransfer",
     "HtmlFormElement",
+    "HtmlImageElement",
 ]}
 reqwasm = "0.5.0"
 serde = "1.0.200"
