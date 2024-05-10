@@ -20,3 +20,6 @@ chrono = {version = "0.4.38", features = ["now", "serde"]}
 date_component = "0.4.1"
 
 datos_comunes = { path = "../datos_comunes" }
+
+lettre = "0.11.7"
+lettre_email = "0.9.4"
