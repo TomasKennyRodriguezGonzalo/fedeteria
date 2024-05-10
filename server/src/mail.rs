@@ -1,14 +1,13 @@
 use lettre::{Message, SmtpTransport, Transport}; 
 use lettre::transport::smtp::{authentication::{Credentials}}; 
 
-//aparentemente funciona
-///Recibe el nombre del remitente, el nombre del destinatario, el email del destinatario, y el contenido del email.
+/// Recibe el nombre del recipiente, el mail del recipiente, el asunto del mail, y el contenido.
 /// El email del negocio está prefijado.
-pub async fn send_email_test(name_recipient: String, email_recipient: String, content: String, subject: String) -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub async fn send_email(name_recipient: String, email_recipient: String, subject: String, content: String) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Build an email message using the builder pattern
-    let name_and_email_sender = format!("{} <{}>", "Administracion de Fedeteria".to_string(), "administracion@fedeteria.com".to_string());
+    let name_and_email_sender = format!("{} <{}>", "Administración de Fedeteria", "administracion@fedeteria.com");
     let name_and_email_recipient = format!("{} <{}>", name_recipient, email_recipient);
-    let body = format!("{} \n \n No contestar a este correo electronico.", content.to_string());
+    let body = format!("{} \n \n No contestar a este correo electronico.", content);
     let email = Message::builder()
         // Set the sender's name and email address
         .from(name_and_email_sender.parse().unwrap()) 
@@ -17,8 +16,7 @@ pub async fn send_email_test(name_recipient: String, email_recipient: String, co
         // Set the subject of the email
         .subject(subject) 
         // Set the body content of the email
-        .body(String::from(body)) 
-        .unwrap();
+        .body(body)?;
 
     // Create SMTP client credentials using username and password
     let creds = Credentials::new("c9855b99e9a768".to_string(), "7e6d5bbd275523".to_string());
@@ -32,10 +30,11 @@ pub async fn send_email_test(name_recipient: String, email_recipient: String, co
     // Attempt to send the email via the SMTP transport
     match mailer.send(&email) { 
         // If email was sent successfully, print confirmation message
-        Ok(_) => println!("Email sent successfully!"), 
+        Ok(_) => Ok(()), 
         // If there was an error sending the email, print the error
-        Err(e) => eprintln!("Could not send email: {:?}", e), 
+        Err(e) => {
+            log::error!("Could not send email: {:?}", e);
+            Err(Box::new(e))
+        }, 
     }
-
-    Ok(())
 }
