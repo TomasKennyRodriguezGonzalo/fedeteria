@@ -70,12 +70,14 @@ pub fn create_publication_molecule() -> Html {
                     <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
                     <GenericInputField name="Descripción" label="Ingrese una descripción para la publicación" tipo="text" handle_on_change={description_changed}/>
                 </div>
-                <div class="image-prompts">
-                    <input oninput={oninput} type="file" id="file" name="publication_img" accept="image/*"/>
-                </div>
+                if (&*image_list).len() < 5 {
+                    <div class="image-prompts">
+                        <input oninput={oninput} type="file" id="file" name="publication_img" accept="image/*"/>
+                    </div>
+                } 
                 <div class="image-preview">
                     if !(&*image_list).is_empty() {
-                        <h2>{"Aqui se previsualizan tus imágenes:"}</h2>
+                        <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", (&*image_list).len())}</h2>
                         <ul class="image-list">
                             {(&*image_list).iter().map(|image| html!(<li class="image-item">{(&*image).clone()}</li>)).collect::<Html>()}
                         </ul>
