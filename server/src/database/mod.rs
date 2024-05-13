@@ -2,13 +2,12 @@ use std::{fs, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
+use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice};
 use serde::{Deserialize, Serialize};
 
-use self::{sucursal::Sucursal, usuario::Usuario};
+use self::{usuario::Usuario};
 
 pub mod usuario;
-pub mod sucursal;
 
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -112,4 +111,22 @@ impl Database {
         self.usuarios[indice].estado.resetear_intentos();
     }
 
+
+    pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
+        let respuesta = self.sucursales.clone();
+        respuesta
+    }
+
+    pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
+        let ubicacion = self.sucursales.iter().
+                                    position(|actual| actual.nombre == eliminar.office_to_delete);
+
+        if let Some (i_eliminar) = ubicacion {
+            self.sucursales.remove(i_eliminar);
+            self.guardar();
+        }
+
+        let respuesta = self.sucursales.clone();
+        respuesta
+    }
 }

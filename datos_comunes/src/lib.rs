@@ -53,3 +53,30 @@ pub struct QueryLogin {
     pub dni: u64,
     pub password: String,
 }
+
+#[derive(Debug, Deserialize, Serialize ,PartialEq, Clone)]
+pub struct Sucursal {
+    pub nombre: String,
+}
+
+impl Sucursal {
+    pub fn new (nombre: String) -> Sucursal {
+        Sucursal {nombre}
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseGetOffices {
+    pub office_list: Vec<Sucursal>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryDeleteOffice {
+    pub office_to_delete: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseDeleteOffice {
+    pub respuesta: Vec<Sucursal>,
+}
+

@@ -4,7 +4,6 @@ use chrono::{DateTime, Local};
 use datos_comunes::LogInError;
 use serde::{Deserialize, Serialize};
 
-use super::sucursal::Sucursal;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Usuario {

@@ -71,6 +71,8 @@ async fn main() {
         .route("/api/usuario_existe", get(usuario_existe))
         .route("/api/registrar_usuario", post(registrar_usuario))
         .route("/api/retornar_usuario", post(retornar_usuario))
+        .route("/api/eliminar_sucursal", post(eliminar_sucursal))
+        .route("/api/obtener_sucursales", get(obtener_sucursales))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -222,6 +224,26 @@ fn hash_str(s: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     s.hash(&mut hasher);
     hasher.finish()
+}
+
+
+async fn eliminar_sucursal (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryDeleteOffice>
+) -> Json<ResponseDeleteOffice> {
+    let mut state = state.write().await;
+    let respuesta = ResponseDeleteOffice { respuesta: state.db.eliminar_sucursal(query) };
+    Json(respuesta)
+}
+
+async fn obtener_sucursales (
+    State(state): State<SharedState>,
+) -> Json<ResponseGetOffices> {
+    let state = state.read().await;
+    let sucursales=state.db.obtener_sucursales();
+    let respuesta = ResponseGetOffices{office_list : sucursales.clone()};
+    Json(respuesta)
+ 
 }
 
 
