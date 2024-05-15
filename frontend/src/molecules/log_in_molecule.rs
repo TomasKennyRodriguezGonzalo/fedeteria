@@ -3,9 +3,9 @@ use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use crate::store::UserStore;
-use crate::Components::generic_button::GenericButton;
-use crate::Components::generic_input_field::GenericInputField;
-use crate::Components::dni_input_field::DniInputField;
+use crate::components::generic_button::GenericButton;
+use crate::components::generic_input_field::GenericInputField;
+use crate::components::dni_input_field::DniInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
@@ -51,8 +51,6 @@ pub fn log_in_molecule()-> Html{
         cloned_password_state.set(password);
     });
 
-    let login_response = use_state(|| "false".to_string());
-    let login_response_c = login_response.clone();
     let cloned_dni_state = dni_state.clone();
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
@@ -67,22 +65,20 @@ pub fn log_in_molecule()-> Html{
         let cloned_error_state = cloned_error_state.clone();
 
         let dispatch_cloned = dispatch_cloned.clone();
-        let login_response_c = login_response_c.clone();
         {
             let cloned_error_state = cloned_error_state.clone();
             let dni = &*cloned_dni_state;
             let password = &*cloned_password_state;
             {
                 let cloned_error_state = cloned_error_state.clone();
-                let dni = dni.clone();
+                let dni = *dni;
                 let password = password.clone();
                 let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
                 spawn_local(async move {
                         let cloned_error_state = cloned_error_state.clone();
-                        let query = QueryLogin{dni:dni.clone(), password: password.clone()};
+                        let query = QueryLogin{dni, password: password.clone()};
                         let respuesta = Request::post("/api/check_login").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
-                        let cloned_dni = dni.clone();
                         match respuesta{
                             Ok(respuesta) =>{
                                 let response:Result<ResponseLogIn, reqwasm::Error> = respuesta.json().await;
@@ -91,7 +87,7 @@ pub fn log_in_molecule()-> Html{
                                         match respuesta{
                                             Ok(respuesta) => {
                                                 let status = respuesta.status;
-                                                if status == true{
+                                                if status {
                                                     dispatch_cloned.reduce_mut(|store|{
                                                         store.dni = Some(dni);
                                                         store.login_fail = false;
@@ -145,7 +141,7 @@ pub fn log_in_molecule()-> Html{
     });
 
 
-    let (store, _dispatch) = use_store::<UserStore>();
+    let (_store, _dispatch) = use_store::<UserStore>();
 
 
     html! {
@@ -156,12 +152,12 @@ pub fn log_in_molecule()-> Html{
                     <form {onsubmit}>
                         <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
                         <GenericInputField name = "password" label="Contraseña" tipo = "password" handle_on_change = {password_changed} />
-                        if !(&*password_state).is_empty() && (&*dni_state) != &0 {
+                        if !password_state.is_empty() && *dni_state != 0 {
                             <GenericButton text="Iniciar Sesion" onclick_event={submit_clicked_example} />
                         } else {
                             <button class="disabled-dyn-element">{"Iniciar Sesion"}</button>
                         }
-                        if !(&*error_state).is_empty(){
+                        if !error_state.is_empty(){
                             <div class="error-text">
                                 <h2>{&*error_state}</h2>
                             </div>

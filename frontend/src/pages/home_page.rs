@@ -15,13 +15,12 @@ pub fn home_page() -> Html {
     //TRAIGO DEL BACKEND LOS DATOS DEL USUARIO
 
     let (store, dispatch) = use_store::<UserStore>();
-    let dni = store.dni.clone();
+    let dni = store.dni;
     use_effect( move ||{
         let dispatch = dispatch.clone();
-        let dni = dni.clone();
         if let Some(dni) = dni{
             spawn_local(async move {
-                let query = QueryObtenerUsuario{dni:dni.clone()};
+                let query = QueryObtenerUsuario{dni};
                 let dispatch = dispatch.clone();
                 let respuesta = Request::post("/api/retornar_usuario").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
                 match respuesta {
@@ -65,7 +64,7 @@ pub fn home_page() -> Html {
 
     
     let (store, _dispatch) = use_store::<UserStore>();
-    let dni = store.dni.clone();
+    let dni = store.dni;
 
 
     
@@ -76,7 +75,7 @@ pub fn home_page() -> Html {
             </div>
             <div class= "publication-list">
                 <h1 class="title">{"Publicaciones..."}</h1>
-                if !dni.is_none() {
+                if dni.is_some() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
                 } else {
                     <Link<Route> to={Route::LogInPage}>{"Publicar"}</Link<Route>>

@@ -5,7 +5,7 @@ use date_component::date_component;
 use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice};
 use serde::{Deserialize, Serialize};
 
-use self::{usuario::Usuario};
+use self::usuario::Usuario;
 
 pub mod usuario;
 
@@ -50,7 +50,7 @@ impl Database {
     }
     pub fn guardar(&self) {
         let s = serde_json::to_string_pretty(self).unwrap();
-        fs::write(PATH, &s).unwrap();
+        fs::write(PATH, s).unwrap();
     }
 
 
@@ -113,8 +113,7 @@ impl Database {
 
 
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
-        let respuesta = self.sucursales.clone();
-        respuesta
+        self.sucursales.clone()
     }
 
     pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
@@ -126,7 +125,6 @@ impl Database {
             self.guardar();
         }
 
-        let respuesta = self.sucursales.clone();
-        respuesta
+        self.sucursales.clone()
     }
 }

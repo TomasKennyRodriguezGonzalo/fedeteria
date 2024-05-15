@@ -1,16 +1,9 @@
-use std::str::FromStr;
-
-use serde_json::from_str;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use crate::Components::generic_button::GenericButton;
-use crate::Components::generic_input_field::GenericInputField;
-use crate::Components::{generic_button, generic_input_field};
-use datos_comunes::{self, QueryDeleteOffice, ResponseDeleteOffice, ResponseGetOffices, Sucursal};
+use crate::components::generic_button::GenericButton;
+use crate::components::generic_input_field::GenericInputField;
+use datos_comunes::{self, QueryDeleteOffice, ResponseDeleteOffice, ResponseGetOffices};
 use reqwasm::http::Request;
-use serde::{Deserialize, Serialize};
-use crate::store::UserStore;
-use crate::router::Route;
 
 
 #[function_component(DeleteOfficeMolecule)]
@@ -114,8 +107,8 @@ pub fn delete_office_molecule () -> Html {
             <section>
             <GenericButton text = "Ver Sucursales" onclick_event = {get_offices} />
             <ul class="office_list">
-                    if !(&*state_office_list_clone).is_empty() {
-                        {(&*state_office_list_clone).iter().map(|sucursal|{html!{<p>{"sucursal: "}{sucursal.nombre.clone()}</p>}}).collect::<Html>()}
+                    if !state_office_list_clone.is_empty() {
+                        {state_office_list_clone.iter().map(|sucursal|{html!{<p>{"sucursal: "}{sucursal.nombre.clone()}</p>}}).collect::<Html>()}
                         <GenericInputField name ="Sucursal a Borrar" label="Ingrese sucursal" tipo = "delete_offfice" handle_on_change = {input_text_changed.clone()} />
                         <GenericButton text = "Confirmar Eliminación" onclick_event = {delete_office.clone()} />
                     } else{

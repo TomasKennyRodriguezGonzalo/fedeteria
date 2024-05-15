@@ -40,10 +40,10 @@ impl EstadoCuenta{
                     *self = EstadoCuenta::Bloqueada;     
                     return Err(LogInError::BlockedUser)         
                 }
-                return Ok(*intentos)
+                Ok(*intentos)
             }
             EstadoCuenta::Bloqueada => {
-                return Err(LogInError::BlockedUser)
+                Err(LogInError::BlockedUser)
             }
         }
     }

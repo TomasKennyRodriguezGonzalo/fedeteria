@@ -6,7 +6,7 @@ use crate::store::UserStore;
 pub fn profile_page() -> Html {
 
     let (store, _dispatch) = use_store::<UserStore>();
-    let dni = store.dni.clone();
+    let dni = store.dni;
 
     let (store, _dispatch) = use_store::<UserStore>();
     let username = store.nombre.clone();

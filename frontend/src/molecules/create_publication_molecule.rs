@@ -1,4 +1,4 @@
-use crate::Components::generic_input_field::GenericInputField;
+use crate::components::generic_input_field::GenericInputField;
 use web_sys::{HtmlImageElement, HtmlInputElement};
 use yew::prelude::*;
 
@@ -70,22 +70,22 @@ pub fn create_publication_molecule() -> Html {
                     <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
                     <GenericInputField name="Descripción" label="Ingrese una descripción para la publicación" tipo="text" handle_on_change={description_changed}/>
                 </div>
-                if (&*image_list).len() < 5 {
+                if image_list.len() < 5 {
                     <div class="image-prompts">
                         <input oninput={oninput} type="file" id="file" name="publication_img" accept="image/*"/>
                     </div>
                 } 
                 <div class="image-preview">
-                    if !(&*image_list).is_empty() {
-                        <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", (&*image_list).len())}</h2>
+                    if !image_list.is_empty() {
+                        <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", image_list.len())}</h2>
                         <ul class="image-list">
-                            {(&*image_list).iter().map(|image| html!(<li class="image-item">{(&*image).clone()}</li>)).collect::<Html>()}
+                            {image_list.iter().map(|image| html!(<li class="image-item">{image.clone()}</li>)).collect::<Html>()}
                         </ul>
                         <button type="button" onclick={delete_last_image}>{"Eliminar última imagen"}</button>
                     }
                 </div>
                 <div class="submit_button">
-                    if !((&*title_state).is_empty()) && !((&*description_state).is_empty()) && !((&*image_list).is_empty()) {
+                    if !(title_state.is_empty()) && !(description_state.is_empty()) && !(image_list.is_empty()) {
                         <input type="submit" value="Confirmar"/>
                     } else { 
                         <button class="disabled-dyn-element">{"Confirmar"}</button>

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::Pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
+use crate::pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
 };
 
 

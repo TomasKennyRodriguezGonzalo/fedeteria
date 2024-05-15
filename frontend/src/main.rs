@@ -1,11 +1,13 @@
+#![allow(clippy::redundant_closure)]
 pub mod app;
-pub mod Molecules;
-pub mod Components;
-pub mod Pages;
+pub mod molecules;
+pub mod components;
+pub mod pages;
 pub mod router;
 pub mod store;
-pub mod Types;
+pub mod types;
 use crate::app::App;
+
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Trace));

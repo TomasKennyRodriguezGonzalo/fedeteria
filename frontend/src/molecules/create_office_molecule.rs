@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::Components::{generic_button::GenericButton, generic_input_field::GenericInputField};
+use crate::components::{generic_button::GenericButton, generic_input_field::GenericInputField};
 
 #[function_component(CreateOfficeMolecule)]
 pub fn create_office_molecule() -> Html {

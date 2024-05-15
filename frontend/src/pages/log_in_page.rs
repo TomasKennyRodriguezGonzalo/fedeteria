@@ -1,6 +1,6 @@
 use yew_router::prelude::Link;
 use yew::prelude::*;
-use crate::Molecules::log_in_molecule::LogInMolecule;
+use crate::molecules::log_in_molecule::LogInMolecule;
 use crate::router::Route;
 
 #[function_component(LogInPage)]

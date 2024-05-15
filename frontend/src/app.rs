@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::Molecules::navbar::Navbar;
+use crate::molecules::navbar::Navbar;
 use crate::router::{Route, switch};
 
 #[function_component(App)]

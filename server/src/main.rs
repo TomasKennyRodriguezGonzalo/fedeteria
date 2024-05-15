@@ -141,21 +141,21 @@ async fn check_login(
             }
             if user.contraseña == hash_str(&password){
                 state.db.resetear_intentos(index);
-                return Json(Ok(ResponseStatus{status : true}))
+                Json(Ok(ResponseStatus{status : true}))
             } else{
                 let res =state.db.decrementar_intentos(index);
                 match res{
                     Ok(intentos) =>{
-                        return Json(Err(LogInError::IncorrectPassword {intentos: intentos}))
+                        Json(Err(LogInError::IncorrectPassword {intentos}))
                     }
                     Err(_) => {
-                        return Json(Err(LogInError::BlockedUser ))
+                        Json(Err(LogInError::BlockedUser ))
                     }
                 }
             }
         }
         None => { 
-            return Json(Err(LogInError::UserNotFound))
+            Json(Err(LogInError::UserNotFound))
         },
     }
 }
@@ -206,7 +206,7 @@ async fn retornar_usuario(
     State(state): State<SharedState>,
     Json(query): Json<QueryObtenerUsuario>
 ) -> Json<Option<ResponseObtenerUsuario>> {
-    let mut state = state.write().await;
+    let state = state.write().await;
     log::info!("we are checking with {} dni ",query.dni.clone()); 
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {

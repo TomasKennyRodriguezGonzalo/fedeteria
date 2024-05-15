@@ -1,7 +1,7 @@
 use yew_router::prelude::Link;
 use yew::prelude::*;
 
-use crate::{router::Route, Molecules::register_molecule::RegisterMolecule};
+use crate::{router::Route, molecules::register_molecule::RegisterMolecule};
 
 #[function_component(RegisterPage)]
 pub fn register_page()-> Html {

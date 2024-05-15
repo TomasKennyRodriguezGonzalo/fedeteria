@@ -12,7 +12,7 @@ pub fn navbar() -> Html{
     let navigator = use_navigator().unwrap();
     
     let (store, dispatch) = use_store::<UserStore>();
-    let dni = store.dni.clone();
+    let dni = store.dni;
     let username = store.nombre.clone();
 
     let logout = Callback::from(move|_event| {
@@ -25,7 +25,7 @@ pub fn navbar() -> Html{
             <div class="logo">
                 <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
             </div>
-            if !dni.is_none(){
+            if dni.is_some(){
                 <div>
                     <h2>{"Hola " }{username}{"!"}</h2>
                 </div>

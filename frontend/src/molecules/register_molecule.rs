@@ -7,7 +7,7 @@ use yew::{platform::spawn_local, prelude::*};
 use yew_router::prelude::use_navigator;
 
 use crate::router::Route;
-use crate::Components::generic_input_field::GenericInputField;
+use crate::components::generic_input_field::GenericInputField;
 
 #[function_component(RegisterMolecule)]
 pub fn register_molecule()-> Html {
