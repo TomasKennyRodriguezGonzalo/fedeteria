@@ -1,0 +1,7 @@
+Para que recarge al hacer cambios:
+- Instalar cargo-watch (cargo install cargo-watch)
+- Abrir dos lineas de comando distintas, una en el frontend y la otra en la carpeta de fedeteria
+- En la de frontend correr el frontend con: trunk serve "--proxy-backend=http://[::1]:8081/api/"
+  El proxy-backend lo va a conectar con el servidor (que lo vamos a correr en el puerto 8081)
+- En la de backend correr el servidor con: cargo watch -- cargo run --bin server -- --port 8081
+- Abrir la página en la ip que te de el FRONTEND, no la del sevidor (que tiene el puerto 8081)

@@ -8,7 +8,7 @@ use crate::router::Route;
 #[function_component(PublicationThumbnail)]
 pub fn publication_thumbnail() -> Html {
     html! {
-        <Link<Route> to={Route::Publication} class="publication-link">
+        <Link<Route> to={Route::Publication{id: "REEMPLAZAR".to_string()}}>
             <div class="publication">
                 <img src="/assets/img/Default_Imagen.jpg"/>
                 <div class="info">
