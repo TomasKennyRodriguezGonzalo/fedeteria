@@ -4,8 +4,6 @@ use reqwasm::http::Request;
 use web_sys::{FormData, HtmlFormElement, HtmlInputElement};
 use wasm_bindgen::JsCast;
 use yew::{platform::spawn_local, prelude::*};
-use serde_json::json;
-use yew_router::components::Link;
 use yew_router::prelude::use_navigator;
 
 use crate::router::Route;
@@ -81,16 +79,16 @@ pub fn register_molecule()-> Html {
                     match resp {
                         Ok(resp) => {
                             match resp {
-                                Ok(resp)=>{
+                                Ok(_)=>{
                                     navigator.push(&Route::LogInPage)
                                 }
                                 Err(CrearUsuarioError::DNIExistente)=>{
                                     let cloned_error_state = cloned_error_state.clone();
-                                    cloned_error_state.set("El DNI ingresado ya se encuentra registrado.".to_string());
+                                    cloned_error_state.set("El DNI ingresado ya pertenece a una cuenta.".to_string());
                                 }
                                 Err(CrearUsuarioError::EmailExistente)=>{
                                     let cloned_error_state = cloned_error_state.clone();
-                                    cloned_error_state.set("El correo electrónico ingresado ya se encuentra registrado.".to_string());
+                                    cloned_error_state.set("El correo electrónico ingresado ya pertenece a una cuenta.".to_string());
                                     
                                 }
                                 Err(CrearUsuarioError::ErrorIndeterminado)=>{
@@ -100,19 +98,17 @@ pub fn register_molecule()-> Html {
                                 }
                                 Err(CrearUsuarioError::MenorA18)=>{
                                     let cloned_error_state = cloned_error_state.clone();
-                                    cloned_error_state.set("Para registrarte debes ser mayor de edad.".to_string());
+                                    cloned_error_state.set("Para registrarte debes ser mayor de 18 años.".to_string());
                                 }
                             }
                         }
                         Err(error) => {
                             log::error!("error en deserializacion{:?}",error);
-                            ()
                         },
                     }
                 },
                 Err(_) =>{
                     log::error!("error en llamada al backend");
-                    ()
                 } 
             }; 
         });
@@ -139,13 +135,13 @@ pub fn register_molecule()-> Html {
                 </div>
                 <input type="date" name="nacimiento"/>
                 <br/>
-                if !((&*name_state).is_empty()) && !((&*password_state).is_empty()) && (&*dni_state) != &0 && !((&*mail_state).is_empty()) {
+                if !(name_state.is_empty()) && !(password_state.is_empty()) && (*dni_state != 0) && !(mail_state.is_empty()) {
                     <input type="submit" value="Confirmar"/>
                 } else {
                     <button class="disabled-dyn-element">{"Confirmar"}</button>
                 }
             </form>
-            if !(&*error_state).is_empty(){
+            if !error_state.is_empty(){
             <h2 class="error-text">
                 {&*error_state}
             </h2>
