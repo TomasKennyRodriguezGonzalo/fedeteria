@@ -16,12 +16,14 @@ pub struct Database {
     sucursales: Vec<Sucursal>,
 }
 
-const PATH: &str = "./db.json";
+pub const BASE_DIR: &str = "./db/";
+pub const DB_PATH: &str = "./db/db.json";
+pub const IMGS_DIR: &str = "./db/imgs/";
 
 impl Database {
     pub fn cargar() -> Database {
         
-        let res = fs::read_to_string(PATH);
+        let res = fs::read_to_string(DB_PATH);
         if let Ok(json) = res {
             if let Ok(db) = serde_json::from_str(&json) {
                 db
@@ -39,18 +41,20 @@ impl Database {
             usuarios: vec![],
             sucursales: vec![],
         };
-        let path = Path::new(PATH);
+        let path = Path::new(DB_PATH);
         if path.exists() {
             log::warn!("Sobreescribiendo database anterior!");
         } else {
-            log::info!("Creando una nueva database...");
+            log::warn!("Creando una nueva database...");
         }
         db.guardar();
         db
     }
     pub fn guardar(&self) {
         let s = serde_json::to_string_pretty(self).unwrap();
-        fs::write(PATH, s).unwrap();
+        std::fs::create_dir_all(BASE_DIR).unwrap();
+        std::fs::create_dir_all(IMGS_DIR).unwrap();
+        fs::write(Path::new("./db/db.json"), s).unwrap();
     }
 
 

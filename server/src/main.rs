@@ -4,24 +4,29 @@ use axum::http::{Response, StatusCode};
 use axum::extract::{Multipart, Query, Request, State};
 use axum::routing::post;
 use axum::Json;
+use axum::{body::Bytes, BoxError};
 use axum::{response::IntoResponse, routing::get, Router};
+use futures::{Stream, TryStreamExt};
 use clap::Parser;
 //use axum::debug_handler;
 use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
-use tokio::fs;
+use tokio::fs::{self, File};
+use tokio::io::BufWriter;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use std::hash::{Hash, Hasher, DefaultHasher};
+use std::{io, path};
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use serde::Deserialize;
+use tokio_util::io::StreamReader;
 
 use crate::mail::send_email;
 use crate::state::ServerState;
@@ -253,7 +258,21 @@ async fn crear_publicacion (
     mut multipart: Multipart,
 ) -> Result<String, ()> {
     // log::info!("La request es: {req:?}");
-    log::info!("Recibido mensaje de crear publicacion!, multipart: {multipart:?}");
+    log::info!("Recibido mensaje de crear publicacion!");
+    let titulo = multipart.next_field().await.unwrap().unwrap();
+    assert_eq!(titulo.name().unwrap(), "Titulo");
+    let titulo = titulo.text().await.unwrap();
+    let descripcion = multipart.next_field().await.unwrap().unwrap();
+    assert_eq!(descripcion.name().unwrap(), "Descripción");
+    let descripcion = descripcion.text().await.unwrap();
+    multipart.next_field().await.unwrap().unwrap();
+    let dni = multipart.next_field().await.unwrap().unwrap();
+    assert_eq!(dni.name().unwrap(), "dni");
+    let dni_str = dni.text().await.unwrap();
+    let dni: u64 = dni_str.parse().unwrap();
+
+    log::info!("Dni: {dni}, titulo: {titulo}, descripcion: {descripcion}");
+
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
@@ -262,8 +281,34 @@ async fn crear_publicacion (
             continue;
         };
         log::info!("Recibido archivo: {file_name}");
-
-        // stream_to_file(&file_name, field).await?;
+        let path = Path::new(database::IMGS_DIR).join(&dni_str);
+        std::fs::create_dir_all(&path).unwrap();
+        let path = path.join(file_name);
+        stream_to_file(path, field).await.unwrap();
     }
     Ok("HOLO".to_string())
+}
+
+async fn stream_to_file<S, E>(path: PathBuf, stream: S) -> Result<(), (StatusCode, String)>
+where
+    S: Stream<Item = Result<Bytes, E>>,
+    E: Into<BoxError>,
+{
+    async {
+        // Convert the stream into an `AsyncRead`.
+        let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
+        let body_reader = StreamReader::new(body_with_io_error);
+        futures::pin_mut!(body_reader);
+
+        // Create the file. `File` implements `AsyncWrite`.
+        log::info!("Guardando archivo en {:?}", path);
+        let mut file = BufWriter::new(File::create(path).await?);
+
+        // Copy the body into the file.
+        tokio::io::copy(&mut body_reader, &mut file).await?;
+
+        Ok::<_, io::Error>(())
+    }
+    .await
+    .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }

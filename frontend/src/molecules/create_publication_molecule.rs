@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::components::generic_input_field::GenericInputField;
 use yewdux::use_store;
 use reqwasm::http::Request;
-use web_sys::{File, FormData, HtmlFormElement, HtmlImageElement, HtmlInputElement};
+use web_sys::{File, FormData, HtmlFormElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VNode};
 use wasm_bindgen::JsCast;
 use crate::store::UserStore;
