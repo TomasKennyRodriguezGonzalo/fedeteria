@@ -1,8 +1,10 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::components::generic_input_field::GenericInputField;
 use yewdux::use_store;
 use reqwasm::http::Request;
-use web_sys::{FormData, HtmlFormElement, HtmlImageElement, HtmlInputElement};
-use yew::{platform::spawn_local, prelude::*};
+use web_sys::{File, FormData, HtmlFormElement, HtmlImageElement, HtmlInputElement};
+use yew::{platform::spawn_local, prelude::*, virtual_dom::VNode};
 use wasm_bindgen::JsCast;
 use crate::store::UserStore;
 
@@ -22,48 +24,50 @@ pub fn create_publication_molecule() -> Html {
         Callback::from(move |description: String| description_state.set(description))
     };
 
-    let image_list = use_state(Vec::new);
+    // IMPORTANTE: Para que se actualice tras cambiar los datos internos, hay que hacer image_list.set((*image_list).clone());
+    let image_list = use_state(|| Rc::new(RefCell::new(Vec::<(VNode, File, String)>::new())));
 
     let on_image_selected = {
         let image_list = image_list.clone();
         Callback::from(move |event: InputEvent| {
-            let mut image_list_new = (*image_list).clone();
             let input: HtmlInputElement = event.target_dyn_into().unwrap();
             let file_list: web_sys::FileList = input.files().unwrap();
-            log::info!("file_list.length(): {}", file_list.length());
             for i in 0..file_list.length() {
-                if image_list_new.len() >= 5 {break; }
-                log::info!("Agregando un archivo!");
+                if image_list.borrow().len() >= 5 {break; }
                 let file = file_list.get(i).unwrap();
+
+                let nombre = file.name();
+                log::info!("Agregando un archivo: {}", nombre);
+                let image_list_c = image_list.clone();
+                let file_c = file.clone();
+                let on_borrar = {
+                    Callback::from(move |_| {
+                        let image_list = image_list_c.clone();
+                        log::info!("Borrando archivo: {}", nombre);
+                        let pos = image_list.borrow()
+                            .iter().enumerate()
+                            .find(|(_, (_, f, _))| f == &file_c)
+                            .unwrap().0;
+                        let (_, _, url) = image_list.borrow_mut().remove(pos);
+                        web_sys::Url::revoke_object_url(&url).unwrap();
+                        image_list.set((*image_list).clone());
+                    })
+                };
 
                 let result = web_sys::Url::create_object_url_with_blob(&file);
                 if let Ok(url) = result {
-                    let node = html! {<img src={url} height="200px" width="300px" />};
-                    image_list_new.push((node, file));
+                    let node = html! {<>
+                        <img src={url.clone()} height="200px" width="300px" />
+                        <button onclick={on_borrar}> {"Borrar"} </button>
+                    </>};
+                    image_list.borrow_mut().push((node, file, url));
                 } else {
                     panic!();
                 }
             }
-            image_list.set(image_list_new);
+            image_list.set((*image_list).clone());
             // Esto hace que el ultimo archivo seleccionado no figure en la parte de arriba.
             input.set_value("");
-        })
-    };
-
-    let delete_last_image = {
-        let image_list = image_list.clone();
-        Callback::from(move |_| {
-            let mut list = (*image_list).clone();
-            let last = list.pop();
-            image_list.set(list);
-            if let Some(last) = last {
-                if let yew::virtual_dom::VNode::VTag(t) = last.0 {
-                    let img = t.node_ref.cast::<HtmlImageElement>().unwrap();
-                    web_sys::Url::revoke_object_url(&img.src()).unwrap();
-                } else {
-                    panic!()
-                }
-            }
         })
     };
 
@@ -79,16 +83,13 @@ pub fn create_publication_molecule() -> Html {
             let form_data = FormData::new_with_form(&form).unwrap();
 
             form_data.append_with_str("dni", &store.dni.unwrap().to_string()).unwrap();
-            for (_, blob) in image_list.iter() {
+            for (_, blob, _) in image_list.borrow().iter() {
                 form_data.append_with_blob("", blob).unwrap();
             }
-            // HtmlFormElement::submit(&self)
-            // // let req: Multipart;
 
             spawn_local(async move {
             
                 let res = Request::post("/api/crear_publicacion")
-                    // .header("Content-Type", "multipart/form-data")
                     .body(form_data)
                     .send().await;
                 let res = res.unwrap();
@@ -106,28 +107,27 @@ pub fn create_publication_molecule() -> Html {
                     <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
                     <GenericInputField name="Descripción" label="Ingrese una descripción para la publicación" tipo="text" handle_on_change={description_changed}/>
                 </div>
-                if image_list.len() < 5 {
+                if image_list.borrow().len() < 5 {
                     <div class="image-prompts">
                         <input oninput={on_image_selected} type="file" id="file" name="publication_img" accept="image/*" multiple=true/>
                     </div>
                 } 
                 <div class="image-preview">
-                    if !image_list.is_empty() {
-                        <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", image_list.len())}</h2>
+                    if !image_list.borrow().is_empty() {
+                        <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", image_list.borrow().len())}</h2>
                         <ul class="image-list">
                             {
-                                image_list.iter().map(|image| {
+                                image_list.borrow().iter().map(|image| {
                                     html!( <>
                                         <li class="image-item">{image.0.clone()}</li>
                                     </>)
                                 }).collect::<Html>()
                             }
                         </ul>
-                        <button type="button" onclick={delete_last_image}>{"Eliminar última imagen"}</button>
                     }
                 </div>
                 <div class="submit_button">
-                    if !(title_state.is_empty()) && !(description_state.is_empty()) && !(image_list.is_empty()) {
+                    if !(title_state.is_empty()) && !(description_state.is_empty()) && !(image_list.borrow().is_empty()) {
                         <input type="submit" value="Confirmar"/>
                     } else { 
                         <button class="disabled-dyn-element">{"Confirmar"}</button>
