@@ -48,8 +48,6 @@ pub fn delete_office_molecule () -> Html {
         input_text_clone.set(text);
     });
 
-
-
     let state_office_list_clone = state_office_list.clone();
 
     let oficces_deleted_boolean = use_state(|| false);

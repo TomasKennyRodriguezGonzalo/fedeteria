@@ -9,23 +9,19 @@ use yewdux::{
 
 #[derive(Debug, Serialize, Deserialize, Clone,Default, PartialEq,Store)]
 #[store(storage = "local", listener(LogListener))]
-pub struct UserStore{
-    pub dni:Option<u64>,
-    pub nombre:String,
-    pub token:String,
-    pub login_fail:bool,
+pub struct InformationStore{
+    pub messages : Vec<String>,
 }
-
 
 struct LogListener;
 impl Listener for LogListener {
-    type Store = UserStore;
+    type Store = InformationStore;
     
     fn on_change(&mut self, _cx: &Context, state: Rc<Self::Store>) {
-        if state.dni.is_some(){
-            log!(Level::Info, "Dni changed to {}", state.dni.unwrap());
+        if !(state.messages.is_empty()) {
+            log!(Level::Info, "Information message changed to {:?}", state.messages);
         } else{
-            log!(Level::Info, "Dni change faliure");
+            log!(Level::Info, "Information message is empty");
         }
     }
 }

@@ -5,6 +5,7 @@ pub mod components;
 pub mod pages;
 pub mod router;
 pub mod store;
+pub mod information_store;
 pub mod types;
 use crate::app::App;
 

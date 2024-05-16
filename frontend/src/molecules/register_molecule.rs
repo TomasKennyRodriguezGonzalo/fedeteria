@@ -5,7 +5,9 @@ use web_sys::{FormData, HtmlFormElement, HtmlInputElement};
 use wasm_bindgen::JsCast;
 use yew::{platform::spawn_local, prelude::*};
 use yew_router::prelude::use_navigator;
+use yewdux::prelude::*;
 
+use crate::information_store::InformationStore;
 use crate::router::Route;
 use crate::components::generic_input_field::GenericInputField;
 
@@ -44,17 +46,21 @@ pub fn register_molecule()-> Html {
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
     
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let information_dispatch = information_dispatch.clone();
+    
     let onsubmit = Callback::from(move |event:SubmitEvent|{
+        let information_dispatch = information_dispatch.clone();
         let navigator = navigator.clone();
         event.prevent_default();
         let target = event.target();
         let form = target.and_then(|t| t.dyn_into::<HtmlFormElement>().ok()).unwrap();
-
+        
         let form_data = FormData::new_with_form(&form).unwrap();
-
+        
         let dni: f64 = form_data.get("dni").try_into().unwrap();
         let dni = dni as u64;
-
+        
         let str_nacimiento: String = form_data.get("nacimiento").try_into().unwrap();
         let fecha = NaiveDate::parse_from_str(&str_nacimiento, "%Y-%m-%d").unwrap();
         let nacimiento = Local.from_local_datetime(&fecha.into()).unwrap();
@@ -80,7 +86,8 @@ pub fn register_molecule()-> Html {
                         Ok(resp) => {
                             match resp {
                                 Ok(_)=>{
-                                    navigator.push(&Route::LogInPage)
+                                    navigator.push(&Route::LogInPage);
+                                    information_dispatch.reduce_mut(|store| store.messages.push("Registraste tu usuario correctamente.".to_string()))
                                 }
                                 Err(CrearUsuarioError::DNIExistente)=>{
                                     let cloned_error_state = cloned_error_state.clone();
