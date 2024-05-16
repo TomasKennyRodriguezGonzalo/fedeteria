@@ -1,11 +1,15 @@
 use crate::components::generic_input_field::GenericInputField;
+use yewdux::use_store;
 use reqwasm::http::Request;
 use web_sys::{FormData, HtmlFormElement, HtmlImageElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*};
 use wasm_bindgen::JsCast;
+use crate::store::UserStore;
 
 #[function_component(CreatePublicationMolecule)]
 pub fn create_publication_molecule() -> Html {
+    let (store, _dispatch) = use_store::<UserStore>();
+
     let title_state = use_state(|| "".to_owned());
     let title_changed = {
         let title_state = title_state.clone();
@@ -23,21 +27,24 @@ pub fn create_publication_molecule() -> Html {
     let on_image_selected = {
         let image_list = image_list.clone();
         Callback::from(move |event: InputEvent| {
+            let mut image_list_new = (*image_list).clone();
             let input: HtmlInputElement = event.target_dyn_into().unwrap();
             let file_list: web_sys::FileList = input.files().unwrap();
+            log::info!("file_list.length(): {}", file_list.length());
+            for i in 0..file_list.length() {
+                if image_list_new.len() >= 5 {break; }
+                log::info!("Agregando un archivo!");
+                let file = file_list.get(i).unwrap();
 
-            let file = file_list.get(0).unwrap();
-
-            let result = web_sys::Url::create_object_url_with_blob(&file);
-            if let Ok(url) = result {
-                image_list.set({
-                    let mut list = (*image_list).clone();
-
+                let result = web_sys::Url::create_object_url_with_blob(&file);
+                if let Ok(url) = result {
                     let node = html! {<img src={url} height="200px" width="300px" />};
-                    list.push((node, file));
-                    list
-                });
+                    image_list_new.push((node, file));
+                } else {
+                    panic!();
+                }
             }
+            image_list.set(image_list_new);
             // Esto hace que el ultimo archivo seleccionado no figure en la parte de arriba.
             input.set_value("");
         })
@@ -71,6 +78,7 @@ pub fn create_publication_molecule() -> Html {
 
             let form_data = FormData::new_with_form(&form).unwrap();
 
+            form_data.append_with_str("dni", &store.dni.unwrap().to_string()).unwrap();
             for (_, blob) in image_list.iter() {
                 form_data.append_with_blob("", blob).unwrap();
             }
@@ -100,7 +108,7 @@ pub fn create_publication_molecule() -> Html {
                 </div>
                 if image_list.len() < 5 {
                     <div class="image-prompts">
-                        <input oninput={on_image_selected} type="file" id="file" name="publication_img" accept="image/*"/>
+                        <input oninput={on_image_selected} type="file" id="file" name="publication_img" accept="image/*" multiple=true/>
                     </div>
                 } 
                 <div class="image-preview">
