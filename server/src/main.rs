@@ -1,7 +1,7 @@
 
 use axum::body::Body;
 use axum::http::{Response, StatusCode};
-use axum::extract::{Query, State};
+use axum::extract::{Multipart, Query, Request, State};
 use axum::routing::post;
 use axum::Json;
 use axum::{response::IntoResponse, routing::get, Router};
@@ -73,6 +73,7 @@ async fn main() {
         .route("/api/retornar_usuario", post(retornar_usuario))
         .route("/api/eliminar_sucursal", post(eliminar_sucursal))
         .route("/api/obtener_sucursales", get(obtener_sucursales))
+        .route("/api/crear_publicacion", post(crear_publicacion))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -246,4 +247,23 @@ async fn obtener_sucursales (
  
 }
 
+async fn crear_publicacion (
+    State(state): State<SharedState>,
+    // req: Request,
+    mut multipart: Multipart,
+) -> Result<String, ()> {
+    // log::info!("La request es: {req:?}");
+    log::info!("Recibido mensaje de crear publicacion!, multipart: {multipart:?}");
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let file_name = if let Some(file_name) = field.file_name() {
+            file_name.to_owned()
+        } else {
+            log::info!("Recibido field de otro tipo, nombre: {:?}", field.name());
+            continue;
+        };
+        log::info!("Recibido archivo: {file_name}");
 
+        // stream_to_file(&file_name, field).await?;
+    }
+    Ok("HOLO".to_string())
+}

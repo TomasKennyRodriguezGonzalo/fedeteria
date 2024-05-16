@@ -1,6 +1,8 @@
 use crate::components::generic_input_field::GenericInputField;
-use web_sys::{HtmlImageElement, HtmlInputElement};
-use yew::prelude::*;
+use reqwasm::http::Request;
+use web_sys::{FormData, HtmlFormElement, HtmlImageElement, HtmlInputElement};
+use yew::{platform::spawn_local, prelude::*};
+use wasm_bindgen::JsCast;
 
 #[function_component(CreatePublicationMolecule)]
 pub fn create_publication_molecule() -> Html {
@@ -16,20 +18,13 @@ pub fn create_publication_molecule() -> Html {
         Callback::from(move |description: String| description_state.set(description))
     };
 
-    let onsubmit = Callback::from(move |event: SubmitEvent| {
-        event.prevent_default();
-        log::info!("Form submitted!")
-    });
-
     let image_list = use_state(Vec::new);
 
-    let oninput = {
+    let on_image_selected = {
         let image_list = image_list.clone();
         Callback::from(move |event: InputEvent| {
-            event.prevent_default();
             let input: HtmlInputElement = event.target_dyn_into().unwrap();
-            let file_list = input.files().unwrap();
-            input.set_disabled(true);
+            let file_list: web_sys::FileList = input.files().unwrap();
 
             let file = file_list.get(0).unwrap();
 
@@ -37,11 +32,14 @@ pub fn create_publication_molecule() -> Html {
             if let Ok(url) = result {
                 image_list.set({
                     let mut list = (*image_list).clone();
-                    list.push(html! { <img src={url} height="200px" width="300px" /> });
+
+                    let node = html! {<img src={url} height="200px" width="300px" />};
+                    list.push((node, file));
                     list
                 });
             }
-            input.set_disabled(false);
+            // Esto hace que el ultimo archivo seleccionado no figure en la parte de arriba.
+            input.set_value("");
         })
     };
 
@@ -52,7 +50,7 @@ pub fn create_publication_molecule() -> Html {
             let last = list.pop();
             image_list.set(list);
             if let Some(last) = last {
-                if let yew::virtual_dom::VNode::VTag(t) = last {
+                if let yew::virtual_dom::VNode::VTag(t) = last.0 {
                     let img = t.node_ref.cast::<HtmlImageElement>().unwrap();
                     web_sys::Url::revoke_object_url(&img.src()).unwrap();
                 } else {
@@ -62,9 +60,39 @@ pub fn create_publication_molecule() -> Html {
         })
     };
 
+    let onsubmit = {
+        
+        let image_list = image_list.clone();
+        Callback::from(move |event: SubmitEvent| {
+            event.prevent_default();
+
+            let target = event.target();
+            let form = target.and_then(|t| t.dyn_into::<HtmlFormElement>().ok()).unwrap();
+
+            let form_data = FormData::new_with_form(&form).unwrap();
+
+            for (_, blob) in image_list.iter() {
+                form_data.append_with_blob("", blob).unwrap();
+            }
+            // HtmlFormElement::submit(&self)
+            // // let req: Multipart;
+
+            spawn_local(async move {
+            
+                let res = Request::post("/api/crear_publicacion")
+                    // .header("Content-Type", "multipart/form-data")
+                    .body(form_data)
+                    .send().await;
+                let res = res.unwrap();
+                let res = res.text().await.unwrap();
+                assert_eq!(res, "HOLO");
+            });
+        })
+    };
+
     html!(
         <div class="create-publication-box">
-            <form {onsubmit}>
+            <form {onsubmit} enctype="multipart/form-data" action="/api/crear_publicacion" method="POST">
                 <h1>{"Crea tu publicación!"}</h1>
                 <div class="text-prompts">
                     <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
@@ -72,14 +100,20 @@ pub fn create_publication_molecule() -> Html {
                 </div>
                 if image_list.len() < 5 {
                     <div class="image-prompts">
-                        <input oninput={oninput} type="file" id="file" name="publication_img" accept="image/*"/>
+                        <input oninput={on_image_selected} type="file" id="file" name="publication_img" accept="image/*"/>
                     </div>
                 } 
                 <div class="image-preview">
                     if !image_list.is_empty() {
                         <h2>{format!("Aqui se previsualizan tus imágenes {}/5:", image_list.len())}</h2>
                         <ul class="image-list">
-                            {image_list.iter().map(|image| html!(<li class="image-item">{image.clone()}</li>)).collect::<Html>()}
+                            {
+                                image_list.iter().map(|image| {
+                                    html!( <>
+                                        <li class="image-item">{image.0.clone()}</li>
+                                    </>)
+                                }).collect::<Html>()
+                            }
                         </ul>
                         <button type="button" onclick={delete_last_image}>{"Eliminar última imagen"}</button>
                     }
