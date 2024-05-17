@@ -92,5 +92,22 @@ pub struct ResponseGetUserInfo {
     pub nacimiento: DateTime<Local>,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum RolDeUsuario {
+    Normal,
+    Dueño,
+    Empleado{sucursal: usize},
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryGetUserRole {
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseGetUserRole {
+    pub rol : RolDeUsuario,
+}
+
 
 

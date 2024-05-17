@@ -1,7 +1,7 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use chrono::{DateTime, Local};
-use datos_comunes::LogInError;
+use datos_comunes::{LogInError, RolDeUsuario};
 use serde::{Deserialize, Serialize};
 
 
@@ -16,12 +16,7 @@ pub struct Usuario {
     pub estado: EstadoCuenta,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub enum RolDeUsuario {
-    Normal,
-    Dueño,
-    Empleado{sucursal: usize},
-}
+
 
 #[derive(Debug, Deserialize, Serialize,Clone,PartialEq)]
 pub enum EstadoCuenta {
