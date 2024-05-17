@@ -7,7 +7,7 @@ use crate::{router::Route, store::UserStore};
 use wasm_bindgen_futures::spawn_local;
 use reqwasm::http::Request;
 use datos_comunes::{self, QueryGetUserInfo, ResponseGetUserInfo};
-
+use yew_router::prelude::Link;
 
 
 pub struct User{
@@ -85,11 +85,24 @@ pub fn profile_page() -> Html {
 
     html! (
         <div class="profile-page">
-            <h1>{"PERFIL"}</h1>
-            <div>{"listo para realizar unos trueques?"}</div>
-            <div>{"nombre y apellido: "} {&*user_state.full_name}</div>
-            <div>{"email: "} {&*user_state.email}</div>
-            <div>{"fecha de nacimiento: "} {&*user_state.born_date.to_string()}</div>
+            <div class="profile-information-box">
+                <h1 class="title">{"Tu información"}</h1>
+                <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>
+                <h2 class="information-text">{"email: "} {&*user_state.email}</h2>
+                <h2 class="information-text">{"fecha de nacimiento: "} {&*user_state.born_date.to_string()}</h2>
+            </div>
+            <div class="profile-actions-box">
+                <h1 class="title">{"Acciones"}</h1>
+                <ul>
+                    <li><Link<Route> to={Route::SavedPublications}>{"Articulos Guardados"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::RecentlySeenPublications}>{"Vistos Recientemente"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyPublications}>{"Tus Publicaciones"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyPendingTrades}>{"Trueques Pendientes"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyCompletedTrades}>{"Trueques Concretados"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::EditPreferences}>{"Editar Preferencias"}</Link<Route>></li>
+                </ul>
+            </div>
         </div>
-    )
+            )
 }
