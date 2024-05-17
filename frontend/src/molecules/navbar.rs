@@ -26,14 +26,9 @@ pub fn navbar() -> Html{
     let (information_store, information_dispatch) = use_store::<InformationStore>();
     let messages = information_store.messages.clone();
 
-
-    
     let onclick = Callback::from(move |button_index:usize|{
         information_dispatch.reduce_mut(|store| store.messages.remove(button_index));
     });
-
-
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
 
     html!{
         <>
@@ -47,7 +42,6 @@ pub fn navbar() -> Html{
                     </div>
                     <nav>
                         <ul class="option_list">
-                            <li><Link<Route> to={Route::MyPublications}>{"Mis publicaciones"}</Link<Route>></li>
                             <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
                             <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
                         </ul>
@@ -70,7 +64,6 @@ pub fn navbar() -> Html{
                             <div class="information-message">
                                 <h2>{ message.clone() }</h2>
                                 <IndexedButton text="Cerrar mensaje" index={index.clone()} onclick_event={onclick.clone()}/>
-                               // <button onclick={Callback::from(move |event:MouseEvent| {onclick(index)})}>{"Cerrar mensaje"}</button>
                             </div>
                             }).collect::<Html>()
                     }

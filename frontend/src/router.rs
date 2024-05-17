@@ -16,13 +16,25 @@ pub enum Route {
     CreatePublication,
     #[at("/perfil")]
     Profile,
+    #[at("/perfil/publicaciones-guardadas")]
+    SavedPublications,
+    #[at("/perfil/visto-recientemente")]
+    RecentlySeenPublications,
+    #[at("/perfil/trueques-pendientes")]
+    MyPendingTrades,
+    #[at("/perfil/trueques-concretados")]
+    MyCompletedTrades,
+    #[at("/perfil/editar-informacion-personal")]
+    EditPersonalInfo,
+    #[at("/perfil/editar-preferencias")]
+    EditPreferences,
     #[at("/agregar-sucursal")]
     CreateOffice,
     #[at("/publicacion:id")]
     Publication {id: String},
     #[at("/register")]
     Register,
-    #[at("/delete-office")]
+    #[at("/eliminar-sucursal")]
     DeleteOffice,
     #[not_found]
     #[at("/404")]
@@ -36,10 +48,16 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPublications => html! { <p>{"MIS PUBLICACIONES!!"}</p> },
         Route::Publication { id } => html! { <PublicationPage id={id}/>},
         Route::Profile => html! { <ProfilePage/> },
+        Route::EditPersonalInfo => html! {"Editar Informacion personal"},
         Route::Register => html! {<RegisterPage/>},
         Route::CreateOffice => html! { <CreateOfficePage/> },
         Route::CreatePublication => html! { <CreatePublicationPage/> },
         Route::DeleteOffice => html! {<DeleteOffice/>},
-        Route::NotFound => html! { <h1>{":( Error 404 página no existente!"}</h1>}, 
+        Route::NotFound => html! { <h1>{"Error 404 página no existente!"}</h1>},
+        Route::SavedPublications => html! {"Publicaciones guardadas"},
+        Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
+        Route::MyPendingTrades => html! {"Trueques Pendientes"},
+        Route::MyCompletedTrades => html! {"Trueques concretados"},
+        Route::EditPreferences => html! {"Editar preferencias"}, 
     }
 }
