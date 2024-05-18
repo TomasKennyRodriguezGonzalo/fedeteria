@@ -78,6 +78,7 @@ async fn main() {
         .route("/api/retornar_usuario", post(retornar_usuario))
         .route("/api/eliminar_sucursal", post(eliminar_sucursal))
         .route("/api/obtener_sucursales", get(obtener_sucursales))
+        .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
         .fallback(get(|req| async move {
@@ -185,6 +186,43 @@ async fn usuario_existe(
     }
 }
 
+async fn obtener_rol(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryGetUserRole>
+) -> Json<Option<ResponseGetUserRole>> {
+    log::info!("Entré a obtener rol!");
+    let state = state.read().await;
+    log::info!("El dni recibido es: {}", query.dni);
+    let indice = state.db.encontrar_dni(query.dni);
+    log::info!("El indice es: {:?}", indice);
+    if indice.is_some() {
+        let rol_obtenido = state.db.obtener_rol_usuario(indice.unwrap());
+        log::info!("El rol es: {:?}", rol_obtenido.clone());
+        let respuesta = ResponseGetUserRole{rol:rol_obtenido.clone()};
+        log::info!("La respuesta es: {:?}", respuesta.clone());
+        return Json(Some(respuesta));
+    }
+    Json(None)
+}
+
+async fn retornar_usuario(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerUsuario>
+) -> Json<Option<ResponseObtenerUsuario>> {
+    let state = state.write().await;
+    log::info!("we are checking with {} dni ",query.dni.clone()); 
+    let res = state.db.encontrar_dni(query.dni);
+    if let Some(res) = res {
+       let usuario = state.db.obtener_datos_usuario(res);
+       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
+       log::info!("username found "); 
+       Json(Some(response))
+    } else{
+        log::info!("username not found "); 
+        Json(None)
+    }
+}
+
 async fn registrar_usuario(
     State(state): State<SharedState>,
     Json(query): Json<QueryRegistrarUsuario>
@@ -209,23 +247,6 @@ Si cree que esto es un error, por favor contacte a un administrador.", usuario.n
     res
 }
 
-async fn retornar_usuario(
-    State(state): State<SharedState>,
-    Json(query): Json<QueryObtenerUsuario>
-) -> Json<Option<ResponseObtenerUsuario>> {
-    let state = state.write().await;
-    log::info!("we are checking with {} dni ",query.dni.clone()); 
-    let res = state.db.encontrar_dni(query.dni);
-    if let Some(res) = res {
-       let usuario = state.db.obtener_datos_usuario(res);
-       let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
-       log::info!("username found "); 
-       Json(Some(response))
-    } else{
-        log::info!("username not found "); 
-        Json(None)
-    }
-}
 
 fn hash_str(s: &str) -> u64 {
     let mut hasher = DefaultHasher::new();

@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice};
+use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice, RolDeUsuario};
 use serde::{Deserialize, Serialize};
 
 use self::usuario::Usuario;
@@ -104,6 +104,10 @@ impl Database {
         &self.usuarios[indice]
     }
 
+    pub fn obtener_rol_usuario(&self, indice:usize) -> RolDeUsuario {
+        self.usuarios[indice].rol.clone()
+    }
+
     pub fn decrementar_intentos(&mut self, indice:usize)-> Result<u8, LogInError>{
         let res = &self.usuarios[indice].estado.decrementar_intentos();
         self.guardar();
@@ -120,7 +124,6 @@ impl Database {
         self.guardar();
         self.usuarios[indice].estado.resetear_intentos();
     }
-
 
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
         self.sucursales.clone()
