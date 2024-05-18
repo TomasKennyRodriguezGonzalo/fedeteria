@@ -313,7 +313,7 @@ async fn crear_publicacion (
     let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
     let mut state = state.write().await;
     state.db.agregar_publicacion(publicacion);
-    Ok("HOLO".to_string())
+    Ok("OK".to_string())
 }
 
 async fn stream_to_file<S, E>(path: PathBuf, stream: S) -> Result<(), (StatusCode, String)>

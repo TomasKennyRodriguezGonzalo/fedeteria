@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::components::generic_input_field::GenericInputField;
+use crate::{components::generic_input_field::GenericInputField, information_store::InformationStore, router::Route};
+use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use reqwasm::http::Request;
 use web_sys::{File, FormData, HtmlFormElement, HtmlInputElement};
@@ -11,6 +12,8 @@ use crate::store::UserStore;
 #[function_component(CreatePublicationMolecule)]
 pub fn create_publication_molecule() -> Html {
     let (store, _dispatch) = use_store::<UserStore>();
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let navigator = use_navigator().unwrap();
 
     let title_state = use_state(|| "".to_owned());
     let title_changed = {
@@ -76,6 +79,8 @@ pub fn create_publication_molecule() -> Html {
         let image_list = image_list.clone();
         Callback::from(move |event: SubmitEvent| {
             event.prevent_default();
+            let navigator = navigator.clone();
+            let information_dispatch = information_dispatch.clone();
 
             let target = event.target();
             let form = target.and_then(|t| t.dyn_into::<HtmlFormElement>().ok()).unwrap();
@@ -94,7 +99,11 @@ pub fn create_publication_molecule() -> Html {
                     .send().await;
                 let res = res.unwrap();
                 let res = res.text().await.unwrap();
-                assert_eq!(res, "HOLO");
+                if res == "OK" {
+
+                    navigator.push(&Route::Home);
+                    information_dispatch.reduce_mut(|store| store.messages.push("Publicación creada con éxito.".to_string()))
+                }
             });
         })
     };

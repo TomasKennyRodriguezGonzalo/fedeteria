@@ -26,8 +26,8 @@ pub const DB_PATH: &str = "./db/db.json";
 pub const IMGS_DIR: &str = "./db/imgs/";
 
 impl Database {
+    /// Carga la database del archivo
     pub fn cargar() -> Database {
-        
         let res = fs::read_to_string(DB_PATH);
         if let Ok(json) = res {
             if let Ok(db) = serde_json::from_str(&json) {
@@ -40,7 +40,7 @@ impl Database {
         }
     }
 
-    // Crea una database y la guarda
+    /// Crea una database nueva y la guarda
     fn init() -> Database {
         let db: Database = Default::default();
         let path = Path::new(DB_PATH);
@@ -52,6 +52,8 @@ impl Database {
         db.guardar();
         db
     }
+
+    /// Guarda la database en el archivo
     pub fn guardar(&self) {
         let s = serde_json::to_string_pretty(self).unwrap();
         std::fs::create_dir_all(BASE_DIR).unwrap();
@@ -102,18 +104,18 @@ impl Database {
         let diff = date_component::calculate(&fecha, &now);
         diff.year >= 18
     }
-    pub fn obtener_datos_usuario(&self, indice:usize) -> &Usuario {
+    pub fn obtener_datos_usuario(&self, indice: usize) -> &Usuario {
         &self.usuarios[indice]
     }
 
-    pub fn obtener_rol_usuario(&self, indice:usize) -> RolDeUsuario {
+    pub fn obtener_rol_usuario(&self, indice: usize) -> RolDeUsuario {
         self.usuarios[indice].rol.clone()
     }
 
-    pub fn decrementar_intentos(&mut self, indice:usize)-> Result<u8, LogInError>{
-        let res = &self.usuarios[indice].estado.decrementar_intentos();
+    pub fn decrementar_intentos(&mut self, indice: usize) -> Result<u8, LogInError> {
+        let res = self.usuarios[indice].estado.decrementar_intentos();
         self.guardar();
-        res.clone()
+        res
     }
 
     pub fn resetear_intentos(&mut self, indice:usize){
@@ -123,9 +125,11 @@ impl Database {
         self.sucursales.push(nueva);
         let nueva = Sucursal::new("La Plata".to_string());
         self.sucursales.push(nueva);*/
-        self.guardar();
         self.usuarios[indice].estado.resetear_intentos();
+        self.guardar();
     }
+
+
 
     pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
         self.publicaciones.push(publicacion);
