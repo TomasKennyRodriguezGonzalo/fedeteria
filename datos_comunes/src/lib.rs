@@ -109,5 +109,23 @@ pub struct ResponseGetUserRole {
     pub rol : RolDeUsuario,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BloquedUser {
+    pub nombre : String,
+    pub dni: u64,
+}
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseGetBloquedAccounts {
+    pub bloqued_users : Vec<BloquedUser>,
+}
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryUnlockAccount {
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseUnlockAccount {
+    pub bloqued_users : Vec<BloquedUser>,
+}

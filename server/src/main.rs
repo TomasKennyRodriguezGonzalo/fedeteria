@@ -81,6 +81,8 @@ async fn main() {
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
+        .route("/api/obtener_cuentas_bloqueadas", get(obtener_cuentas_bloqueadas))
+        .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -271,7 +273,6 @@ async fn obtener_sucursales (
     let sucursales=state.db.obtener_sucursales();
     let respuesta = ResponseGetOffices{office_list : sucursales.clone()};
     Json(respuesta)
- 
 }
 
 async fn crear_publicacion (
@@ -351,8 +352,21 @@ Json(query): Json<QueryGetUserInfo>
         log::info!("username not found "); 
         Json(None)
     }
+}
 
+async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
+) -> Json<ResponseGetBloquedAccounts> {
+    let state = state.read().await;
+    let usuarios_bloqueados = state.db.obtener_usuarios_bloqueados();
+    let respuesta = ResponseGetBloquedAccounts{ bloqued_users: usuarios_bloqueados};
+    Json(respuesta)
+}
 
+async fn desbloquear_cuenta (State(state): State<SharedState>, 
+Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
+    let mut state = state.write().await;
+    let respuesta = ResponseUnlockAccount { bloqued_users: state.db.desbloquear_cuenta(query) };
+    Json(respuesta)
 }
 
 

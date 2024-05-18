@@ -1,6 +1,13 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
+use crate::pages:: {create_office_page::CreateOfficePage, 
+                    create_publication_page::CreatePublicationPage, 
+                    home_page::HomePage, log_in_page::LogInPage, 
+                    profile_page::ProfilePage, 
+                    publication_page::PublicationPage, 
+                    register_page::RegisterPage, 
+                    delete_office_page::DeleteOffice, 
+                    unlock_account_page::UnlockAccountPage
 };
 
 
@@ -28,6 +35,8 @@ pub enum Route {
     EditPersonalInfo,
     #[at("/perfil/editar-preferencias")]
     EditPreferences,
+    #[at("/desbloquear-cuenta")]
+    UnlockAccount,
     #[at("/agregar-sucursal")]
     CreateOffice,
     #[at("/publicacion:id")]
@@ -58,6 +67,7 @@ pub fn switch(routes: Route) -> Html {
         Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
-        Route::EditPreferences => html! {"Editar preferencias"}, 
+        Route::EditPreferences => html! {"Editar preferencias"},
+        Route::UnlockAccount => html!(<UnlockAccountPage/>), 
     }
 }
