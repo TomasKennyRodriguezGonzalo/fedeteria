@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
+use crate::pages::{privileged_actions_page::PrivilegedActionsPage, create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
 };
 
 
@@ -28,14 +28,20 @@ pub enum Route {
     EditPersonalInfo,
     #[at("/perfil/editar-preferencias")]
     EditPreferences,
-    #[at("/agregar-sucursal")]
-    CreateOffice,
     #[at("/publicacion:id")]
     Publication {id: String},
     #[at("/register")]
     Register,
-    #[at("/eliminar-sucursal")]
+    #[at("/acciones-privilegiadas")]
+    PrivilegedActions,
+    #[at("/acciones-privilegiadas/agregar-sucursal")]
+    CreateOffice,
+    #[at("/acciones-privilegiadas/eliminar-sucursal")]
     DeleteOffice,
+    #[at("/acciones-priviligiadas/desbloquear-cuenta")]
+    UnlockAccount,
+    #[at("/acciones-privilegiadas/cambiar-rol")]
+    ChangeUserRole,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -59,5 +65,8 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
         Route::EditPreferences => html! {"Editar preferencias"}, 
+        Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
+        Route::UnlockAccount => html! {"Desbloquear Cuenta"},
+        Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},
     }
 }

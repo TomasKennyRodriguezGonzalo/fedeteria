@@ -11,7 +11,7 @@ use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
-
+use web_sys::window;
 
 #[derive(Default)]
 pub struct State{
@@ -101,8 +101,11 @@ pub fn log_in_molecule()-> Html{
                                                         store.login_fail = false;
                                                     });
                                                     navigator.push(&Route::Home);
-                                                    information_dispatch.reduce_mut(|store| store.messages.push("Iniciaste sesion exitosamente.".to_string()))
-                                                    
+                                                    // Refreshes to reset the first load states all over the code
+                                                    if let Some(window) = window() {
+                                                        window.location().reload().unwrap();
+                                                    }
+                                                    information_dispatch.reduce_mut(|store| store.messages.push("Iniciaste sesion exitosamente.".to_string()));
                                                 } else{
                                                     log::error!("UNREACHABLE CODE");
                                                 }
@@ -142,6 +145,7 @@ pub fn log_in_molecule()-> Html{
                     })     
             }
         }
+        
     });
 
 

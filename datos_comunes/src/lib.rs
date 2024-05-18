@@ -92,7 +92,7 @@ pub struct ResponseGetUserInfo {
     pub nacimiento: DateTime<Local>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub enum RolDeUsuario {
     Normal,
     Dueño,
