@@ -7,7 +7,8 @@ use crate::pages::{create_office_page::CreateOfficePage,
     publication_page::PublicationPage, 
     register_page::RegisterPage, 
     delete_office_page::DeleteOffice, 
-    edit_personal_info_page::EditPersonalInfoPage
+    edit_personal_info_page::EditPersonalInfoPage,
+    privileged_actions_page::PrivilegedActionsPage,
 };
 
 
@@ -69,7 +70,7 @@ pub fn switch(routes: Route) -> Html {
         Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
-        Route::EditPreferences => html! {"Editar preferencias"}, 
+        //Route::EditPreferences => html! {"Editar preferencias"}, 
         Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
         Route::UnlockAccount => html! {"Desbloquear Cuenta"},
         Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},

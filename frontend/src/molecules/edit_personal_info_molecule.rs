@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
 use gloo::console::log;
+use web_sys::window;
 use yew::prelude::*;
 use yew_router::{hooks::use_navigator, navigator};
-use yewdux::prelude::*;
+use yewdux::{dispatch, prelude::*};
 extern crate chrono;
 use chrono::prelude::*;
 use crate::components::generic_button::_Props::onclick_event;
@@ -163,7 +164,10 @@ pub fn edit_personal_info_molecule() -> Html {
     let dni = store.dni;
     let cloned_dni = dni.clone();
     let cloned_show_button_state = show_button_state.clone();
+    let (store, dispatch) = use_store::<UserStore>();
+    let cloned_dispatch = dispatch.clone();
     let change_user = Callback::from(move |e:MouseEvent|{
+        let cloned_dispatch = cloned_dispatch.clone();
         log::info!("el nombre que se va a enviar es: {:?}", (&*cloned_name_state).clone());
         let cloned_born_date_state = cloned_born_date_state.clone(); 
         let cloned_email_state = cloned_email_state.clone(); 
@@ -175,6 +179,7 @@ pub fn edit_personal_info_molecule() -> Html {
         cloned_user_state.set(new_user);
         cloned_show_button_state.set(false);
             spawn_local(async move {
+                let cloned_dispatch = cloned_dispatch.clone();
                 let cloned_born_date_state = cloned_born_date_state.clone(); 
                 let cloned_user_state = cloned_user_state.clone();
                 let cloned_dni = cloned_dni.clone();
@@ -190,6 +195,14 @@ pub fn edit_personal_info_molecule() -> Html {
                             Ok(response) => {  
                                 if response.datos_cambiados{
                                     log::info!("datos cambiados con exito");
+                                    let cloned_dispatch = cloned_dispatch.clone();
+                                    cloned_dispatch.reduce_mut(|store|{
+                                        store.nombre = (&*cloned_name_state).clone();
+                                    });
+                                    
+                                    if let Some(window) = window() {
+                                        window.location().reload().unwrap();
+                                    }
                                 }else{
                                     log::error!("ERROR EN EL CAMBIO DE USUARIO");
                                 }     
