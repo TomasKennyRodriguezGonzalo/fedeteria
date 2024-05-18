@@ -82,6 +82,7 @@ async fn main() {
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
+        .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
