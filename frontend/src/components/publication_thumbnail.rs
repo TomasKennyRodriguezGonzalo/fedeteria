@@ -59,22 +59,20 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
         <Link<Route> to={Route::Publication{id}}>
             <div class="publication">
                 if let Some(publicacion) = datos_publicacion.deref() {
-                            <img src={
-                                let src = format!("/publication_images/{}", publicacion.imagenes[0]);
-                                log::info!("src es {src}");
-                                src
-                            }/>
-                            <div class="info">
-                                <h4 class="name">{publicacion.titulo.clone()}</h4>
-                                <h2 class="price">{
-                                    if let Some(precio) = publicacion.precio {
-                                        precio.to_string()
-                                    }
-                                    else {
-                                        "Sin Tasar".to_string()
-                                    }
-                                }</h2>
-                            </div>
+                    <img src={
+                        format!("/publication_images/{}", publicacion.imagenes[0])
+                    }/>
+                    <div class="info">
+                        <h4 class="name">{publicacion.titulo.clone()}</h4>
+                        <h2 class="price">{
+                            if let Some(precio) = publicacion.precio {
+                                precio.to_string()
+                            }
+                            else {
+                                "Sin Tasar".to_string()
+                            }
+                        }</h2>
+                    </div>
                 } else {
                     {"Cargando..."}
                 }
