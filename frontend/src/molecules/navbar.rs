@@ -1,3 +1,4 @@
+use web_sys::window;
 use datos_comunes::{RolDeUsuario, ResponseGetUserRole, QueryGetUserRole};
 use wasm_bindgen_futures::spawn_local;
 use yew_router::hooks::use_navigator;
@@ -22,13 +23,16 @@ pub fn navbar() -> Html{
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
 
     let logout = Callback::from(move|_event| {
-        dispatch.reduce_mut(|store| store.dni = None);
+        dispatch.reduce_mut(|store| {store.dni = None; store.nombre = "".to_string()});
         navigator.push(&Route::Home);
+        // Refreshes to reset the first load states all over the code
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
     });
 
     let first_render_state = use_state(|| true);
     let cloned_first_render_state = first_render_state.clone();
-
 
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
@@ -71,8 +75,7 @@ pub fn navbar() -> Html{
         }
 
         ||{}
-
-        });
+    });
         
         let (information_store, information_dispatch) = use_store::<InformationStore>();
         let messages = information_store.messages.clone();
@@ -89,17 +92,41 @@ pub fn navbar() -> Html{
                 </div>
                 if dni.is_some(){
                     <div>
-                        if (&*role_state).is_some(){
-                            <h2>{"Hola " }{username}{"! Tu rol es "}{format!("{:?}", (&*role_state).clone().unwrap())}</h2>
-                        } else {
-                            <h2>{"Hola " }{username}{"!"}</h2>
-                        }
+                        <h2>{"Hola " }{username}{"!"}</h2>
                     </div>
                     <nav>
-                        <ul class="option_list">
-                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                        </ul>
+                        if (&*role_state).clone().is_some() {
+                            {
+                                match (&*role_state).clone().unwrap() { 
+                                    RolDeUsuario::Dueño => {
+                                        html!{
+                                        <ul class="option_list">
+                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                            <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
+                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                        </ul>
+                                        }
+                                    },
+                                    RolDeUsuario::Empleado{sucursal : _} => {
+                                        html!{
+                                        <ul class="option_list">
+                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                            <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
+                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                        </ul>
+                                        }
+                                    },
+                                    RolDeUsuario::Normal => {
+                                        html!{
+                                        <ul class="option_list">
+                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                        </ul>
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     </nav>
                 } else {
                     <div>
