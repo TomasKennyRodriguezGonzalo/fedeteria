@@ -2,14 +2,12 @@ use std::{fs, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice, RolDeUsuario};
+use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice, RolDeUsuario, Publicacion};
 use serde::{Deserialize, Serialize};
 
-use self::{publicacion::Publicacion, usuario::Usuario};
+use self::{usuario::Usuario};
 
 pub mod usuario;
-pub mod publicacion;
-
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Database {
