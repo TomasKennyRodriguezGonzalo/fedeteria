@@ -111,6 +111,12 @@ impl Database {
     }
 
     pub fn resetear_intentos(&mut self, indice:usize){
+        /*let nueva = Sucursal::new("Brandsen".to_string());
+        self.sucursales.push(nueva);
+        let nueva = Sucursal::new("Jeppener".to_string());
+        self.sucursales.push(nueva);
+        let nueva = Sucursal::new("La Plata".to_string());
+        self.sucursales.push(nueva);*/
         self.guardar();
         self.usuarios[indice].estado.resetear_intentos();
     }
