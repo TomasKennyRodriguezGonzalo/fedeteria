@@ -90,12 +90,11 @@ pub fn navbar() -> Html{
                 <div class="logo">
                     <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
                 </div>
-                if dni.is_some(){
+                if dni.is_some() && (&*role_state).clone().is_some() {
                     <div>
                         <h2>{"Hola " }{username}{"!"}</h2>
                     </div>
                     <nav>
-                        if (&*role_state).clone().is_some() {
                             {
                                 match (&*role_state).clone().unwrap() { 
                                     RolDeUsuario::Dueño => {
@@ -126,7 +125,6 @@ pub fn navbar() -> Html{
                                     }
                                 }
                             }
-                        }
                     </nav>
                 } else {
                     <div>

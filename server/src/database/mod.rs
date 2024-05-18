@@ -2,18 +2,21 @@ use std::{borrow::BorrowMut, fs, ops::Deref, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{BloquedUser, CrearUsuarioError, LogInError, QueryDeleteOffice, QueryRegistrarUsuario, QueryUnlockAccount, ResponseRegistrarUsuario, RolDeUsuario, Sucursal};
+use datos_comunes::{BloquedUser, CrearUsuarioError, LogInError, QueryDeleteOffice, QueryRegistrarUsuario, QueryUnlockAccount, ResponseRegistrarUsuario, RolDeUsuario, Sucursal, Publicacion};
 use serde::{Deserialize, Serialize};
 
-use self::usuario::Usuario;
+use self::{usuario::Usuario};
 
 pub mod usuario;
 
-
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Database {
+
     usuarios: Vec<Usuario>,
     sucursales: Vec<Sucursal>,
+    publicaciones: Vec<Publicacion>,
+
+
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -21,8 +24,8 @@ pub const DB_PATH: &str = "./db/db.json";
 pub const IMGS_DIR: &str = "./db/imgs/";
 
 impl Database {
+    /// Carga la database del archivo
     pub fn cargar() -> Database {
-        
         let res = fs::read_to_string(DB_PATH);
         if let Ok(json) = res {
             if let Ok(db) = serde_json::from_str(&json) {
@@ -35,12 +38,9 @@ impl Database {
         }
     }
 
-    // Crea una database y la guarda
+    /// Crea una database nueva y la guarda
     fn init() -> Database {
-        let db = Database {
-            usuarios: vec![],
-            sucursales: vec![],
-        };
+        let db: Database = Default::default();
         let path = Path::new(DB_PATH);
         if path.exists() {
             log::warn!("Sobreescribiendo database anterior!");
@@ -50,6 +50,8 @@ impl Database {
         db.guardar();
         db
     }
+
+    /// Guarda la database en el archivo
     pub fn guardar(&self) {
         let s = serde_json::to_string_pretty(self).unwrap();
         std::fs::create_dir_all(BASE_DIR).unwrap();
@@ -100,18 +102,18 @@ impl Database {
         let diff = date_component::calculate(&fecha, &now);
         diff.year >= 18
     }
-    pub fn obtener_datos_usuario(&self, indice:usize) -> &Usuario {
+    pub fn obtener_datos_usuario(&self, indice: usize) -> &Usuario {
         &self.usuarios[indice]
     }
 
-    pub fn obtener_rol_usuario(&self, indice:usize) -> RolDeUsuario {
+    pub fn obtener_rol_usuario(&self, indice: usize) -> RolDeUsuario {
         self.usuarios[indice].rol.clone()
     }
 
-    pub fn decrementar_intentos(&mut self, indice:usize)-> Result<u8, LogInError>{
-        let res = &self.usuarios[indice].estado.decrementar_intentos();
+    pub fn decrementar_intentos(&mut self, indice: usize) -> Result<u8, LogInError> {
+        let res = self.usuarios[indice].estado.decrementar_intentos();
         self.guardar();
-        res.clone()
+        res
     }
 
     pub fn resetear_intentos(&mut self, indice:usize){
@@ -121,9 +123,17 @@ impl Database {
         self.sucursales.push(nueva);
         let nueva = Sucursal::new("La Plata".to_string());
         self.sucursales.push(nueva);*/
-        self.guardar();
         self.usuarios[indice].estado.resetear_intentos();
+        self.guardar();
     }
+
+
+
+    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
+        self.publicaciones.push(publicacion);
+        self.guardar();
+    }
+
 
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
         self.sucursales.clone()
