@@ -81,6 +81,7 @@ async fn main() {
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
+        .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -133,7 +134,7 @@ async fn hello() -> impl IntoResponse {
     "hello from server!"
 }
 
-//  fedeteria.com/api/check_login?username=algo&password=otracosa
+
 async fn check_login(
     State(state): State<SharedState>,
     Json(query): Json<QueryLogin>,
@@ -272,7 +273,6 @@ async fn obtener_sucursales (
     let sucursales=state.db.obtener_sucursales();
     let respuesta = ResponseGetOffices{office_list : sucursales.clone()};
     Json(respuesta)
- 
 }
 
 async fn crear_publicacion (
@@ -340,7 +340,18 @@ where
     .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }
 
-
+async fn get_datos_publicacion (
+    State(state): State<SharedState>,
+    Query(query): Query<QueryPublicacion>
+) -> Json<ResponsePublicacion> {
+    let id = query.id;
+    let state = state.read().await;
+    if let Some(publicacion) = state.db.get_publicacion(id) {
+        Json(Ok(publicacion.clone()))
+    } else {
+        Json(Err(ErrorPublicacion::PublicacionInexistente))
+    }
+}
 
 async fn get_user_info( State(state): State<SharedState>,
 Json(query): Json<QueryGetUserInfo>

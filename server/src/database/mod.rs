@@ -129,6 +129,10 @@ impl Database {
         self.guardar();
     }
 
+    pub fn get_publicacion(&self, id: usize) -> Option<&Publicacion> {
+        self.publicaciones.get(&id)
+    }
+
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
         self.sucursales.clone()
     }
