@@ -33,14 +33,20 @@ pub enum Route {
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
-    #[at("/agregar-sucursal")]
-    CreateOffice,
     #[at("/publicacion:id")]
     Publication {id: String},
     #[at("/register")]
     Register,
-    #[at("/eliminar-sucursal")]
+    #[at("/acciones-privilegiadas")]
+    PrivilegedActions,
+    #[at("/acciones-privilegiadas/agregar-sucursal")]
+    CreateOffice,
+    #[at("/acciones-privilegiadas/eliminar-sucursal")]
     DeleteOffice,
+    #[at("/acciones-priviligiadas/desbloquear-cuenta")]
+    UnlockAccount,
+    #[at("/acciones-privilegiadas/cambiar-rol")]
+    ChangeUserRole,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -63,5 +69,9 @@ pub fn switch(routes: Route) -> Html {
         Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
+        Route::EditPreferences => html! {"Editar preferencias"}, 
+        Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
+        Route::UnlockAccount => html! {"Desbloquear Cuenta"},
+        Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},
     }
 }

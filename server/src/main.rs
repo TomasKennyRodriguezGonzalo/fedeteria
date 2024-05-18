@@ -28,6 +28,7 @@ use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
 
+use crate::database::publicacion::{self, Publicacion};
 use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
@@ -295,7 +296,7 @@ async fn crear_publicacion (
     let dni: u64 = dni_str.parse().unwrap();
 
     log::info!("Dni: {dni}, titulo: {titulo}, descripcion: {descripcion}");
-
+    let mut imagenes = vec![];
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
@@ -307,9 +308,13 @@ async fn crear_publicacion (
         let path = Path::new(database::IMGS_DIR).join(&dni_str);
         std::fs::create_dir_all(&path).unwrap();
         let path = path.join(file_name);
+        imagenes.push(path.to_str().unwrap().to_string());
         stream_to_file(path, field).await.unwrap();
     }
-    Ok("HOLO".to_string())
+    let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
+    let mut state = state.write().await;
+    state.db.agregar_publicacion(publicacion);
+    Ok("OK".to_string())
 }
 
 async fn stream_to_file<S, E>(path: PathBuf, stream: S) -> Result<(), (StatusCode, String)>

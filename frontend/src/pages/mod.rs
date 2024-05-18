@@ -7,3 +7,4 @@ pub mod profile_page;
 pub mod create_office_page;
 pub mod delete_office_page;
 pub mod edit_personal_info_page;
+pub mod privileged_actions_page;
