@@ -1,6 +1,13 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
+use crate::pages::{create_office_page::CreateOfficePage,
+    create_publication_page::CreatePublicationPage,
+    home_page::HomePage, log_in_page::LogInPage,
+    profile_page::ProfilePage, 
+    publication_page::PublicationPage, 
+    register_page::RegisterPage, 
+    delete_office_page::DeleteOffice, 
+    edit_personal_info_page::EditPersonalInfoPage
 };
 
 
@@ -26,8 +33,6 @@ pub enum Route {
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
-    #[at("/perfil/editar-preferencias")]
-    EditPreferences,
     #[at("/agregar-sucursal")]
     CreateOffice,
     #[at("/publicacion:id")]
@@ -48,7 +53,7 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPublications => html! { <p>{"MIS PUBLICACIONES!!"}</p> },
         Route::Publication { id } => html! { <PublicationPage id={id}/>},
         Route::Profile => html! { <ProfilePage/> },
-        Route::EditPersonalInfo => html! {"Editar Informacion personal"},
+        Route::EditPersonalInfo => html! {<EditPersonalInfoPage/>},
         Route::Register => html! {<RegisterPage/>},
         Route::CreateOffice => html! { <CreateOfficePage/> },
         Route::CreatePublication => html! { <CreatePublicationPage/> },
@@ -58,6 +63,5 @@ pub fn switch(routes: Route) -> Html {
         Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
-        Route::EditPreferences => html! {"Editar preferencias"}, 
     }
 }

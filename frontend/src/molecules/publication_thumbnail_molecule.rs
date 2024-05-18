@@ -5,7 +5,7 @@ use crate::router::Route;
 
 
 
-#[function_component(PublicationThumbnail)]
+#[function_component(PublicationThumbnailMolecule)]
 pub fn publication_thumbnail() -> Html {
     html! {
         <Link<Route> to={Route::Publication{id: "REEMPLAZAR".to_string()}}>
