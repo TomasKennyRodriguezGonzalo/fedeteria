@@ -1,14 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages:: {create_office_page::CreateOfficePage,
-                    create_publication_page::CreatePublicationPage,
-                    home_page::HomePage, log_in_page::LogInPage,
-                    profile_page::ProfilePage, 
-                    publication_page::PublicationPage, 
-                    register_page::RegisterPage, 
-                    delete_office_page::DeleteOffice, 
-                    edit_personal_info_page::EditPersonalInfoPage, 
-                    unlock_account_page::UnlockAccountPage
+use crate::pages:: {change_user_rol_page::ChangeUserRolePage, create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, delete_office_page::DeleteOffice, edit_personal_info_page::EditPersonalInfoPage, home_page::HomePage, log_in_page::LogInPage, privileged_actions_page::PrivilegedActionsPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, unlock_account_page::UnlockAccountPage
 };
 
 
@@ -71,7 +63,7 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
         Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
-        Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},
+        Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
         Route::UnlockAccount => html!(<UnlockAccountPage/>), 
     }
 }
