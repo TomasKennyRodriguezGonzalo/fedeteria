@@ -109,5 +109,19 @@ pub struct ResponseGetUserRole {
     pub rol : RolDeUsuario,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryCambiarDatosUsuario{
+    pub dni:u64,
+    pub full_name:String,
+    pub email:String,
+    pub born_date:DateTime<Local>,
+
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseCambiarDatosUsuario{
+    pub datos_cambiados:bool,
+
+}
 
 
