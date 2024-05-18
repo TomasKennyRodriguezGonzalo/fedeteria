@@ -2,6 +2,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::pages::{create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, home_page::HomePage, log_in_page::LogInPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, delete_office_page::DeleteOffice
 };
+use crate::components::publication_thumbnail::PublicationThumbnail;
 
 
 #[derive(Clone, Routable, PartialEq)]
@@ -36,6 +37,8 @@ pub enum Route {
     Register,
     #[at("/eliminar-sucursal")]
     DeleteOffice,
+    #[at("/test/publication-thumbnail/:id")]
+    PublicationThumbnail {id: String},
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -59,5 +62,6 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
         Route::EditPreferences => html! {"Editar preferencias"}, 
+        Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>}
     }
 }

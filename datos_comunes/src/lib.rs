@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
 mod publicacion;
-pub use publicacion::Publicacion;
+pub use publicacion::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {

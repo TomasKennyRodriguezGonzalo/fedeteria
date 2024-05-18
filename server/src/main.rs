@@ -306,8 +306,9 @@ async fn crear_publicacion (
         log::info!("Recibido archivo: {file_name}");
         let path = Path::new(database::IMGS_DIR).join(&dni_str);
         std::fs::create_dir_all(&path).unwrap();
-        let path = path.join(file_name);
-        imagenes.push(path.to_str().unwrap().to_string());
+        let path = path.join(&file_name);
+        let relative_path = Path::new(&dni_str).join(&file_name);
+        imagenes.push(relative_path.to_str().unwrap().to_string());
         stream_to_file(path, field).await.unwrap();
     }
     let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
