@@ -5,15 +5,20 @@ use date_component::date_component;
 use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice};
 use serde::{Deserialize, Serialize};
 
-use self::usuario::Usuario;
+use self::{publicacion::Publicacion, usuario::Usuario};
 
 pub mod usuario;
+pub mod publicacion;
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Database {
+
     usuarios: Vec<Usuario>,
     sucursales: Vec<Sucursal>,
+    publicaciones: Vec<Publicacion>,
+
+
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -37,10 +42,7 @@ impl Database {
 
     // Crea una database y la guarda
     fn init() -> Database {
-        let db = Database {
-            usuarios: vec![],
-            sucursales: vec![],
-        };
+        let db: Database = Default::default();
         let path = Path::new(DB_PATH);
         if path.exists() {
             log::warn!("Sobreescribiendo database anterior!");
@@ -113,6 +115,11 @@ impl Database {
     pub fn resetear_intentos(&mut self, indice:usize){
         self.guardar();
         self.usuarios[indice].estado.resetear_intentos();
+    }
+
+    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
+        self.publicaciones.push(publicacion);
+        self.guardar();
     }
 
 
