@@ -80,3 +80,34 @@ pub struct ResponseDeleteOffice {
     pub respuesta: Vec<Sucursal>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryGetUserInfo {
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseGetUserInfo {
+    pub nombre_y_ap:String,
+    pub email:String,
+    pub nacimiento: DateTime<Local>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum RolDeUsuario {
+    Normal,
+    Dueño,
+    Empleado{sucursal: usize},
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryGetUserRole {
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseGetUserRole {
+    pub rol : RolDeUsuario,
+}
+
+
+

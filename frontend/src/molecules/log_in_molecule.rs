@@ -3,6 +3,7 @@ use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use crate::store::UserStore;
+use crate::information_store::InformationStore;
 use crate::components::generic_button::GenericButton;
 use crate::components::generic_input_field::GenericInputField;
 use crate::components::dni_input_field::DniInputField;
@@ -51,31 +52,38 @@ pub fn log_in_molecule()-> Html{
         cloned_password_state.set(password);
     });
 
+    
     let cloned_dni_state = dni_state.clone();
     let cloned_password_state = password_state.clone();
     let navigator = use_navigator().unwrap();
-
+    
     let (_store, dispatch) = use_store::<UserStore>();
-
+    
     let dispatch_cloned = dispatch.clone();
-
-
+    
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let information_dispatch = information_dispatch.clone();
+    
     let submit_clicked_example = Callback::from(move |()| {
-
+        let information_dispatch = information_dispatch.clone();
+        
         let cloned_error_state = cloned_error_state.clone();
-
+        
         let dispatch_cloned = dispatch_cloned.clone();
         {
+            let information_dispatch = information_dispatch.clone();
             let cloned_error_state = cloned_error_state.clone();
             let dni = &*cloned_dni_state;
             let password = &*cloned_password_state;
             {
+                let information_dispatch = information_dispatch.clone();
                 let cloned_error_state = cloned_error_state.clone();
                 let dni = *dni;
                 let password = password.clone();
                 let navigator = navigator.clone();
                 let dispatch_cloned = dispatch_cloned.clone();
                 spawn_local(async move {
+                        let information_dispatch = information_dispatch.clone();
                         let cloned_error_state = cloned_error_state.clone();
                         let query = QueryLogin{dni, password: password.clone()};
                         let respuesta = Request::post("/api/check_login").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
@@ -93,7 +101,8 @@ pub fn log_in_molecule()-> Html{
                                                         store.login_fail = false;
                                                     });
                                                     navigator.push(&Route::Home);
-
+                                                    information_dispatch.reduce_mut(|store| store.messages.push("Iniciaste sesion exitosamente.".to_string()))
+                                                    
                                                 } else{
                                                     log::error!("UNREACHABLE CODE");
                                                 }
