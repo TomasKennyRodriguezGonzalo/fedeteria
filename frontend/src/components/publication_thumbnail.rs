@@ -56,7 +56,7 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
     });
     
     html! {
-        <Link<Route> to={Route::Publication{id: "REEMPLAZAR".to_string()}}>
+        <Link<Route> to={Route::Publication{id}}>
             <div class="publication">
                 if let Some(publicacion) = datos_publicacion.deref() {
                             <img src={

@@ -31,7 +31,7 @@ pub enum Route {
     EditPreferences,
     #[at("/agregar-sucursal")]
     CreateOffice,
-    #[at("/publicacion:id")]
+    #[at("/publicacion?id=:id")]
     Publication {id: String},
     #[at("/register")]
     Register,
