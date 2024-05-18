@@ -1,6 +1,10 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
+// Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
+mod publicacion;
+pub use publicacion::Publicacion;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {
     pub nombre_y_apellido: String,
