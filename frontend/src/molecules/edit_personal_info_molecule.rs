@@ -3,6 +3,7 @@ use yew_router::{hooks::use_navigator, navigator};
 use yewdux::prelude::*;
 extern crate chrono;
 use chrono::prelude::*;
+use crate::components::generic_button::_Props::onclick_event;
 use crate::{router::Route, store::UserStore};
 use wasm_bindgen_futures::spawn_local;
 use reqwasm::http::Request;
@@ -10,7 +11,8 @@ use datos_comunes::{self, QueryGetUserInfo, ResponseGetUserInfo};
 use yew_router::prelude::Link;
 use crate::pages::profile_page::User;
 use crate::components::generic_input_field::GenericInputField;
-
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
+use crate::components::generic_button::GenericButton;
 
 
 
@@ -26,6 +28,8 @@ pub fn publication_thumbnail() -> Html {
     let cloned_user_state = user_state.clone();
     let first_render_state = use_state(|| true);
     let cloned_first_render_state = first_render_state.clone();
+
+    let show_button_state = use_state(|| false);
 
     let navigator = use_navigator().unwrap();   
     use_effect(move ||{
@@ -84,20 +88,47 @@ pub fn publication_thumbnail() -> Html {
         });
 
         let cloned_user_state = user_state.clone();
-
+        let user_state_before_confirm = use_state(|| User::new("".to_string(), "".to_string(), default_local_date));
+        let cloned_user_state_before_confirm = user_state_before_confirm.clone();
 
         let full_name_changed = Callback::from(move |new_name|{
+            let cloned_user_state_before_confirm = cloned_user_state_before_confirm.clone();
+            let new_user = User::new(new_name, (cloned_user_state_before_confirm.email).clone(), (cloned_user_state_before_confirm.born_date).clone());
+            cloned_user_state_before_confirm.set(new_user);
+        });
+        
+
+        let cloned_show_button_state = show_button_state.clone();
+        let change_name = Callback::from(move |e:MouseEvent|{
+            let cloned_show_button_state = cloned_show_button_state.clone();
+            let cloned_user_state_before_confirm = user_state_before_confirm.clone();
             let cloned_user_state = cloned_user_state.clone();
-            let new_user = User::new(new_name, (cloned_user_state.email).clone(), (cloned_user_state.born_date).clone());
+            let new_user = User::new((cloned_user_state_before_confirm.full_name).clone(), (cloned_user_state_before_confirm.email).clone(), (cloned_user_state_before_confirm.born_date).clone());
             cloned_user_state.set(new_user);
+            cloned_show_button_state.set(false);
+  
         });
 
+        let cloned_show_button_state = show_button_state.clone();
+        let reject_name = Callback::from(move |e:MouseEvent|{
+            let cloned_show_button_state = cloned_show_button_state.clone();
+            cloned_show_button_state.set(false);
+        });
 
-
+        let cloned_show_button_state = show_button_state.clone();
+        let change_button = Callback::from(move |()|{
+            let cloned_show_button_state = cloned_show_button_state.clone();
+            cloned_show_button_state.set(true);
+        });
 
     html! {
         <>
-            <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>  <GenericInputField name = "full_name_change" label="full_name_change" tipo = "text" handle_on_change = {full_name_changed} />
+            <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>
+              <GenericInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" handle_on_change = {full_name_changed} />
+              <GenericButton text = "cambiar nombre" onclick_event = {change_button} />
+              if (&*show_button_state).clone(){
+                  <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_name} reject_func = {reject_name}  />
+              }
             <h2 class="information-text">{"email: "} {&*user_state.email}</h2>
             <h2 class="information-text">{"fecha de nacimiento: "} {&*user_state.born_date.to_string()}</h2>
         </>
