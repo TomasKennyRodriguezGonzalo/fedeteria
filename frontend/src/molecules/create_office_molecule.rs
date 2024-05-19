@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::components::{generic_button::GenericButton, generic_input_field::GenericInputField};
+use crate::components::{generic_button::GenericButton, checked_input_field::CheckedInputField};
 
 #[function_component(CreateOfficeMolecule)]
 pub fn create_office_molecule() -> Html {
@@ -23,7 +23,7 @@ pub fn create_office_molecule() -> Html {
     html!(
         <div class="create-office-box">
             <form onsubmit={onsubmit}>
-                <GenericInputField name="office-name" label="Ingresa el nombre de la sucursal: " tipo="text" handle_on_change={office_name_changed}/>
+                <CheckedInputField name="office-name" label="Ingresa el nombre de la sucursal: " tipo="text" on_change={office_name_changed}/>
                 <GenericButton text="Cargar Sucursal" onclick_event={submit_clicked}/>
             </form>
         </div>

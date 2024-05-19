@@ -9,7 +9,7 @@ use yewdux::prelude::*;
 
 use crate::information_store::InformationStore;
 use crate::router::Route;
-use crate::components::generic_input_field::GenericInputField;
+use crate::components::checked_input_field::CheckedInputField;
 
 #[function_component(RegisterMolecule)]
 pub fn register_molecule()-> Html {
@@ -126,16 +126,16 @@ pub fn register_molecule()-> Html {
         <div class = "login-box">
             <h1> {"Registrarse"} </h1>
             <form {onsubmit}>
-                <GenericInputField name = "nombre" label="Nombre:" tipo = "text" handle_on_change = {name_changed} />
+                <CheckedInputField name = "nombre" label="Nombre:" tipo = "text" on_change = {name_changed} />
                 
                 <div>
                 <label> {"DNI:"} </label>
                 </div>
                 <input type="number" name="dni" min="0" onchange={dni_changed}/>
                 
-                <GenericInputField name = "email" label="Correo electrónico:" tipo = "email" handle_on_change = {mail_changed} />
+                <CheckedInputField name = "email" label="Correo electrónico:" tipo = "email" on_change = {mail_changed} />
 
-                <GenericInputField name = "contraseña" label="Contraseña:" tipo = "password" handle_on_change = {password_changed} />
+                <CheckedInputField name = "contraseña" label="Contraseña:" tipo = "password" on_change = {password_changed} />
 
                 <div>
                     <label> {"Fecha de nacimiento:"} </label>
