@@ -87,6 +87,7 @@ async fn main() {
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
+        .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
         .route("/api/obtener_mis_publicaciones", post(obtener_datos_de_mi_publicacion))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -373,10 +374,7 @@ Json(query): Json<QueryGetUserInfo>
         log::info!("username not found "); 
         Json(None)
     }
-
-
 }
-
 
 async fn cambiar_usuario( State(state): State<SharedState>,
 Json(query): Json<QueryCambiarDatosUsuario>
@@ -394,6 +392,15 @@ Json(query): Json<QueryCambiarDatosUsuario>
     }
 }
 
+async fn alternar_pausa_publicacion( State(state): State<SharedState>,
+Json(query): Json<QueryTogglePublicationPause>
+) -> Json<ResponseTogglePublicationPause>{
+    let mut state = state.write().await;
+    let id = query.id.parse().unwrap();
+    state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : true})
+}
+
 
 async fn obtener_datos_de_mi_publicacion( 
     State(state): State<SharedState>,
@@ -405,8 +412,6 @@ async fn obtener_datos_de_mi_publicacion(
     response
   
 }
-
-
 
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
 ) -> Json<ResponseGetBlockedAccounts> {

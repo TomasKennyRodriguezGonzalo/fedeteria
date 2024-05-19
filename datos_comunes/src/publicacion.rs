@@ -22,6 +22,10 @@ impl Publicacion {
             pausada: true,
         }
     }
+
+    pub fn alternar_pausa(&mut self){
+        self.pausada = !(self.pausada);
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]

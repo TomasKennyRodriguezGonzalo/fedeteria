@@ -17,8 +17,6 @@ pub fn my_publications_page() -> Html {
     let publication_list_state: UseStateHandle<Vec<String>> = use_state(|| Vec::new());
 
     let first_load = use_state(|| true);
-    
-
 
     let cloned_dni = dni.clone();
     let cloned_publication_list_state = publication_list_state.clone();
@@ -47,30 +45,22 @@ pub fn my_publications_page() -> Html {
                     log::error!("Error en llamada al backend: {}", error);
                 }
             }
-
-
-
             });
             
             cloned_first_load.set(false)
         }
     });
 
-
-
-
-
-
-
-
     html!(
-        <>
+        <div class="my-publications-box">
+            <div class="title">
+                <h1>{"Tus Publicaciones"}</h1>
+            </div>
             <div class="publication-grid">
             if !(&*publication_list_state).is_empty() {
                 <ul>
                     {
-                        (&*publication_list_state).iter().map(|id| {
-
+                        (&*publication_list_state).iter().enumerate().map(|(index, id)| {
                             html! {
                                 <li><PublicationThumbnail id={id.clone()}/></li>
                             }
@@ -81,6 +71,6 @@ pub fn my_publications_page() -> Html {
                 <div>{"aun no tienes publicaciones"}</div>
             }
             </div>
-        </>
+        </div>
     )
 }

@@ -131,14 +131,11 @@ pub struct QueryCambiarDatosUsuario{
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseCambiarDatosUsuario{
     pub datos_cambiados:bool,
-
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseObtenerPublicacioneseUsuario{
     pub datos_cambiados:bool,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -172,3 +169,14 @@ pub struct QueryChangeUserRole {
 pub struct ResponseChangeUserRole {
     pub changed: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryTogglePublicationPause {
+    pub id : String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTogglePublicationPause {
+    pub changed: bool,
+}
+

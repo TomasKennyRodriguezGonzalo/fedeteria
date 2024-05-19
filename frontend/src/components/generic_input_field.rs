@@ -4,6 +4,8 @@ use web_sys::HtmlInputElement;
 
 #[derive(Properties,PartialEq)]
 pub struct Props{
+    #[prop_or(0)]
+    pub maxlength : usize,
     pub name:String,
     pub label:String,
     pub tipo:String,
@@ -32,7 +34,11 @@ pub fn generic_field(props: &Props)-> Html{
                 <label for={id.clone()}>{&props.label}</label>
             </div>
             <div>
-                <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+                if props.maxlength == 0 {
+                    <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+                } else {
+                    <input type = {props.tipo.clone()} name = {props.name.clone()} maxlength = {props.maxlength.to_string()} onchange={onchange} />
+                }
             </div>
         </>
     }

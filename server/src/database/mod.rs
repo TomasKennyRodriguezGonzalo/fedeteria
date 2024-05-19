@@ -191,4 +191,8 @@ impl Database {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
         self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
     }
+
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize){
+        self.publicaciones.get_mut(id).unwrap().alternar_pausa()
+    }
 }
