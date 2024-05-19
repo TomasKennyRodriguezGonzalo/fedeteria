@@ -1,4 +1,4 @@
-use datos_comunes::{QueryAddOffice, ResponseAddOffice, ResponseGetOffices, Sucursal};
+use datos_comunes::{QueryAddOffice, ResponseAddOffice, ResponseGetOffices};
 use yew::prelude::*;
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
@@ -78,44 +78,49 @@ pub fn create_office_molecule() -> Html {
             let state_office_list_clone = state_office_list_clone.clone();
             let informe_cloned = informe_cloned.clone();
             let office_to_add = office_to_add.clone();
-            spawn_local(async move {
-                let state_office_list_clone = state_office_list_clone.clone();
-                let informe_cloned = informe_cloned.clone();
-                let office_to_add = office_to_add.clone();
-                log::info!("entre al spawn local");
-                let query = QueryAddOffice {office_to_add: office_to_add.clone()};
-                let respuesta = Request::post("/api/agregar_sucursal")
-                                                                .header("Content-Type", "application/json")
-                                                                .body(serde_json::to_string(&query).unwrap())
-                                                                .send()
-                                                                .await;
-                match respuesta{
-                    Ok(respuesta) =>{
-                        let response:Result<ResponseAddOffice, reqwasm::Error> = respuesta.json().await;
-                        log::info!("deserailice la respuesta {:?}",response);
-                        match response{
-                            Ok(respuesta) => {
-                                state_office_list_clone.set(respuesta.respuesta.clone());
-                                if respuesta.agrego {
-                                    informe_cloned.set("Sucursal agregada".to_string());
+            if !office_to_add.is_empty() {
+                spawn_local(async move {
+                    let state_office_list_clone = state_office_list_clone.clone();
+                    let informe_cloned = informe_cloned.clone();
+                    let office_to_add = office_to_add.clone();
+                    log::info!("entre al spawn local");
+                    let query = QueryAddOffice {office_to_add: office_to_add.clone()};
+                    let respuesta = Request::post("/api/agregar_sucursal")
+                                                                    .header("Content-Type", "application/json")
+                                                                    .body(serde_json::to_string(&query).unwrap())
+                                                                    .send()
+                                                                    .await;
+                    match respuesta{
+                        Ok(respuesta) =>{
+                            let response:Result<ResponseAddOffice, reqwasm::Error> = respuesta.json().await;
+                            log::info!("deserailice la respuesta {:?}",response);
+                            match response{
+                                Ok(respuesta) => {
+                                    state_office_list_clone.set(respuesta.respuesta.clone());
+                                    if respuesta.agrego {
+                                        informe_cloned.set("Sucursal agregada".to_string());
+                                    }
+                                    else {
+                                        informe_cloned.set("Sucursal ya existente".to_string());
+                                    }
+                                    log::info!("{:?}", respuesta.respuesta);
                                 }
-                                else {
-                                    informe_cloned.set("Sucursal ya existente".to_string());
+                                Err(error)=>{
+                                    log::error!("Error en deserializacion: {}", error);
+                                    informe_cloned.set("Ocurrio un error".to_string());
                                 }
-                                log::info!("{:?}", respuesta.respuesta);
-                            }
-                            Err(error)=>{
-                                log::error!("Error en deserializacion: {}", error);
-                                informe_cloned.set("Ocurrio un error".to_string());
                             }
                         }
+                        Err(error)=>{
+                            log::error!("Error en llamada al backend: {}", error);
+                            informe_cloned.set("Ocurrio un error".to_string());
+                        }
                     }
-                    Err(error)=>{
-                        log::error!("Error en llamada al backend: {}", error);
-                        informe_cloned.set("Ocurrio un error".to_string());
-                    }
-                }
-            });
+                });
+            }
+            else {
+                informe_cloned.set("No se ha ingresado una sucursal".to_string());
+            }
     }
     });
 
