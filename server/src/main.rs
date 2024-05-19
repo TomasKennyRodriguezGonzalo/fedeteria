@@ -401,15 +401,6 @@ Json(query): Json<QueryTogglePublicationPause>
     Json(ResponseTogglePublicationPause{changed : true})
 }
 
-async fn alternar_pausa_publicacion( State(state): State<SharedState>,
-Json(query): Json<QueryTogglePublicationPause>
-) -> Json<ResponseTogglePublicationPause>{
-    let mut state = state.write().await;
-    let id = query.id.parse().unwrap();
-    state.db.alternar_pausa_publicacion(&id);
-    Json(ResponseTogglePublicationPause{changed : true})
-}
-
 
 async fn obtener_publicaciones( 
     State(state): State<SharedState>,
