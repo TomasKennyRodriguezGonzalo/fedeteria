@@ -87,7 +87,7 @@ async fn main() {
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
-        .route("/api/obtener_mis_publicaciones", post(obtener_datos_de_mi_publicacion))
+        .route("/api/obtener_publicaciones", post(obtener_publicaciones))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -395,15 +395,13 @@ Json(query): Json<QueryCambiarDatosUsuario>
 }
 
 
-async fn obtener_datos_de_mi_publicacion( 
+async fn obtener_publicaciones( 
     State(state): State<SharedState>,
-    Json(query): Json<QueryPublicacionesUsuario>
+    Json(query): Json<QueryPublicacionesFiltradas>
 ) -> Json<ResponsePublicacionesUsuario>{
-    let mut state = state.read().await;
-    let response = state.db.obtener_publicaciones_de_usuario(query.dni);
-    let response = Json(response);
-    response
-  
+    let state = state.read().await;
+    let response = state.db.obtener_publicaciones(query);
+    Json(response)
 }
 
 

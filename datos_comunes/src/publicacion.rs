@@ -40,10 +40,14 @@ pub enum ErrorPublicacion {
 pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
 
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
-pub struct QueryPublicacionesUsuario{
-    pub dni:u64,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryPublicacionesFiltradas {
+    pub filtro_dni: Option<u64>,
+    pub filtro_nombre: Option<String>,
+    // FALTA HACER: filtro por fecha
+    pub filtro_fecha_min: Option<()>,
+    pub filtro_fecha_max: Option<()>,
 }
 
 
-pub type ResponsePublicacionesUsuario = Vec<String>;
+pub type ResponsePublicacionesUsuario = Vec<usize>;

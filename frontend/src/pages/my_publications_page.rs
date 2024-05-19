@@ -2,7 +2,7 @@ use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use crate::components::publication_thumbnail::PublicationThumbnail;
-use datos_comunes::{Publicacion, QueryPublicacionesUsuario, ResponsePublicacionesUsuario};
+use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesUsuario};
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 use crate::store::UserStore;
@@ -14,7 +14,7 @@ pub fn my_publications_page() -> Html {
     let (store, dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
-    let publication_list_state: UseStateHandle<Vec<String>> = use_state(|| Vec::new());
+    let publication_list_state: UseStateHandle<Vec<usize>> = use_state(|| Vec::new());
 
     let first_load = use_state(|| true);
     
@@ -27,8 +27,17 @@ pub fn my_publications_page() -> Html {
         if (&*cloned_first_load).clone() {
             // traigo todas las publicaciones
             spawn_local(async move{
-                let query = QueryPublicacionesUsuario{dni : cloned_dni.clone().unwrap()};
-                let respuesta = Request::post("/api/obtener_mis_publicaciones").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
+                let query = QueryPublicacionesFiltradas
+                    {
+                        filtro_dni : Some(cloned_dni.clone().unwrap()),
+                        filtro_nombre: None,
+                        filtro_fecha_min: None,
+                        filtro_fecha_max: None,
+                    };
+                let respuesta = Request::post("/api/obtener_publicaciones")
+                    .header("Content-Type", "application/json")
+                    .body(serde_json::to_string(&query).unwrap())
+                    .send().await;
                 match respuesta{
                 Ok(respuesta) => {
                     let respuesta: Result<ResponsePublicacionesUsuario, reqwasm::Error> = respuesta.json().await;
@@ -72,7 +81,7 @@ pub fn my_publications_page() -> Html {
                         (&*publication_list_state).iter().map(|id| {
 
                             html! {
-                                <li><PublicationThumbnail id={id.clone()}/></li>
+                                <li><PublicationThumbnail id={id.to_string()}/></li>
                             }
                         }).collect::<Html>()
                     }
