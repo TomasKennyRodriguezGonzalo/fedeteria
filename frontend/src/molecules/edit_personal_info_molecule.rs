@@ -164,7 +164,7 @@ pub fn edit_personal_info_molecule() -> Html {
                 <CheckedInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" on_change = {name_changed} />
                 <h2 class="information-text">{"Email: "} {email_state.as_deref().unwrap_or("")}</h2>
                 <CheckedInputField name = "email" label="Ingresa tu nuevo email" tipo = "email" on_change_checked = {email_changed} />
-                <h2 class="information-text">{"Fecha de nacimiento: "} {birth_date_state.to_string().clone()}</h2>
+                <h2 class="information-text">{"Fecha de nacimiento: "} {birth_date_state.clone().format("%Y-%m-%d")}</h2>
                 <CheckedInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" on_change = {full_born_date_changed} />
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
                 if (&*show_button_state).clone(){
