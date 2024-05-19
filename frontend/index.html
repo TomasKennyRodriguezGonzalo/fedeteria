@@ -54,6 +54,7 @@
             margin-bottom: 15px;
             text-decoration: wavy;
             color: beige;
+            min-width: 50vw;
         }
 
         .confirm-prompt {
@@ -63,7 +64,7 @@
             justify-content: center;
             align-content: center;
             align-items: center;
-            flex-direction: row;
+            flex-direction: column;
             z-index: 10;
             top: 0;
             right: 0;
@@ -75,6 +76,10 @@
 
         .confirm-prompt * {
             margin: 0px 5px;
+        }
+
+        .confirm-prompt > * {
+            padding-bottom: 2%;
         }
     
         /* -- NAV BAR -- */
@@ -339,6 +344,43 @@
 
         .profile-page .profile-actions-box ul li {
             padding: 0 5px 25px;
+        }
+
+        /* --- Delete Office --- */
+        .delete-office-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding : 2%;
+        }
+
+        .delete-office-box * {
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .delete-office-box ul {
+            list-style: none;
+        }
+
+        .delete-office-box ul li {
+            background: gray;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            padding: 5px 0px;
+        }
+        .delete-office-box ul li * {
+            margin-bottom: 2px;
         }
 
         /* --- Privileged Actions --- */
