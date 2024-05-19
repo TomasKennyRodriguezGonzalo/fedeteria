@@ -44,7 +44,7 @@ impl Database {
         let db: Database = Default::default();
         let path = Path::new(DB_PATH);
         if path.exists() {
-            log::warn!("Sobreescribiendo database anterior!");
+            log::warn!("Sobreescribiendo database anterior! =)");
         } else {
             log::warn!("Creando una nueva database...");
         }
