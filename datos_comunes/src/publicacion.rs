@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::QueryAddOffice;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Publicacion {
     pub dni_usuario: u64,

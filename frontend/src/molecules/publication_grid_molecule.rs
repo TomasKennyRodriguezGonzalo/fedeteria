@@ -14,6 +14,10 @@ pub struct Props {
 pub fn publication_grid_molecule(props: &Props) -> Html {
     let publication_list_state = use_state(|| None);
     let publication_list_state_c = publication_list_state.clone();
+
+    //let first_render_state = use_state(|| true);
+
+
     let props_clone = props.query.clone();
     use_effect_once(move || {
         // traigo todas las publicaciones

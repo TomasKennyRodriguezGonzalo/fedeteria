@@ -1,6 +1,7 @@
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
+use datos_comunes::QueryPublicacionesFiltradas;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::pages::{create_office_page::CreateOfficePage,
@@ -55,7 +56,7 @@ pub enum Route {
     #[at("/acciones-privilegiadas/cambiar-rol")]
     ChangeUserRole,
     #[at("/resultados-busqueda/:search_query")]
-    SearchResults {search_query: String},
+    SearchResults {search_query: QueryPublicacionesFiltradas},
     #[not_found]
     #[at("/404")]
     NotFound,

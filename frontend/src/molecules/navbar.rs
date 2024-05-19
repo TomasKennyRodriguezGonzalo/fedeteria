@@ -100,8 +100,12 @@ pub fn navbar() -> Html{
     let search_products = Callback::from(move |()| {
         let state_product_to_search_string = &*state_product_to_search_clone;
         let search_query = QueryPublicacionesFiltradas {filtro_dni: None, filtro_nombre: Some(state_product_to_search_string.clone()), filtro_fecha_min: None, filtro_fecha_max: None};
-        let search_query_json = serde_json::to_string(&search_query).unwrap();
-        navigator_cloned.push(&Route::SearchResults{search_query: search_query_json});
+        //let search_query_json = serde_json::to_string(&search_query).unwrap();
+        navigator_cloned.push(&Route::SearchResults{search_query});
+
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
     });
         
     html!{

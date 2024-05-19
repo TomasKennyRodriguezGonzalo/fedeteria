@@ -6,12 +6,12 @@ use crate::molecules::publication_grid_molecule::PublicationGridMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct SearchResultsPageProps {
-    pub search_query: String,
+    pub search_query: QueryPublicacionesFiltradas,
 }
 
 #[function_component(SearchResultsPage)]
 pub fn search_results_page (props: &SearchResultsPageProps) -> Html {
-    let props_deserialized: QueryPublicacionesFiltradas = serde_json::from_str(&props.search_query).unwrap();
+    //let props_deserialized: QueryPublicacionesFiltradas = serde_json::from_str(&props.search_query).unwrap();
     log::info!("{:?}", props_deserialized);
 
     html! (
