@@ -167,9 +167,7 @@ pub fn edit_personal_info_molecule() -> Html {
                 <CheckedInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" on_change = {full_born_date_changed} />
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
                 if (&*show_button_state).clone(){
-                    <div class="confirm-prompt">
-                        <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user.clone()} reject_func = {reject_changes.clone()}  />
-                    </div>
+                    <ConfirmPromptButtonMolecule text = "¿Confirma los cambios?" confirm_func = {change_user} reject_func = {reject_changes}  />
                 }
             </div>
         </>
