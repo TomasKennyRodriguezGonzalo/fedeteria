@@ -61,10 +61,10 @@ pub fn home_page() -> Html {
                 <h1 class="title">{"Publicaciones..."}</h1>
                 if dni.is_some() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
-                    <PublicationGridMolecule/>
                 } else {
                     <Link<Route> to={Route::LogInPage}>{"Publicar"}</Link<Route>>
                 }
+                <PublicationGridMolecule/>
             </div>
         </div>
     }

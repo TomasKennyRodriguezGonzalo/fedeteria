@@ -1,3 +1,6 @@
+use crate::{router::Route, store::UserStore};
+use yew_router::hooks::use_navigator;
+use yewdux::use_store;
 use datos_comunes::{Publicacion, ResponsePublicacion};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
@@ -11,6 +14,11 @@ pub struct Props {
 
 #[function_component(PublicationMolecule)]
 pub fn publication_molecule(props : &Props) -> Html {
+
+    let navigator = use_navigator().unwrap();
+
+    let (store, _dispatch) = use_store::<UserStore>();
+    let dni = store.dni;
     
     let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
@@ -18,35 +26,38 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let cloned_id = id.clone();
     use_effect_once(move || {
-        let id = cloned_id;
-        spawn_local(async move {
-            let respuesta = Request::get(&format!("/api/datos_publicacion?id={id}")).send().await;
-            match respuesta{
-                Ok(respuesta) => {
-                    let respuesta: Result<ResponsePublicacion, reqwasm::Error> = respuesta.json().await;
-                    match respuesta{
-                        Ok(respuesta) => {
-                            match respuesta {
-                                Ok(publicacion) => {
-                                    log::info!("Datos de publicacion!: {publicacion:?}");
-                                    datos_publicacion_setter.set(Some(publicacion));
-                                },
-                                Err(error) => {
-                                    log::error!("Error de publicacion: {error:?}. TODO INFORMAR BIEN?");
+        if dni.is_none(){
+            navigator.push(&Route::LogInPage);
+        } else {
+            let id = cloned_id;
+            spawn_local(async move {
+                let respuesta = Request::get(&format!("/api/datos_publicacion?id={id}")).send().await;
+                match respuesta{
+                    Ok(respuesta) => {
+                        let respuesta: Result<ResponsePublicacion, reqwasm::Error> = respuesta.json().await;
+                        match respuesta{
+                            Ok(respuesta) => {
+                                match respuesta {
+                                    Ok(publicacion) => {
+                                        log::info!("Datos de publicacion!: {publicacion:?}");
+                                        datos_publicacion_setter.set(Some(publicacion));
+                                    },
+                                    Err(error) => {
+                                        log::error!("Error de publicacion: {error:?}. TODO INFORMAR BIEN?");
+                                    }
                                 }
                             }
-                        }
-                        Err(error)=>{
-                            log::error!("Error en deserializacion: {}", error);
+                            Err(error)=>{
+                                log::error!("Error en deserializacion: {}", error);
+                            }
                         }
                     }
+                    Err(error)=>{
+                        log::error!("Error en llamada al backend: {}", error);
+                    }
                 }
-                Err(error)=>{
-                    log::error!("Error en llamada al backend: {}", error);
-                }
-            }
-        });
-
+            });
+        }
         || {}
     });
 

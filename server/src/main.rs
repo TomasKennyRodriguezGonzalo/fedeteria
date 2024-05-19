@@ -376,17 +376,17 @@ Json(query): Json<QueryGetUserInfo>
 
 
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
-) -> Json<ResponseGetBloquedAccounts> {
+) -> Json<ResponseGetBlockedAccounts> {
     let state = state.read().await;
     let usuarios_bloqueados = state.db.obtener_usuarios_bloqueados();
-    let respuesta = ResponseGetBloquedAccounts{ bloqued_users: usuarios_bloqueados};
+    let respuesta = ResponseGetBlockedAccounts{ blocked_users: usuarios_bloqueados};
     Json(respuesta)
 }
 
 async fn desbloquear_cuenta (State(state): State<SharedState>, 
 Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
     let mut state = state.write().await;
-    let respuesta = ResponseUnlockAccount { bloqued_users: state.db.desbloquear_cuenta(query) };
+    let respuesta = ResponseUnlockAccount { blocked_users: state.db.desbloquear_cuenta(query) };
     Json(respuesta)
 }
 

@@ -6,19 +6,19 @@ use crate::components::indexed_button::IndexedButton;
 use crate::components::generic_button::GenericButton;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 //use crate::components::indexed_button::IndexedButton;
-use datos_comunes::ResponseGetBloquedAccounts;
+use datos_comunes::ResponseGetBlockedAccounts;
 
 #[function_component(UnlockAccountMolecule)]
 pub fn unlock_account_molecule () -> Html {
 
-    let state_bloqued_accounts = use_state(|| Vec::new());
-    let state_bloqued_accounts_clone = state_bloqued_accounts.clone();
+    let state_blocked_accounts = use_state(|| Vec::new());
+    let state_blocked_accounts_clone = state_blocked_accounts.clone();
 
     let clicks = use_state(|| 0);
     let clicks_cloned = clicks.clone();
 
-    let get_bloqued_users = Callback::from(move |()| {
-        let state_bloqued_accounts_clone = state_bloqued_accounts_clone.clone();
+    let get_blocked_users = Callback::from(move |()| {
+        let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
         clicks_cloned.set(&*clicks_cloned + 1); 
         {
             spawn_local(async move {
@@ -29,11 +29,11 @@ pub fn unlock_account_molecule () -> Html {
                                                         .await;
                 match respuesta{
                     Ok(respuesta) =>{
-                        let response:Result<ResponseGetBloquedAccounts, reqwasm::Error> = respuesta.json().await;
+                        let response:Result<ResponseGetBlockedAccounts, reqwasm::Error> = respuesta.json().await;
                         log::info!("deserailice la respuesta {:?}",response);
                         match response{
                             Ok(respuesta) => {           
-                                    state_bloqued_accounts_clone.set(respuesta.bloqued_users);
+                                    state_blocked_accounts_clone.set(respuesta.blocked_users);
                             }
                             Err(error)=>{
                                 log::error!("Error en deserializacion: {}", error);
@@ -50,7 +50,7 @@ pub fn unlock_account_molecule () -> Html {
         }
     });
 
-    let state_bloqued_accounts_clone = state_bloqued_accounts.clone();
+    let state_blocked_accounts_clone = state_blocked_accounts.clone();
 
     let informe = use_state(|| "".to_string());
     let informe_cloned = informe.clone();
@@ -75,14 +75,14 @@ pub fn unlock_account_molecule () -> Html {
 
     let unlock_account = Callback::from(move |_e: MouseEvent| {
         cloned_show_button_state.set(false);
-        let state_bloqued_accounts_clone = state_bloqued_accounts_clone.clone();
+        let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
         let informe_cloned = informe_cloned.clone();
         let index = &*state_index_account_to_unlock_clone;
-        let account_to_unlock = state_bloqued_accounts_clone.get(*index).unwrap().clone();
+        let account_to_unlock = state_blocked_accounts_clone.get(*index).unwrap().clone();
         {
             spawn_local(async move {
                 let account_to_unlock = account_to_unlock.clone();
-                let state_bloqued_accounts_clone = state_bloqued_accounts_clone.clone();
+                let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
                 log::info!("entre al spawn local");
                 let query = QueryUnlockAccount {dni: account_to_unlock.dni.clone()};
                 let respuesta = Request::post("/api/desbloquear_cuenta")
@@ -96,9 +96,9 @@ pub fn unlock_account_molecule () -> Html {
                         log::info!("deserailice la respuesta {:?}",response);
                         match response{
                             Ok(respuesta) => {
-                                state_bloqued_accounts_clone.set(respuesta.bloqued_users.clone());
+                                state_blocked_accounts_clone.set(respuesta.blocked_users.clone());
                                 informe_cloned.set("Sucursal Eliminada".to_string());
-                                log::info!("{:?}", respuesta.bloqued_users.clone());
+                                log::info!("{:?}", respuesta.blocked_users.clone());
                             }
                             Err(error)=>{
                                 log::error!("Error en deserializacion: {}", error);
@@ -115,22 +115,22 @@ pub fn unlock_account_molecule () -> Html {
         }
     });
 
-    let state_bloqued_accounts_clone = &*state_bloqued_accounts.clone();
-    log::info!("state bloqued users value: {:?}",*state_bloqued_accounts_clone);
+    let state_blocked_accounts_clone = &*state_blocked_accounts.clone();
+    log::info!("state blocked users value: {:?}",*state_blocked_accounts_clone);
 
     html!(
         <div class="unlock_account_box">
             <h1>{"Desbloquear Usuario"}</h1>
             <section>
-                <GenericButton text="Obtener usuarios bloqueados" onclick_event={get_bloqued_users}/>
-                <ul class="bloqued_account_list">
+                <GenericButton text="Obtener usuarios bloqueados" onclick_event={get_blocked_users}/>
+                <ul class="blocked_account_list">
                 if &*clicks != &0 {
-                    if !state_bloqued_accounts_clone.is_empty() {
-                        <div class="showing-bloqued-accounts">
+                    if !state_blocked_accounts_clone.is_empty() {
+                        <div class="showing-blocked-accounts">
                         {
-                            state_bloqued_accounts_clone.iter().enumerate().map(|(index, account)| {
+                            state_blocked_accounts_clone.iter().enumerate().map(|(index, account)| {
                                 html!(
-                                    <div class="show-bloqued-account">
+                                    <div class="show-blocked-account">
                                         <h2>{ format!("DNI: {}, Nombre: {}", account.dni, account.nombre) }</h2>
                                         <IndexedButton text="Desbloquear Cuenta" index={index.clone()} onclick_event={change_index_account_to_unlock.clone()}/>
                                     </div>

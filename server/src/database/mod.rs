@@ -148,13 +148,13 @@ impl Database {
         self.sucursales.clone()
     }
 
-    pub fn obtener_usuarios_bloqueados (&self) -> Vec<BloquedUser> {
+    pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
-                            .map(|usuario| BloquedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})
+                            .map(|usuario| BlockedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})
                             .collect()
     }
 
-    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BloquedUser> {
+    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BlockedUser> {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == cuenta.dni).unwrap();
         self.usuarios.get_mut(index).unwrap().estado.desbloquear();
         self.guardar();
