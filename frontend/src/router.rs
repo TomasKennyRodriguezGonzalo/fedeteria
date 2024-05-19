@@ -55,8 +55,8 @@ pub enum Route {
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
     ChangeUserRole,
-    #[at("/resultados-busqueda/:search_query")]
-    SearchResults {search_query: QueryPublicacionesFiltradas},
+    #[at("/resultados-busqueda")]
+    SearchResults,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -83,6 +83,6 @@ pub fn switch(routes: Route) -> Html {
         Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
         Route::UnlockAccount => html!(<UnlockAccountPage/>), 
         Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>},
-        Route::SearchResults {search_query }=> html!(<SearchResultsPage search_query={search_query}/>),
+        Route::SearchResults => html!(<SearchResultsPage/>),
     }
 }
