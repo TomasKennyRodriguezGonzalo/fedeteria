@@ -12,6 +12,7 @@
             padding: 0;
             font-size: 20px;
             font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            position: relative;
         }
 
         .disabled-dyn-element {
@@ -28,7 +29,6 @@
             text-decoration: none;
             font-size: 500;
             color: beige;
-            max-width: max-content;
             background-color: #e7ab12;
             padding: 6px 10px;
             text-align: center;
@@ -54,6 +54,32 @@
             margin-bottom: 15px;
             text-decoration: wavy;
             color: beige;
+            min-width: 50vw;
+        }
+
+        .confirm-prompt {
+            position: absolute;
+            background: rgba(128, 128, 128, 0.5);
+            display: flex;
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10;
+            top: 0;
+            right: 0;
+            left: 0;
+            bottom: 0;
+            border-radius: 10px;
+            padding: 0;
+        }
+
+        .confirm-prompt * {
+            margin: 0px 5px;
+        }
+
+        .confirm-prompt > * {
+            padding-bottom: 2%;
         }
     
         /* -- NAV BAR -- */
@@ -316,12 +342,45 @@
             list-style: none;
         }
 
-        .profile-page .profile-information-box * {
-            padding: 0 5px 5px;
-        }
-
         .profile-page .profile-actions-box ul li {
             padding: 0 5px 25px;
+        }
+
+        /* --- Delete Office --- */
+        .delete-office-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding : 2%;
+        }
+
+        .delete-office-box * {
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .delete-office-box ul {
+            list-style: none;
+        }
+
+        .delete-office-box ul li {
+            background: gray;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            padding: 5px 0px;
+        }
+        .delete-office-box ul li * {
+            margin-bottom: 2px;
         }
 
         /* --- Privileged Actions --- */
@@ -443,6 +502,26 @@
             margin-bottom: 1%;
             padding : 2%;
         }
+
+        /* --- edit personal info --- */
+        .edit-personal-info-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding : 2%;
+        }
+        
+        .edit-personal-info-box > * {
+            justify-content: center;
+            align-items: center;
+            margin: 2px;
+        }
+
 
 
     </style>

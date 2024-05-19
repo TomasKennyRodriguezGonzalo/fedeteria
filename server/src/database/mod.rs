@@ -176,6 +176,21 @@ impl Database {
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
+        let query_nombre = query.filtro_nombre.clone();
+        self.publicaciones.iter()
+            .filter(|(_, p)| {
+                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            })
+            .filter(|(_, publication)| {
+                query_nombre.as_ref().map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true)
+            })
+            // FALTA HACER EL RESTO DE FILTROS
+            .map(|(&id, _)| id)
+            .collect()
+    }
+
+    /*pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
+        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
         self.publicaciones.iter()
             .filter(|(_, p)| {
                 query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
@@ -183,8 +198,7 @@ impl Database {
             // FALTA HACER EL RESTO DE FILTROS
             .map(|(&id, _)| id)
             .collect()
-    }
-
+    } */
 
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
@@ -207,4 +221,12 @@ impl Database {
     pub fn alternar_pausa_publicacion (&mut self, id : &usize){
         self.publicaciones.get_mut(id).unwrap().alternar_pausa()
     }
+
+    pub fn eliminar_publicacion (&mut self, id : usize)->bool{
+        self.publicaciones.remove(&id);
+        self.guardar();
+        true
+
+    }
+
 }

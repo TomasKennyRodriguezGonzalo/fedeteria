@@ -25,7 +25,6 @@ pub fn register_molecule()-> Html {
         name_state_cloned.set(name);
     });
     
-    
     let mail_state_cloned = mail_state.clone();
     let mail_changed = Callback::from(move |mail| {
         mail_state_cloned.set(mail);

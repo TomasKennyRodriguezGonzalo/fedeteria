@@ -20,9 +20,6 @@ pub enum CambiarDatosUsuarioError {
     NombreConNumeros,
 }
 
-
-
-
 #[function_component(EditPersonalInfoMolecule)]
 pub fn edit_personal_info_molecule() -> Html {
 
@@ -31,7 +28,6 @@ pub fn edit_personal_info_molecule() -> Html {
     
     let (store, store_dispatch) = use_store::<UserStore>();
     let dni = store.dni;
-    
     
     let show_button_state = use_state(|| false);
     
@@ -91,8 +87,6 @@ pub fn edit_personal_info_molecule() -> Html {
             .expect("Error al convertir NaiveDateTime a DateTime<Local>");
         birth_date_state_c.set(new_date);
     });
-
-
 
     // creo el state de error
     let my_error_state = use_state(|| CambiarDatosUsuarioError::SinError);
@@ -160,23 +154,22 @@ pub fn edit_personal_info_molecule() -> Html {
         CambiarDatosUsuarioError::SinError => (),
     }
 
-
     html! {
         <>
-            <div>
+            <div class="edit-personal-info-box">
                 if (*my_error_state) != CambiarDatosUsuarioError::SinError{
                     <div> {error_text.clone()} </div>
                 }
-                <h2 class="information-text">{"nombre y apellido: "} {&*name_state}</h2>
+                <h2 class="information-text">{"Nombre y apellido: "} {&*name_state}</h2>
                 <CheckedInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" on_change = {name_changed} />
-                if *show_button_state {
-                    <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
-                }
-                <h2 class="information-text">{"email: "} {email_state.as_deref().unwrap_or("")}</h2>
+                <h2 class="information-text">{"Email: "} {email_state.as_deref().unwrap_or("")}</h2>
                 <CheckedInputField name = "email" label="Ingresa tu nuevo email" tipo = "email" on_change_checked = {email_changed} />
-                <h2 class="information-text">{"fecha de nacimiento: "} {birth_date_state.to_string().clone()}</h2>
+                <h2 class="information-text">{"Fecha de nacimiento: "} {birth_date_state.to_string().clone()}</h2>
                 <CheckedInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" on_change = {full_born_date_changed} />
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
+                if (&*show_button_state).clone(){
+                    <ConfirmPromptButtonMolecule text = "¿Confirma los cambios?" confirm_func = {change_user} reject_func = {reject_changes}  />
+                }
             </div>
         </>
     

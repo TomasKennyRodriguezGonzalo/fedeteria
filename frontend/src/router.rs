@@ -1,5 +1,7 @@
+use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
+use datos_comunes::QueryPublicacionesFiltradas;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::pages::{create_office_page::CreateOfficePage,
@@ -38,7 +40,7 @@ pub enum Route {
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
     #[at("/publicacion/:id")]
-    Publication {id: String},
+    Publication {id: usize},
     #[at("/register")]
     Register,
     #[at("/acciones-privilegiadas")]
@@ -48,11 +50,13 @@ pub enum Route {
     #[at("/acciones-privilegiadas/eliminar-sucursal")]
     DeleteOffice,
     #[at("/test/publication-thumbnail/:id")]
-    PublicationThumbnail {id: String},
+    PublicationThumbnail {id: usize},
     #[at("/acciones-priviligiadas/desbloquear-cuenta")]
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
     ChangeUserRole,
+    #[at("/resultados-busqueda")]
+    SearchResults,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -78,6 +82,7 @@ pub fn switch(routes: Route) -> Html {
         Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
         Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
         Route::UnlockAccount => html!(<UnlockAccountPage/>), 
-        Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>}
+        Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>},
+        Route::SearchResults => html!(<SearchResultsPage/>),
     }
 }

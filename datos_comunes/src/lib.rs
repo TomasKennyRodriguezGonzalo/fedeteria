@@ -183,7 +183,7 @@ pub struct ResponseChangeUserRole {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryTogglePublicationPause {
-    pub id : String,
+    pub id : usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -191,3 +191,12 @@ pub struct ResponseTogglePublicationPause {
     pub changed: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarPublicacion{
+    pub id: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarPublicacion{
+    pub ok: bool,
+}
