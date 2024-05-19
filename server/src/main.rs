@@ -90,6 +90,7 @@ async fn main() {
         .route("/api/cambiar_usuario", post(cambiar_usuario))
         .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
         .route("/api/obtener_publicaciones", post(obtener_publicaciones))
+        .route("/api/eliminar_publicacion", post(eliminar_publicacion))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -406,7 +407,7 @@ async fn alternar_pausa_publicacion( State(state): State<SharedState>,
 Json(query): Json<QueryTogglePublicationPause>
 ) -> Json<ResponseTogglePublicationPause>{
     let mut state = state.write().await;
-    let id = query.id.parse().unwrap();
+    let id = query.id;
     state.db.alternar_pausa_publicacion(&id);
     Json(ResponseTogglePublicationPause{changed : true})
 }
@@ -442,3 +443,19 @@ Json(query): Json<QueryChangeUserRole>) -> Json<ResponseChangeUserRole>{
     let respuesta = ResponseChangeUserRole { changed: state.db.cambiar_rol_usuario(query) };
     Json(respuesta)
 }
+
+
+async fn eliminar_publicacion (State(state): State<SharedState>,
+Json(query): Json<QueryEliminarPublicacion>) -> Json<ResponseEliminarPublicacion>{
+    let mut state = state.write().await;
+    let respuesta = ResponseEliminarPublicacion { ok: state.db.eliminar_publicacion(query.id) };
+    Json(respuesta)
+}
+
+
+
+
+
+
+
+

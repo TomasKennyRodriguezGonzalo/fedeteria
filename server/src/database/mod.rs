@@ -207,4 +207,12 @@ impl Database {
     pub fn alternar_pausa_publicacion (&mut self, id : &usize){
         self.publicaciones.get_mut(id).unwrap().alternar_pausa()
     }
+
+    pub fn eliminar_publicacion (&mut self, id : usize)->bool{
+        self.publicaciones.remove(&id);
+        self.guardar();
+        true
+
+    }
+
 }
