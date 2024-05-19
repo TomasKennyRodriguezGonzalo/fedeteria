@@ -130,7 +130,7 @@ pub fn unlock_account_molecule () -> Html {
                         {
                             state_bloqued_accounts_clone.iter().enumerate().map(|(index, account)| {
                                 html!(
-                                    <div class="show-bloqued-account">
+                                    <div class="show-blocked-account">
                                         <h2>{ format!("DNI: {}, Nombre: {}", account.dni, account.nombre) }</h2>
                                         <IndexedButton text="Desbloquear Cuenta" index={index.clone()} onclick_event={change_index_account_to_unlock.clone()}/>
                                     </div>
