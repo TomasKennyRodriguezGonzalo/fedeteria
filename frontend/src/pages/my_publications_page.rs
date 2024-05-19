@@ -4,7 +4,7 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::{components::publication_thumbnail::PublicationThumbnail, request_post};
-use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesUsuario};
+use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 use crate::store::UserStore;
@@ -35,7 +35,7 @@ pub fn my_publications_page() -> Html {
             filtro_fecha_min: None,
             filtro_fecha_max: None,
         };
-        request_post("/api/obtener_publicaciones", query, move |respuesta| {
+        request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
             let publicaciones = respuesta;
             log::info!("ids de todas las publicaciones: {publicaciones:?}");
             cloned_publication_list_state.set(publicaciones);

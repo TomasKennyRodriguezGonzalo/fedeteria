@@ -398,7 +398,7 @@ Json(query): Json<QueryCambiarDatosUsuario>
 async fn obtener_publicaciones( 
     State(state): State<SharedState>,
     Json(query): Json<QueryPublicacionesFiltradas>
-) -> Json<ResponsePublicacionesUsuario>{
+) -> Json<ResponsePublicacionesFiltradas>{
     let state = state.read().await;
     let response = state.db.obtener_publicaciones(query);
     Json(response)

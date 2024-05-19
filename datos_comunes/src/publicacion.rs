@@ -50,4 +50,4 @@ pub struct QueryPublicacionesFiltradas {
 }
 
 
-pub type ResponsePublicacionesUsuario = Vec<usize>;
+pub type ResponsePublicacionesFiltradas = Vec<usize>;
