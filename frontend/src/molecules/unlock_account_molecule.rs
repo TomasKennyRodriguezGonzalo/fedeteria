@@ -1,11 +1,12 @@
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use datos_comunes::{self, QueryDeleteOffice, QueryUnlockAccount, ResponseDeleteOffice, ResponseGetOffices, ResponseUnlockAccount, Sucursal};
+use datos_comunes::{self, QueryUnlockAccount, ResponseUnlockAccount};
 use reqwasm::http::Request;
-use crate::components::{generic_input_field::GenericInputField, indexed_button::IndexedButton};
+use crate::components::indexed_button::IndexedButton;
 use crate::components::generic_button::GenericButton;
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 //use crate::components::indexed_button::IndexedButton;
-use datos_comunes::{BloquedUser, ResponseGetBloquedAccounts};
+use datos_comunes::ResponseGetBloquedAccounts;
 
 #[function_component(UnlockAccountMolecule)]
 pub fn unlock_account_molecule () -> Html {
@@ -54,10 +55,30 @@ pub fn unlock_account_molecule () -> Html {
     let informe = use_state(|| "".to_string());
     let informe_cloned = informe.clone();
 
-    let unlock_account = Callback::from(move |index: usize| {
+    let show_button_state = use_state(|| false);
+    let cloned_show_button_state = show_button_state.clone();
+    let reject_account_to_unlock = Callback::from(move |_e:MouseEvent|{
+        let cloned_show_button_state = cloned_show_button_state.clone();
+        cloned_show_button_state.set(false);
+    });
+
+    let cloned_show_button_state = show_button_state.clone();
+
+    let state_index_account_to_unlock = use_state(|| 0);
+    let state_index_account_to_unlock_clone = state_index_account_to_unlock.clone();
+    let change_index_account_to_unlock = Callback::from(move |index: usize| {
+        state_index_account_to_unlock_clone.set(index);
+        cloned_show_button_state.set(true);
+    });
+    let state_index_account_to_unlock_clone = state_index_account_to_unlock.clone(); 
+    let cloned_show_button_state = show_button_state.clone();
+
+    let unlock_account = Callback::from(move |_e: MouseEvent| {
+        cloned_show_button_state.set(false);
         let state_bloqued_accounts_clone = state_bloqued_accounts_clone.clone();
         let informe_cloned = informe_cloned.clone();
-        let account_to_unlock = state_bloqued_accounts_clone.get(index).unwrap().clone();
+        let index = &*state_index_account_to_unlock_clone;
+        let account_to_unlock = state_bloqued_accounts_clone.get(*index).unwrap().clone();
         {
             spawn_local(async move {
                 let account_to_unlock = account_to_unlock.clone();
@@ -111,10 +132,14 @@ pub fn unlock_account_molecule () -> Html {
                                 html!(
                                     <div class="show-bloqued-account">
                                         <h2>{ format!("DNI: {}, Nombre: {}", account.dni, account.nombre) }</h2>
-                                        <IndexedButton text="Desbloquear Cuenta" index={index.clone()} onclick_event={unlock_account.clone()}/>
+                                        <IndexedButton text="Desbloquear Cuenta" index={index.clone()} onclick_event={change_index_account_to_unlock.clone()}/>
                                     </div>
                                 )
                             }).collect::<Html>()
+                        }
+                        if (&*show_button_state).clone(){
+                            <h2> {"¿Desea desbloquear la cuenta seleccionada?"}</h2>
+                            <ConfirmPromptButtonMolecule text = "¿Desea desbloquear la cuenta seleccionada?" confirm_func = {unlock_account.clone()} reject_func = {reject_account_to_unlock.clone()}  />
                         }
                         </div>
                     } else{
