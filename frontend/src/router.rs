@@ -1,8 +1,6 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::pages:: {change_user_rol_page::ChangeUserRolePage, create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, delete_office_page::DeleteOffice, edit_personal_info_page::EditPersonalInfoPage, home_page::HomePage, log_in_page::LogInPage, privileged_actions_page::PrivilegedActionsPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, unlock_account_page::UnlockAccountPage,
-    privileged_actions_page::PrivilegedActionsPage
-};
+use crate::pages:: {change_user_rol_page::ChangeUserRolePage, create_office_page::CreateOfficePage, create_publication_page::CreatePublicationPage, delete_office_page::DeleteOffice, edit_personal_info_page::EditPersonalInfoPage, home_page::HomePage, log_in_page::LogInPage, privileged_actions_page::PrivilegedActionsPage, profile_page::ProfilePage, publication_page::PublicationPage, register_page::RegisterPage, unlock_account_page::UnlockAccountPage};
 
 
 #[derive(Clone, Routable, PartialEq)]

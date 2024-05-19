@@ -27,8 +27,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
-
-use crate::database::publicacion::{self};
+use datos_comunes::Publicacion;//::{self};
 use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
@@ -84,6 +83,7 @@ async fn main() {
         .route("/api/get_user_info", post(get_user_info))
         .route("/api/obtener_cuentas_bloqueadas", get(obtener_cuentas_bloqueadas))
         .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
+        .route("/api/cambiar_rol_usuario", post(cambiar_rol_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -359,6 +359,8 @@ Json(query): Json<QueryGetUserInfo>
     }
 }
 
+
+
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
 ) -> Json<ResponseGetBloquedAccounts> {
     let state = state.read().await;
@@ -374,5 +376,9 @@ Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
     Json(respuesta)
 }
 
-
-
+async fn cambiar_rol_usuario (State(state): State<SharedState>,
+Json(query): Json<QueryChangeUserRole>) -> Json<ResponseChangeUserRole>{
+    let mut state = state.write().await;
+    let respuesta = ResponseChangeUserRole { changed: state.db.cambiar_rol_usuario(query) };
+    Json(respuesta)
+}

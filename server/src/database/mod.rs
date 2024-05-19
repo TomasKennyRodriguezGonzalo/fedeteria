@@ -2,7 +2,7 @@ use std::{borrow::BorrowMut, fs, ops::Deref, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{BloquedUser, CrearUsuarioError, LogInError, QueryDeleteOffice, QueryRegistrarUsuario, QueryUnlockAccount, ResponseRegistrarUsuario, RolDeUsuario, Sucursal, Publicacion};
+use datos_comunes::{BloquedUser, CrearUsuarioError, LogInError, Publicacion, QueryChangeUserRole, QueryDeleteOffice, QueryRegistrarUsuario, QueryUnlockAccount, ResponseChangeUserRole, ResponseRegistrarUsuario, RolDeUsuario, Sucursal};
 use serde::{Deserialize, Serialize};
 
 use self::{usuario::Usuario};
@@ -162,5 +162,10 @@ impl Database {
         self.usuarios.get_mut(index).unwrap().estado.desbloquear();
         self.guardar();
         self.obtener_usuarios_bloqueados()
+    }
+
+    pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {
+        let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
+        self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
     }
 }
