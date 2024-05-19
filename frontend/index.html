@@ -117,13 +117,19 @@
         }
 
         .publication {
-            display: flexbox;
-            padding: 20px 20px;
-            background-color: #114232;
+            display: flex;
+            padding: 10px;
+            background-color: #e7ab12;
             border-radius: 10px;
-            width: 200px;
+            width: 250px;
             transition: all 0.3s;
             text-align: center;
+            height: 300px;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-content: center;
+            justify-content: center;
+            align-items: center;
         }
 
         .publication:hover {
@@ -142,10 +148,18 @@
         .publication .info {
             color: #D9D9D9;
             padding: 10px 10px;
+            width: 200px;
         }
 
         .publication .info .price {
             font-size: 30px;
+            background-color: dimgray;
+            border-radius: 10px;
+        }
+
+        .publication .info .name {
+            font-size: 17px;
+            padding-bottom: 5px;
         }
 
         /* -- login-box -- */
@@ -252,6 +266,23 @@
             text-decoration: wavy;
             color: beige;
         }
+
+        /* --- Publication Grid --- */
+        .publication-grid ul{
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .publication-grid ul li{
+            margin: 1% 10px 0px 0px;
+        }
+        .publication-grid ul li a{
+            all: initial;
+            cursor: pointer;
+        }
+
 
         /* --- Profile Page --- */
         .profile-page {
