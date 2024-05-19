@@ -83,6 +83,17 @@ pub struct ResponseDeleteOffice {
     pub respuesta: Vec<Sucursal>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAddOffice {
+    pub office_to_add: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAddOffice {
+    pub agrego: bool,
+    pub respuesta: Vec<Sucursal>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryGetUserInfo {
     pub dni:u64,

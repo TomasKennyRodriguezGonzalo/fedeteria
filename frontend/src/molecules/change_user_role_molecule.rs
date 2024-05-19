@@ -3,7 +3,7 @@ use yew::prelude::*;
 use datos_comunes::{self, QueryChangeUserRole, QueryDeleteOffice, QueryGetUserRole, ResponseDeleteOffice, ResponseGetOffices, ResponseGetUserRole, RolDeUsuario, Sucursal};
 use reqwasm::http::Request;
 use crate::components::dni_input_field::DniInputField;
-use crate::components::generic_input_field::GenericInputField;
+use crate::components::checked_input_field::CheckedInputField;
 use crate::components::generic_button::GenericButton;
 //use crate::components::indexed_button::IndexedButton;
 

@@ -76,6 +76,7 @@ async fn main() {
         .route("/api/usuario_existe", get(usuario_existe))
         .route("/api/registrar_usuario", post(registrar_usuario))
         .route("/api/retornar_usuario", post(retornar_usuario))
+        .route("/api/agregar_sucursal", post(agregar_sucursal))
         .route("/api/eliminar_sucursal", post(eliminar_sucursal))
         .route("/api/obtener_sucursales", get(obtener_sucursales))
         .route("/api/obtener_rol", post(obtener_rol))
@@ -255,6 +256,13 @@ Si cree que esto es un error, por favor contacte a un administrador.", usuario.n
     res
 }
 
+async fn agregar_sucursal (State(state): State<SharedState>,
+Json(query): Json<QueryAddOffice>) ->  Json<ResponseAddOffice> {
+    let mut state = state.write().await;
+    let agrego = state.db.agregar_sucursal(query);
+    let respuesta = ResponseAddOffice { respuesta: state.db.obtener_sucursales(), agrego };
+    Json(respuesta) 
+}
 
 fn hash_str(s: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -271,6 +279,8 @@ async fn eliminar_sucursal (
     let respuesta = ResponseDeleteOffice { respuesta: state.db.eliminar_sucursal(query) };
     Json(respuesta)
 }
+
+
 
 async fn obtener_sucursales (
     State(state): State<SharedState>,
@@ -366,10 +376,10 @@ Json(query): Json<QueryGetUserInfo>
     let state = state.read().await;
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
-       let usuario = state.db.obtener_datos_usuario(res);
-       let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
-       log::info!("username found "); 
-       Json(Some(response))
+        let usuario = state.db.obtener_datos_usuario(res);
+        let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
+        log::info!("username found "); 
+        Json(Some(response))
     } else{
         log::info!("username not found "); 
         Json(None)

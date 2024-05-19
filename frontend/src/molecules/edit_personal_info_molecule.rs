@@ -14,7 +14,7 @@ use reqwasm::http::Request;
 use datos_comunes::{self, QueryCambiarDatosUsuario, QueryGetUserInfo, ResponseCambiarDatosUsuario, ResponseGetUserInfo};
 use yew_router::prelude::Link;
 use crate::pages::profile_page::User;
-use crate::components::generic_input_field::GenericInputField;
+use crate::components::checked_input_field::CheckedInputField;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 use crate::components::generic_button::GenericButton;
 
@@ -150,11 +150,11 @@ pub fn edit_personal_info_molecule() -> Html {
     let cloned_email_state = email_state.clone();
     let cloned_user_state = user_state.clone();
     let cloned_user_state = user_state.clone();
-    let full_email_changed:Callback<String> = Callback::from(move |new_email:String|{
+    let full_email_changed = Callback::from(move |new_email: Option<String>| {
         //let cloned_user_state = cloned_user_state.clone();
         let cloned_email_state = cloned_email_state.clone();
        //     cloned_email_state.set((&*cloned_user_state).clone().email);
-            cloned_email_state.set(new_email);
+            cloned_email_state.set(new_email.unwrap());
         
     });
     
@@ -280,11 +280,11 @@ pub fn edit_personal_info_molecule() -> Html {
                     <div> {error_text.clone()} </div>
                 }
                 <h2 class="information-text">{"Nombre y apellido: "} {&*user_state.full_name}</h2>
-                <GenericInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" handle_on_change = {full_name_changed} />
+                <CheckedInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" on_change = {full_name_changed} />
                 <h2 class="information-text">{"Email: "} {&*user_state.email}</h2>
-                <GenericInputField name = "full_name_change" label="Ingresa tu nuevo email" tipo = "email" handle_on_change = {full_email_changed} />
+                <CheckedInputField name = "email" label="Ingresa tu nuevo email" tipo = "email" on_change_checked = {full_email_changed} />
                 <h2 class="information-text">{"Fecha de nacimiento: "} {(&user_state.born_date).clone().format("%Y-%m-%d")}</h2>
-                <GenericInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" handle_on_change = {full_born_date_changed} />
+                <CheckedInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" on_change = {full_born_date_changed} />
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
                 if (&*show_button_state).clone(){
                     <div class="confirm-prompt">

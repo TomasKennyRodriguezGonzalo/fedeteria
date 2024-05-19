@@ -5,7 +5,7 @@ use yew::prelude::*;
 use crate::store::UserStore;
 use crate::information_store::InformationStore;
 use crate::components::generic_button::GenericButton;
-use crate::components::generic_input_field::GenericInputField;
+use crate::components::checked_input_field::CheckedInputField;
 use crate::components::dni_input_field::DniInputField;
 use wasm_bindgen_futures::spawn_local;
 use crate::router::Route;
@@ -164,7 +164,7 @@ pub fn log_in_molecule()-> Html{
                 <div>
                     <form {onsubmit}>
                         <DniInputField dni = "dni" label="Dni" tipo = "number" handle_on_change = {dni_changed} />
-                        <GenericInputField name = "password" label="Contraseña" tipo = "password" handle_on_change = {password_changed} />
+                        <CheckedInputField name = "password" label="Contraseña" tipo = "password" on_change = {password_changed} />
                         if !password_state.is_empty() && *dni_state != 0 {
                             <GenericButton text="Iniciar Sesion" onclick_event={submit_clicked_example} />
                         } else {
