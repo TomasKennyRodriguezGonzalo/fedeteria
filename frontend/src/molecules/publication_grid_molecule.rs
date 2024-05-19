@@ -31,7 +31,7 @@ pub fn publication_grid_molecule() -> Html {
                     {
                         (publication_list_state).as_ref().unwrap().iter().map(|id| {
                             html! {
-                                <li><PublicationThumbnail id={id.to_string()}/></li>
+                                <li><PublicationThumbnail id={id}/></li>
                             }
                         }).collect::<Html>()
                     }

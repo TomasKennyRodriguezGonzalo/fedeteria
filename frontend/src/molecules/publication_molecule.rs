@@ -12,10 +12,11 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
-    pub id: String,
+    pub id: usize,
 }
 
 #[function_component(PublicationMolecule)]
@@ -69,12 +70,12 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let (_information_store, information_dispatch) = use_store::<InformationStore>();
     let information_dispatch = information_dispatch.clone();
-    let publicacion_eliminada = use_state(||false);
-    let cloned_publicacion_eliminada = publicacion_eliminada.clone();
     let cloned_id = id.clone();
-    let delete_publication = Callback::from(move |()|{
+    let navigator = use_navigator().unwrap();
+    let cloned_navigator = navigator.clone();
+    let delete_publication = Callback::from(move |_e:MouseEvent|{
+        let cloned_navigator = cloned_navigator.clone();
         let information_dispatch = information_dispatch.clone();
-        let cloned_publicacion_eliminada = cloned_publicacion_eliminada.clone();
         let cloned_id = cloned_id.clone();
         let query = QueryEliminarPublicacion
         {
@@ -82,11 +83,12 @@ pub fn publication_molecule(props : &Props) -> Html {
         };
         request_post("/api/eliminar_publicacion", query, move |respuesta: ResponseEliminarPublicacion| {
             //si se elimino bien ok sera true
+            let cloned_navigator = cloned_navigator.clone();
             let ok = respuesta.ok;
             let information_dispatch = information_dispatch.clone();
             information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
             log::info!("resultado de eliminar publicacion : {ok}");
-            cloned_publicacion_eliminada.set(true);
+            cloned_navigator.push(&Route::Home);
 
         });
 
@@ -151,10 +153,20 @@ pub fn publication_molecule(props : &Props) -> Html {
 
 
 
+    let activate_delete_publication_state = use_state(||false);
+    let cloned_activate_delete_publication_state = activate_delete_publication_state.clone();
+
+    let activate_delete_publication = Callback::from(move |()|{
+        let cloned_activate_delete_publication_state = cloned_activate_delete_publication_state.clone();
+        cloned_activate_delete_publication_state.set(true);
+    });
 
 
-
-
+    let cloned_activate_delete_publication_state = activate_delete_publication_state.clone();
+    let reject_func = Callback::from(move |_e:MouseEvent|{
+        let cloned_activate_delete_publication_state = cloned_activate_delete_publication_state.clone();
+        cloned_activate_delete_publication_state.set(false);
+    });
 
 
     html!{
@@ -183,7 +195,10 @@ pub fn publication_molecule(props : &Props) -> Html {
                 </div>
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
-                    <GenericButton text="Eliminar Publicación" onclick_event={delete_publication}/>
+                    <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                    if (&*activate_delete_publication_state).clone(){
+                        <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />
+                    }
                     if publicacion.pausada {
                         <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
                     } else {

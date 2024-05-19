@@ -3,7 +3,7 @@ use yew::prelude::*;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
-    pub id : String
+    pub id : usize
 }
 
 #[function_component(PublicationPage)]

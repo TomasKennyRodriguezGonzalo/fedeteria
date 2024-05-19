@@ -38,7 +38,7 @@ pub enum Route {
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
     #[at("/publicacion/:id")]
-    Publication {id: String},
+    Publication {id: usize},
     #[at("/register")]
     Register,
     #[at("/acciones-privilegiadas")]
@@ -48,7 +48,7 @@ pub enum Route {
     #[at("/acciones-privilegiadas/eliminar-sucursal")]
     DeleteOffice,
     #[at("/test/publication-thumbnail/:id")]
-    PublicationThumbnail {id: String},
+    PublicationThumbnail {id: usize},
     #[at("/acciones-priviligiadas/desbloquear-cuenta")]
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
