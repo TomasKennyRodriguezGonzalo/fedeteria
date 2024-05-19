@@ -161,9 +161,6 @@ pub fn edit_personal_info_molecule() -> Html {
                 }
                 <h2 class="information-text">{"nombre y apellido: "} {&*name_state}</h2>
                 <CheckedInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" on_change = {name_changed} />
-                if *show_button_state {
-                    <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
-                }
                 <h2 class="information-text">{"email: "} {email_state.as_deref().unwrap_or("")}</h2>
                 <CheckedInputField name = "email" label="Ingresa tu nuevo email" tipo = "email" on_change_checked = {email_changed} />
                 <h2 class="information-text">{"fecha de nacimiento: "} {birth_date_state.to_string().clone()}</h2>
@@ -171,7 +168,7 @@ pub fn edit_personal_info_molecule() -> Html {
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
                 if (&*show_button_state).clone(){
                     <div class="confirm-prompt">
-                        <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
+                        <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user.clone()} reject_func = {reject_changes.clone()}  />
                     </div>
                 }
             </div>
