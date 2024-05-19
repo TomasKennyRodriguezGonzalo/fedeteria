@@ -83,6 +83,17 @@ pub struct ResponseDeleteOffice {
     pub respuesta: Vec<Sucursal>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAddOffice {
+    pub office_to_add: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAddOffice {
+    pub agrego: bool,
+    pub respuesta: Vec<Sucursal>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryGetUserInfo {
     pub dni:u64,
@@ -131,14 +142,11 @@ pub struct QueryCambiarDatosUsuario{
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseCambiarDatosUsuario{
     pub datos_cambiados:bool,
-
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseObtenerPublicacioneseUsuario{
     pub datos_cambiados:bool,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -172,3 +180,14 @@ pub struct QueryChangeUserRole {
 pub struct ResponseChangeUserRole {
     pub changed: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryTogglePublicationPause {
+    pub id : String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTogglePublicationPause {
+    pub changed: bool,
+}
+

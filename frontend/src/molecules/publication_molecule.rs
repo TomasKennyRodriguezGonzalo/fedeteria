@@ -1,7 +1,9 @@
+use web_sys::window;
+use crate::components::generic_button::GenericButton;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, ResponsePublicacion};
+use datos_comunes::{Publicacion, QueryTogglePublicationPause, ResponsePublicacion, ResponseTogglePublicationPause};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -61,27 +63,80 @@ pub fn publication_molecule(props : &Props) -> Html {
         || {}
     });
 
+
+    let delete_publication = Callback::from( |()|{
+
+    });
+
+    let cloned_id = id.clone();
+    let toggle_publication_pause = Callback::from(move |()| {
+        let id = cloned_id.clone();
+        spawn_local(async move{
+            let query = QueryTogglePublicationPause{id : id.clone()};
+            let response = Request::post("/api/alternar_pausa_publicacion").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
+            match response{
+            Ok(response) => {
+                let response: Result<ResponseTogglePublicationPause, reqwasm::Error> = response.json().await;
+                match response {
+                    Ok(response) => {
+                        if response.changed {
+                            // Refreshes to reset the first load states all over the code
+                            if let Some(window) = window() {
+                                window.location().reload().unwrap();
+                            }
+                        } else {
+                            log::info!("No se cambió la publicación.")
+                        }
+                    }
+                    Err(error) => {
+                        log::error!("{:?}", error)
+                    }
+                }
+            }
+            Err(error)=>{
+                log::error!("Error en llamada al backend: {}", error);
+            }
+        }
+        });
+    });
+
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
+                <div class="info">
                 <img src={
                     format!("/publication_images/{}", publicacion.imagenes[0])
-                }/>
-                <div class="info">
+                    }/>
+                    <div class="text">
                     <h4 class="name">{publicacion.titulo.clone()}</h4>
                     <h2 class="price">{
-                        if let Some(precio) = publicacion.precio {
-                            precio.to_string()
-                        }
-                        else {
-                            "Sin Tasar".to_string()
-                        }
-                    }</h2>
-                    <h5 class="description">{publicacion.descripcion.clone()}</h5>
+                            if publicacion.pausada {
+                                "Publicación Pausada".to_string()
+                            } else {
+                                if let Some(precio) = publicacion.precio {
+                                    precio.to_string()
+                                }
+                                else {
+                                    "Sin Tasar".to_string()
+                                }
+                            }
+                        }</h2>
+                        <h5 class="description">{publicacion.descripcion.clone()}</h5>
+                        </div>
                 </div>
+                if publicacion.dni_usuario == dni.clone().unwrap(){
+                <div class="moderation-buttons">
+                    <GenericButton text="Eliminar Publicación" onclick_event={delete_publication}/>
+                    if publicacion.pausada {
+                        <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
+                    } else {
+                        <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
+                    }
+                </div>
+                }
             } else {
                 {"Cargando..."}
             }
-        </div>
-    }
+            </div>
+        }
 }

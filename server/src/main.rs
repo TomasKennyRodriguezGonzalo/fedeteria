@@ -76,6 +76,7 @@ async fn main() {
         .route("/api/usuario_existe", get(usuario_existe))
         .route("/api/registrar_usuario", post(registrar_usuario))
         .route("/api/retornar_usuario", post(retornar_usuario))
+        .route("/api/agregar_sucursal", post(agregar_sucursal))
         .route("/api/eliminar_sucursal", post(eliminar_sucursal))
         .route("/api/obtener_sucursales", get(obtener_sucursales))
         .route("/api/obtener_rol", post(obtener_rol))
@@ -87,6 +88,7 @@ async fn main() {
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
+        .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
         .route("/api/obtener_publicaciones", post(obtener_publicaciones))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -254,6 +256,13 @@ Si cree que esto es un error, por favor contacte a un administrador.", usuario.n
     res
 }
 
+async fn agregar_sucursal (State(state): State<SharedState>,
+Json(query): Json<QueryAddOffice>) ->  Json<ResponseAddOffice> {
+    let mut state = state.write().await;
+    let agrego = state.db.agregar_sucursal(query);
+    let respuesta = ResponseAddOffice { respuesta: state.db.obtener_sucursales(), agrego };
+    Json(respuesta) 
+}
 
 fn hash_str(s: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -270,6 +279,8 @@ async fn eliminar_sucursal (
     let respuesta = ResponseDeleteOffice { respuesta: state.db.eliminar_sucursal(query) };
     Json(respuesta)
 }
+
+
 
 async fn obtener_sucursales (
     State(state): State<SharedState>,
@@ -373,10 +384,7 @@ Json(query): Json<QueryGetUserInfo>
         log::info!("username not found "); 
         Json(None)
     }
-
-
 }
-
 
 async fn cambiar_usuario( State(state): State<SharedState>,
 Json(query): Json<QueryCambiarDatosUsuario>
@@ -394,6 +402,15 @@ Json(query): Json<QueryCambiarDatosUsuario>
     }
 }
 
+async fn alternar_pausa_publicacion( State(state): State<SharedState>,
+Json(query): Json<QueryTogglePublicationPause>
+) -> Json<ResponseTogglePublicationPause>{
+    let mut state = state.write().await;
+    let id = query.id.parse().unwrap();
+    state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : true})
+}
+
 
 async fn obtener_publicaciones( 
     State(state): State<SharedState>,
@@ -403,8 +420,6 @@ async fn obtener_publicaciones(
     let response = state.db.obtener_publicaciones(query);
     Json(response)
 }
-
-
 
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
 ) -> Json<ResponseGetBlockedAccounts> {

@@ -118,7 +118,7 @@ pub fn create_publication_molecule() -> Html {
             <form onsubmit={onsubmit} ref={form_ref}>
                 <h1>{"Crea tu publicación!"}</h1>
                 <div class="text-prompts">
-                    <CheckedInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" on_change={title_changed}/>
+                    <CheckedInputField name="Titulo" maxlength={40} label="Ingrese el titulo de la publicación" tipo="text" on_change={title_changed}/>
                     <CheckedInputField name="Descripción" label="Ingrese una descripción para la publicación" tipo="text" on_change={description_changed}/>
                 </div>
                 if image_list.borrow().len() < 5 {

@@ -43,21 +43,16 @@ pub fn my_publications_page() -> Html {
         || {}
     });
 
-
-
-
-
-
-
-
     html!(
-        <>
+        <div class="my-publications-box">
+            <div class="title">
+                <h1>{"Tus Publicaciones"}</h1>
+            </div>
             <div class="publication-grid">
             if !(&*publication_list_state).is_empty() {
                 <ul>
                     {
-                        (&*publication_list_state).iter().map(|id| {
-
+                        (&*publication_list_state).iter().enumerate().map(|(index, id)| {
                             html! {
                                 <li><PublicationThumbnail id={id.to_string()}/></li>
                             }
@@ -68,6 +63,6 @@ pub fn my_publications_page() -> Html {
                 <div>{"aun no tienes publicaciones"}</div>
             }
             </div>
-        </>
+        </div>
     )
 }

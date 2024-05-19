@@ -46,7 +46,16 @@
         body {
             background-color: #F7F6BB;
         }
-
+        
+        .title {
+            background-color: #e7ab12;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-decoration: wavy;
+            color: beige;
+        }
+    
         /* -- NAV BAR -- */
         .navbar {
             display: flex;
@@ -315,15 +324,6 @@
             padding: 0 5px 25px;
         }
 
-        .profile-page .title {
-            background-color: #e7ab12;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 15px;
-            text-decoration: wavy;
-            color: beige;
-        }
-    
         /* --- Privileged Actions --- */
         .privileged-actions-box {
             background-color: #114232;
@@ -371,7 +371,7 @@
             margin-bottom: 1%;
             padding: 2%;
             align-content: center;
-            flex-direction: row;
+            flex-direction: column;
             flex-wrap: nowrap;
         }
 
@@ -386,32 +386,64 @@
             border-radius: 20px;
         }
 
-        .publication-box .name {
+        
+        .publication-box .info {
+            display: flex;
+            align-content: center;
+            flex-direction: row;
+            flex-wrap: nowrap;
+        }
+        
+        .publication-box .text {
+            margin: auto;
+            width: 60%;
+        }
+
+        .publication-box .text .name {
             font-size: 50px;
             background-color: burlywood;
             border-radius: 10px;
             padding: 0px 30px;
         }
 
-        .publication-box .info {
-            margin: auto;
-            width: 60%;
-        }
-
-        .publication-box .price {
+        .publication-box .text .price {
             font-size: 60px;
             background-color: dimgray;
             border-radius: 10px;
             text-align: center;
         }
 
-        .publication-box .description {
+        .publication-box .text .description {
             text-align: end;
             font-size: 30px;
             background-color: burlywood;
             border-radius: 10px;
             padding: 0px 30px;
         }
+
+        .publication-box .moderation-buttons {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .publication-box .moderation-buttons * {
+            margin-right: 5px;
+        }
+
+        /* --- my-publications --- */
+        .my-publications-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding : 2%;
+        }
+
 
     </style>
   </head>

@@ -76,6 +76,7 @@ impl Database {
         self.guardar();
         Ok(())
     }
+
     pub fn get_ultimo_usuario(&self) -> &Usuario {
         &self.usuarios[self.usuarios.len() - 1]
     }
@@ -136,6 +137,15 @@ impl Database {
         self.sucursales.clone()
     }
 
+    pub fn agregar_sucursal (&mut self, nueva: QueryAddOffice) -> bool {
+        if self.sucursales.iter().map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
+            self.sucursales.push(Sucursal { nombre: nueva.office_to_add });
+            self.guardar();
+            return true;
+        }
+        false
+    }
+
     pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
         let ubicacion = self.sucursales.iter().
                                     position(|actual| actual.nombre == eliminar.office_to_delete);
@@ -192,5 +202,9 @@ impl Database {
     pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
         self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
+    }
+
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize){
+        self.publicaciones.get_mut(id).unwrap().alternar_pausa()
     }
 }
