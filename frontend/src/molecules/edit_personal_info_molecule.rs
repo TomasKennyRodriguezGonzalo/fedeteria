@@ -26,9 +26,6 @@ pub enum CambiarDatosUsuarioError{
     NombreConNumeros,
 }
 
-
-
-
 #[function_component(EditPersonalInfoMolecule)]
 pub fn edit_personal_info_molecule() -> Html {
 
@@ -40,11 +37,9 @@ pub fn edit_personal_info_molecule() -> Html {
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
-    
     let show_button_state = use_state(|| false);
     
     let navigator = use_navigator().unwrap();   
-    
     
     let name_state:UseStateHandle<String> = use_state(|| "default".to_string());   
     let cloned_name_state = name_state.clone();  
@@ -115,10 +110,6 @@ pub fn edit_personal_info_molecule() -> Html {
         ||{}
         
     });
-
-    
-    
-    
     
     let navigator = navigator.clone();
     let dni = dni.clone();
@@ -132,11 +123,6 @@ pub fn edit_personal_info_molecule() -> Html {
     
     //logica de botones y cambio de datos
 
-
-
-
-    
-    
     
     //cloned_user_state tiene los datos de la persona que esta en la pagina
     let cloned_user_state = user_state.clone();
@@ -191,14 +177,9 @@ pub fn edit_personal_info_molecule() -> Html {
 
     });
 
-
-
     // creo el state de error
     let my_error_state = use_state(|| CambiarDatosUsuarioError::SinError);
     let cloned_my_error_state = my_error_state.clone();
-
-
-
     
     //traigo los nuevos valores
     let cloned_user_state = user_state.clone();
@@ -292,23 +273,24 @@ pub fn edit_personal_info_molecule() -> Html {
         CambiarDatosUsuarioError::SinError => (),
     }
 
-
     html! {
         <>
-            <div>
+            <div class="edit-personal-info-box">
                 if (*my_error_state) != CambiarDatosUsuarioError::SinError{
                     <div> {error_text.clone()} </div>
                 }
-                <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>
+                <h2 class="information-text">{"Nombre y apellido: "} {&*user_state.full_name}</h2>
                 <GenericInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" handle_on_change = {full_name_changed} />
-                if (&*show_button_state).clone(){
-                    <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
-                }
-                <h2 class="information-text">{"email: "} {&*user_state.email}</h2>
+                <h2 class="information-text">{"Email: "} {&*user_state.email}</h2>
                 <GenericInputField name = "full_name_change" label="Ingresa tu nuevo email" tipo = "email" handle_on_change = {full_email_changed} />
-                <h2 class="information-text">{"fecha de nacimiento: "} {(&user_state.born_date).to_string().clone()}</h2>
+                <h2 class="information-text">{"Fecha de nacimiento: "} {(&user_state.born_date).clone().format("%Y-%m-%d")}</h2>
                 <GenericInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" handle_on_change = {full_born_date_changed} />
                 <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
+                if (&*show_button_state).clone(){
+                    <div class="confirm-prompt">
+                        <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
+                    </div>
+                }
             </div>
         </>
     

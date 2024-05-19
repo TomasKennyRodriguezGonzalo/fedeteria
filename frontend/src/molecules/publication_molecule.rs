@@ -127,11 +127,13 @@ pub fn publication_molecule(props : &Props) -> Html {
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
                     <GenericButton text="Eliminar Publicación" onclick_event={delete_publication}/>
-                    if publicacion.pausada {
-                        <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
-                    } else {
-                        <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
-                    }
+                    if publicacion.precio.is_some() {
+                        if publicacion.pausada {
+                            <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
+                        } else {
+                            <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
+                        }
+                    }  
                 </div>
                 }
             } else {
