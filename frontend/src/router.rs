@@ -34,7 +34,7 @@ pub enum Route {
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
-    #[at("/publicacion:id")]
+    #[at("/publicacion/:id")]
     Publication {id: String},
     #[at("/register")]
     Register,

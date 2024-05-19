@@ -1,3 +1,4 @@
+use crate::molecules::publication_molecule::PublicationMolecule;
 use yew::prelude::*;
 
 #[derive(Properties,PartialEq)]
@@ -6,10 +7,10 @@ pub struct Props {
 }
 
 #[function_component(PublicationPage)]
-pub fn publication_page(_props : &Props) -> Html {
+pub fn publication_page(props : &Props) -> Html {
     html!(
         <>
-            <h1>{"Publicacion"}</h1>
+            <PublicationMolecule id={(&props).id.clone()}/>
         </>
     )
 }
