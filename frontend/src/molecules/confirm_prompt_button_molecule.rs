@@ -16,10 +16,15 @@ pub fn log_in_button(props: &Props)-> Html{
     let reject_func = (props.reject_func).clone();
 
     html! {
-            <>
-                <button onclick={move |e: MouseEvent|  confirm_func.emit(e)}>  {"confirmar"} </button>
-                <button onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
-            </>
+            <div class="confirm-prompt">
+                <div>
+                    <h1 class="title">{props.text.clone()}</h1>
+                </div>
+                <div>
+                    <button onclick={move |e: MouseEvent|  confirm_func.emit(e)}>  {"confirmar"} </button>
+                    <button onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
+                </div>
+            </div>
 
     }
 

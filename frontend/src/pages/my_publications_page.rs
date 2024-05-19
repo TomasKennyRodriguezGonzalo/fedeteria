@@ -54,7 +54,7 @@ pub fn my_publications_page() -> Html {
                     {
                         (&*publication_list_state).iter().enumerate().map(|(index, id)| {
                             html! {
-                                <li><PublicationThumbnail id={id.to_string()}/></li>
+                                <li><PublicationThumbnail id={id}/></li>
                             }
                         }).collect::<Html>()
                     }

@@ -11,7 +11,7 @@ use crate::router::Route;
 
 #[derive(Properties,PartialEq)]
 pub struct PublicationThumbnailProps {
-    pub id: String,
+    pub id: usize,
 }
 
 #[function_component(PublicationThumbnail)]
