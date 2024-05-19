@@ -8,7 +8,8 @@ pub mod store;
 pub mod information_store;
 pub mod types;
 use crate::app::App;
-
+mod convenient_request;
+pub use convenient_request::request_post;
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Trace));
