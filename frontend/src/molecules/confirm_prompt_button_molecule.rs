@@ -17,8 +17,8 @@ pub fn log_in_button(props: &Props)-> Html{
 
     html! {
             <>
-            <button onclick={move |e: MouseEvent|  confirm_func.emit(e)}>  {"confirmar"} </button>
-            <button onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
+                <button onclick={move |e: MouseEvent|  confirm_func.emit(e)}>  {"confirmar"} </button>
+                <button onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
             </>
 
     }

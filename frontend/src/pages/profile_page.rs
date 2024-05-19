@@ -9,7 +9,7 @@ use reqwasm::http::Request;
 use datos_comunes::{self, QueryGetUserInfo, ResponseGetUserInfo};
 use yew_router::prelude::Link;
 
-
+#[derive(Clone)]
 pub struct User{
     pub full_name:String,
     pub email:String,

@@ -15,13 +15,12 @@ use reqwasm::http::Request;
 pub fn navbar() -> Html{
 
     let navigator = use_navigator().unwrap();
-    
     let (store, dispatch) = use_store::<UserStore>();
-    let dni = store.dni;
-    let username = store.nombre.clone();
-
+    
+    
+    
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
-
+    
     let logout = Callback::from(move|_event| {
         dispatch.reduce_mut(|store| {store.dni = None; store.nombre = "".to_string()});
         navigator.push(&Route::Home);
@@ -30,13 +29,18 @@ pub fn navbar() -> Html{
             window.location().reload().unwrap();
         }
     });
-
+    
     let first_render_state = use_state(|| true);
     let cloned_first_render_state = first_render_state.clone();
+    
+    let dni = store.dni;
+    let username = store.nombre.clone();
 
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
     use_effect( move || {
+        let cloned_dni = cloned_dni.clone();
+        let username = store.nombre.clone();
         let cloned_first_render_state = cloned_first_render_state.clone();
         if *cloned_first_render_state{
             let cloned_dni = cloned_dni.clone();

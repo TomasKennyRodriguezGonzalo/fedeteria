@@ -148,6 +148,32 @@ impl Database {
         self.sucursales.clone()
     }
 
+    pub fn cambiar_usuario (&mut self, full_name:String, email:String, born_date:DateTime<Local>, index:usize) -> bool {
+        let usuario_a_modificar = self.usuarios.get_mut(index);
+        if let Some(user) = usuario_a_modificar{
+            user.nombre_y_apellido = full_name.clone();
+            user.email = email;
+            user.nacimiento = born_date;
+            log::info!("el parametro es: {}",full_name); 
+            log::info!("el nuevo nombre es: {}",self.usuarios.get(index).unwrap().nombre_y_apellido); 
+            self.guardar();
+            return true;
+        } else{
+            log::info!("backend error"); 
+            return false;
+        }
+    }
+
+    pub fn obtener_publicaciones_de_usuario(&self ,dni:u64)->Vec<String>{
+        let publicaciones_de_usuario = self.publicaciones.iter()
+        .filter(|publicacion| publicacion.1.dni_usuario == dni)
+        .map(|publicacion| publicacion.0.to_string())
+        .collect();
+    
+        publicaciones_de_usuario
+    }
+
+
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
                             .map(|usuario| BlockedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})

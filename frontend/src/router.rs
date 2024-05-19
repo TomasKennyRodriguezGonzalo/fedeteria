@@ -10,7 +10,8 @@ use crate::pages::{create_office_page::CreateOfficePage,
     register_page::RegisterPage, 
     delete_office_page::DeleteOffice, 
     edit_personal_info_page::EditPersonalInfoPage,
-    privileged_actions_page::PrivilegedActionsPage
+    privileged_actions_page::PrivilegedActionsPage,
+    my_publications_page::MyPublicationsPage,
 };
 
 use crate::components::publication_thumbnail::PublicationThumbnail;
@@ -61,7 +62,7 @@ pub fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <HomePage/> },
         Route::LogInPage => html! { <LogInPage /> },
-        Route::MyPublications => html! { <p>{"MIS PUBLICACIONES!!"}</p> },
+        Route::MyPublications => html! { < MyPublicationsPage /> },
         Route::Publication { id } => html! { <PublicationPage id={id}/>},
         Route::Profile => html! { <ProfilePage/> },
         Route::EditPersonalInfo => html! {<EditPersonalInfoPage/>},

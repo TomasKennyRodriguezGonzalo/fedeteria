@@ -8,7 +8,7 @@ use axum::{body::Bytes, BoxError};
 use axum::{response::IntoResponse, routing::get, Router};
 use futures::{Stream, TryStreamExt};
 use clap::Parser;
-//use axum::debug_handler;
+use axum::debug_handler;
 use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
@@ -86,6 +86,8 @@ async fn main() {
         .route("/api/cambiar_rol_usuario", post(cambiar_rol_usuario))
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
+        .route("/api/cambiar_usuario", post(cambiar_usuario))
+        .route("/api/obtener_mis_publicaciones", post(obtener_datos_de_mi_publicacion))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -371,6 +373,37 @@ Json(query): Json<QueryGetUserInfo>
         log::info!("username not found "); 
         Json(None)
     }
+
+
+}
+
+
+async fn cambiar_usuario( State(state): State<SharedState>,
+Json(query): Json<QueryCambiarDatosUsuario>
+) -> Json<ResponseCambiarDatosUsuario>{
+    let mut state = state.write().await;
+    let index = state.db.encontrar_dni(query.dni);
+    if let Some(index) = index{
+        let response = state.db.cambiar_usuario(query.full_name.clone(), query.email.clone(), query.born_date.clone(), index);
+        let response = ResponseCambiarDatosUsuario{ datos_cambiados : response};
+        log::info!("username found "); 
+        Json(response)
+    } else{
+        let respuesta = ResponseCambiarDatosUsuario{ datos_cambiados : false};
+        return Json(respuesta);
+    }
+}
+
+
+async fn obtener_datos_de_mi_publicacion( 
+    State(state): State<SharedState>,
+    Json(query): Json<QueryPublicacionesUsuario>
+) -> Json<ResponsePublicacionesUsuario>{
+    let mut state = state.read().await;
+    let response = state.db.obtener_publicaciones_de_usuario(query.dni);
+    let response = Json(response);
+    response
+  
 }
 
 
