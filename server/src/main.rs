@@ -28,7 +28,6 @@ use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
 
-use crate::database::publicacion::{self, Publicacion};
 use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
@@ -82,6 +81,8 @@ async fn main() {
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
+        .route("/api/datos_publicacion", get(get_datos_publicacion))
+        .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -134,7 +135,7 @@ async fn hello() -> impl IntoResponse {
     "hello from server!"
 }
 
-//  fedeteria.com/api/check_login?username=algo&password=otracosa
+
 async fn check_login(
     State(state): State<SharedState>,
     Json(query): Json<QueryLogin>,
@@ -273,7 +274,6 @@ async fn obtener_sucursales (
     let sucursales=state.db.obtener_sucursales();
     let respuesta = ResponseGetOffices{office_list : sucursales.clone()};
     Json(respuesta)
- 
 }
 
 async fn crear_publicacion (
@@ -307,8 +307,9 @@ async fn crear_publicacion (
         log::info!("Recibido archivo: {file_name}");
         let path = Path::new(database::IMGS_DIR).join(&dni_str);
         std::fs::create_dir_all(&path).unwrap();
-        let path = path.join(file_name);
-        imagenes.push(path.to_str().unwrap().to_string());
+        let path = path.join(&file_name);
+        let relative_path = Path::new(&dni_str).join(&file_name);
+        imagenes.push(relative_path.to_str().unwrap().to_string());
         stream_to_file(path, field).await.unwrap();
     }
     let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
@@ -341,7 +342,18 @@ where
     .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }
 
-
+async fn get_datos_publicacion (
+    State(state): State<SharedState>,
+    Query(query): Query<QueryPublicacion>
+) -> Json<ResponsePublicacion> {
+    let id = query.id;
+    let state = state.read().await;
+    if let Some(publicacion) = state.db.get_publicacion(id) {
+        Json(Ok(publicacion.clone()))
+    } else {
+        Json(Err(ErrorPublicacion::PublicacionInexistente))
+    }
+}
 
 async fn get_user_info( State(state): State<SharedState>,
 Json(query): Json<QueryGetUserInfo>

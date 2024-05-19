@@ -74,16 +74,21 @@ pub fn create_publication_molecule() -> Html {
         })
     };
 
-    let onsubmit = {
-        
+    let onsubmit = Callback::from(move |event: SubmitEvent| {
+        event.prevent_default()
+    });
+    let form_ref = use_node_ref();
+
+    let on_confirmar = {
         let image_list = image_list.clone();
-        Callback::from(move |event: SubmitEvent| {
+        let form_ref = form_ref.clone();
+        Callback::from(move |event: MouseEvent| {
+            log::info!("enviando publicacion!!!");
             event.prevent_default();
             let navigator = navigator.clone();
             let information_dispatch = information_dispatch.clone();
 
-            let target = event.target();
-            let form = target.and_then(|t| t.dyn_into::<HtmlFormElement>().ok()).unwrap();
+            let form = form_ref.cast::<HtmlFormElement>().unwrap();
 
             let form_data = FormData::new_with_form(&form).unwrap();
 
@@ -110,7 +115,7 @@ pub fn create_publication_molecule() -> Html {
 
     html!(
         <div class="create-publication-box">
-            <form {onsubmit} enctype="multipart/form-data" action="/api/crear_publicacion" method="POST">
+            <form onsubmit={onsubmit} ref={form_ref}>
                 <h1>{"Crea tu publicación!"}</h1>
                 <div class="text-prompts">
                     <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
@@ -137,7 +142,7 @@ pub fn create_publication_molecule() -> Html {
                 </div>
                 <div class="submit_button">
                     if !(title_state.is_empty()) && !(description_state.is_empty()) && !(image_list.borrow().is_empty()) {
-                        <input type="submit" value="Confirmar"/>
+                        <button onclick={on_confirmar}>{"Confirmar"}</button>
                     } else { 
                         <button class="disabled-dyn-element">{"Confirmar"}</button>
                     }

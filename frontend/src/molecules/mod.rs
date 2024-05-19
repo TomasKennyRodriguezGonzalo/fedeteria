@@ -3,7 +3,7 @@ pub mod navbar;
 pub mod register_molecule;
 pub mod create_publication_molecule;
 pub mod create_office_molecule;
-pub mod publication_thumbnail_molecule;
 pub mod delete_office_molecule;
 pub mod edit_personal_info_molecule;
 pub mod confirm_prompt_button_molecule;
+pub mod publication_grid_molecule;
