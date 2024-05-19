@@ -88,7 +88,7 @@ pub fn navbar() -> Html{
         <>
             <header class="navbar">
                 <div class="logo">
-                    <Link<Route> to={Route::Home}><img src="assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
+                    <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
                 </div>
                 if dni.is_some() && (&*role_state).clone().is_some() {
                     <div>

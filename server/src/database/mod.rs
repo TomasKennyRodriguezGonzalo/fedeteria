@@ -1,8 +1,8 @@
-use std::{fs, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
-use datos_comunes::{CrearUsuarioError, LogInError, QueryRegistrarUsuario, ResponseRegistrarUsuario,Sucursal,QueryDeleteOffice, RolDeUsuario, Publicacion};
+use datos_comunes::*;
 use serde::{Deserialize, Serialize};
 
 use self::{usuario::Usuario};
@@ -14,8 +14,9 @@ pub struct Database {
 
     usuarios: Vec<Usuario>,
     sucursales: Vec<Sucursal>,
-    publicaciones: Vec<Publicacion>,
 
+    publicaciones_auto_incremental: usize,
+    publicaciones: HashMap<usize, Publicacion>,
 
 }
 
@@ -116,24 +117,20 @@ impl Database {
         res
     }
 
-    pub fn resetear_intentos(&mut self, indice:usize){
-        /*let nueva = Sucursal::new("Brandsen".to_string());
-        self.sucursales.push(nueva);
-        let nueva = Sucursal::new("Jeppener".to_string());
-        self.sucursales.push(nueva);
-        let nueva = Sucursal::new("La Plata".to_string());
-        self.sucursales.push(nueva);*/
+    pub fn resetear_intentos(&mut self, indice: usize) {
         self.usuarios[indice].estado.resetear_intentos();
         self.guardar();
     }
 
-
-
     pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
-        self.publicaciones.push(publicacion);
+        self.publicaciones.insert(self.publicaciones_auto_incremental, publicacion);
+        self.publicaciones_auto_incremental += 1;
         self.guardar();
     }
 
+    pub fn get_publicacion(&self, id: usize) -> Option<&Publicacion> {
+        self.publicaciones.get(&id)
+    }
 
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
         self.sucursales.clone()

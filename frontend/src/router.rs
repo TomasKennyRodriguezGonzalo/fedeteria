@@ -11,7 +11,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     privileged_actions_page::PrivilegedActionsPage
 };
 
-
+use crate::components::publication_thumbnail::PublicationThumbnail;
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
     #[at("/")]
@@ -44,6 +44,8 @@ pub enum Route {
     CreateOffice,
     #[at("/acciones-privilegiadas/eliminar-sucursal")]
     DeleteOffice,
+    #[at("/test/publication-thumbnail/:id")]
+    PublicationThumbnail {id: String},
     #[at("/acciones-priviligiadas/desbloquear-cuenta")]
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
@@ -73,5 +75,6 @@ pub fn switch(routes: Route) -> Html {
         Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
         Route::UnlockAccount => html! {"Desbloquear Cuenta"},
         Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},
+        Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>}
     }
 }
