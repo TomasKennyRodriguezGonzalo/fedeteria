@@ -118,7 +118,7 @@ pub fn create_publication_molecule() -> Html {
             <form onsubmit={onsubmit} ref={form_ref}>
                 <h1>{"Crea tu publicación!"}</h1>
                 <div class="text-prompts">
-                    <GenericInputField name="Titulo" label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
+                    <GenericInputField name="Titulo" maxlength={40} label="Ingrese el titulo de la publicación" tipo="text" handle_on_change={title_changed}/>
                     <GenericInputField name="Descripción" label="Ingrese una descripción para la publicación" tipo="text" handle_on_change={description_changed}/>
                 </div>
                 if image_list.borrow().len() < 5 {

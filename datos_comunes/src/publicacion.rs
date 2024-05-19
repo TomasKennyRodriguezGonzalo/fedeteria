@@ -22,6 +22,10 @@ impl Publicacion {
             pausada: true,
         }
     }
+
+    pub fn alternar_pausa(&mut self){
+        self.pausada = !(self.pausada);
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -35,4 +39,19 @@ pub enum ErrorPublicacion {
     PublicacionInexistente,
 }
 
+
+
 pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
+
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct QueryPublicacionesFiltradas {
+    pub filtro_dni: Option<u64>,
+    pub filtro_nombre: Option<String>,
+    // FALTA HACER: filtro por fecha
+    pub filtro_fecha_min: Option<()>,
+    pub filtro_fecha_max: Option<()>,
+}
+
+
+pub type ResponsePublicacionesFiltradas = Vec<usize>;

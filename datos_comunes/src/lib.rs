@@ -131,14 +131,33 @@ pub struct ResponseGetUserRole {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BloquedUser {
+pub struct QueryCambiarDatosUsuario{
+    pub dni:u64,
+    pub full_name:String,
+    pub email:String,
+    pub born_date:DateTime<Local>,
+
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseCambiarDatosUsuario{
+    pub datos_cambiados:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseObtenerPublicacioneseUsuario{
+    pub datos_cambiados:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BlockedUser {
     pub nombre : String,
     pub dni: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResponseGetBloquedAccounts {
-    pub bloqued_users : Vec<BloquedUser>,
+pub struct ResponseGetBlockedAccounts {
+    pub blocked_users : Vec<BlockedUser>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -148,7 +167,7 @@ pub struct QueryUnlockAccount {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseUnlockAccount {
-    pub bloqued_users : Vec<BloquedUser>,
+    pub blocked_users : Vec<BlockedUser>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -161,3 +180,14 @@ pub struct QueryChangeUserRole {
 pub struct ResponseChangeUserRole {
     pub changed: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryTogglePublicationPause {
+    pub id : String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTogglePublicationPause {
+    pub changed: bool,
+}
+

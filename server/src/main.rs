@@ -8,7 +8,7 @@ use axum::{body::Bytes, BoxError};
 use axum::{response::IntoResponse, routing::get, Router};
 use futures::{Stream, TryStreamExt};
 use clap::Parser;
-//use axum::debug_handler;
+use axum::debug_handler;
 use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
@@ -87,6 +87,9 @@ async fn main() {
         .route("/api/cambiar_rol_usuario", post(cambiar_rol_usuario))
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
+        .route("/api/cambiar_usuario", post(cambiar_usuario))
+        .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
+        .route("/api/obtener_publicaciones", post(obtener_publicaciones))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -383,18 +386,53 @@ Json(query): Json<QueryGetUserInfo>
     }
 }
 
+async fn cambiar_usuario( State(state): State<SharedState>,
+Json(query): Json<QueryCambiarDatosUsuario>
+) -> Json<ResponseCambiarDatosUsuario>{
+    let mut state = state.write().await;
+    let index = state.db.encontrar_dni(query.dni);
+    if let Some(index) = index{
+        let response = state.db.cambiar_usuario(query.full_name.clone(), query.email.clone(), query.born_date.clone(), index);
+        let response = ResponseCambiarDatosUsuario{ datos_cambiados : response};
+        log::info!("username found "); 
+        Json(response)
+    } else{
+        let respuesta = ResponseCambiarDatosUsuario{ datos_cambiados : false};
+        return Json(respuesta);
+    }
+}
+
+async fn alternar_pausa_publicacion( State(state): State<SharedState>,
+Json(query): Json<QueryTogglePublicationPause>
+) -> Json<ResponseTogglePublicationPause>{
+    let mut state = state.write().await;
+    let id = query.id.parse().unwrap();
+    state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : true})
+}
+
+
+async fn obtener_publicaciones( 
+    State(state): State<SharedState>,
+    Json(query): Json<QueryPublicacionesFiltradas>
+) -> Json<ResponsePublicacionesFiltradas>{
+    let state = state.read().await;
+    let response = state.db.obtener_publicaciones(query);
+    Json(response)
+}
+
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
-) -> Json<ResponseGetBloquedAccounts> {
+) -> Json<ResponseGetBlockedAccounts> {
     let state = state.read().await;
     let usuarios_bloqueados = state.db.obtener_usuarios_bloqueados();
-    let respuesta = ResponseGetBloquedAccounts{ bloqued_users: usuarios_bloqueados};
+    let respuesta = ResponseGetBlockedAccounts{ blocked_users: usuarios_bloqueados};
     Json(respuesta)
 }
 
 async fn desbloquear_cuenta (State(state): State<SharedState>, 
 Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
     let mut state = state.write().await;
-    let respuesta = ResponseUnlockAccount { bloqued_users: state.db.desbloquear_cuenta(query) };
+    let respuesta = ResponseUnlockAccount { blocked_users: state.db.desbloquear_cuenta(query) };
     Json(respuesta)
 }
 

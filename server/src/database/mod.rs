@@ -158,13 +158,41 @@ impl Database {
         self.sucursales.clone()
     }
 
-    pub fn obtener_usuarios_bloqueados (&self) -> Vec<BloquedUser> {
+    pub fn cambiar_usuario (&mut self, full_name:String, email:String, born_date:DateTime<Local>, index:usize) -> bool {
+        let usuario_a_modificar = self.usuarios.get_mut(index);
+        if let Some(user) = usuario_a_modificar{
+            user.nombre_y_apellido = full_name.clone();
+            user.email = email;
+            user.nacimiento = born_date;
+            log::info!("el parametro es: {}",full_name); 
+            log::info!("el nuevo nombre es: {}",self.usuarios.get(index).unwrap().nombre_y_apellido); 
+            self.guardar();
+            return true;
+        } else{
+            log::info!("backend error"); 
+            return false;
+        }
+    }
+
+    pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
+        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
+        self.publicaciones.iter()
+            .filter(|(_, p)| {
+                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            })
+            // FALTA HACER EL RESTO DE FILTROS
+            .map(|(&id, _)| id)
+            .collect()
+    }
+
+
+    pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
-                            .map(|usuario| BloquedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})
+                            .map(|usuario| BlockedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})
                             .collect()
     }
 
-    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BloquedUser> {
+    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BlockedUser> {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == cuenta.dni).unwrap();
         self.usuarios.get_mut(index).unwrap().estado.desbloquear();
         self.guardar();
@@ -174,5 +202,9 @@ impl Database {
     pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
         self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
+    }
+
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize){
+        self.publicaciones.get_mut(id).unwrap().alternar_pausa()
     }
 }
