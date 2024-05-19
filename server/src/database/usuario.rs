@@ -47,6 +47,16 @@ impl EstadoCuenta{
         *self = EstadoCuenta::Activa { intentos: 3 }
     }
 
+    pub fn esta_bloqueada (&self) -> bool {
+        match self {
+            EstadoCuenta::Activa { .. } => false,
+            EstadoCuenta::Bloqueada => true,
+        }
+    }
+
+    pub fn desbloquear (&mut self) {
+        self.resetear_intentos();
+    }
 }
 
 impl Usuario {

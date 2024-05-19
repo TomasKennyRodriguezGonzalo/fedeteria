@@ -73,8 +73,8 @@ pub fn switch(routes: Route) -> Html {
         Route::MyPendingTrades => html! {"Trueques Pendientes"},
         Route::MyCompletedTrades => html! {"Trueques concretados"},
         Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
-        Route::UnlockAccount => html! {"Desbloquear Cuenta"},
-        Route::ChangeUserRole => html! {"Cambiar Rol de Usuario"},
+        Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
+        Route::UnlockAccount => html!(<UnlockAccountPage/>), 
         Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>}
     }
 }

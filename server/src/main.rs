@@ -81,6 +81,9 @@ async fn main() {
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
+        .route("/api/obtener_cuentas_bloqueadas", get(obtener_cuentas_bloqueadas))
+        .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
+        .route("/api/cambiar_rol_usuario", post(cambiar_rol_usuario))
         .route("/api/datos_publicacion", get(get_datos_publicacion))
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .fallback(get(|req| async move {
@@ -368,9 +371,28 @@ Json(query): Json<QueryGetUserInfo>
         log::info!("username not found "); 
         Json(None)
     }
-
-
 }
 
 
 
+async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
+) -> Json<ResponseGetBloquedAccounts> {
+    let state = state.read().await;
+    let usuarios_bloqueados = state.db.obtener_usuarios_bloqueados();
+    let respuesta = ResponseGetBloquedAccounts{ bloqued_users: usuarios_bloqueados};
+    Json(respuesta)
+}
+
+async fn desbloquear_cuenta (State(state): State<SharedState>, 
+Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
+    let mut state = state.write().await;
+    let respuesta = ResponseUnlockAccount { bloqued_users: state.db.desbloquear_cuenta(query) };
+    Json(respuesta)
+}
+
+async fn cambiar_rol_usuario (State(state): State<SharedState>,
+Json(query): Json<QueryChangeUserRole>) -> Json<ResponseChangeUserRole>{
+    let mut state = state.write().await;
+    let respuesta = ResponseChangeUserRole { changed: state.db.cambiar_rol_usuario(query) };
+    Json(respuesta)
+}

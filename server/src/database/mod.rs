@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{borrow::BorrowMut, collections::HashMap, fs, ops::Deref, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
@@ -146,5 +146,23 @@ impl Database {
         }
 
         self.sucursales.clone()
+    }
+
+    pub fn obtener_usuarios_bloqueados (&self) -> Vec<BloquedUser> {
+        self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
+                            .map(|usuario| BloquedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})
+                            .collect()
+    }
+
+    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BloquedUser> {
+        let index = self.usuarios.iter().position(|usuario| usuario.dni == cuenta.dni).unwrap();
+        self.usuarios.get_mut(index).unwrap().estado.desbloquear();
+        self.guardar();
+        self.obtener_usuarios_bloqueados()
+    }
+
+    pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {
+        let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
+        self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
     }
 }

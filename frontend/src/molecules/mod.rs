@@ -7,4 +7,6 @@ pub mod delete_office_molecule;
 pub mod edit_personal_info_molecule;
 pub mod confirm_prompt_button_molecule;
 pub mod publication_grid_molecule;
+pub mod unlock_account_molecule;
+pub mod change_user_role_molecule;
 pub mod publication_molecule;

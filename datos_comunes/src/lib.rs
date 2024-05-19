@@ -102,6 +102,13 @@ pub enum RolDeUsuario {
     Empleado{sucursal: usize},
 }
 
+impl RolDeUsuario {
+    pub fn cambiar_rol_usuario (&mut self, new_role: RolDeUsuario) -> bool {
+        *self = new_role;
+        true
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryGetUserRole {
     pub dni:u64,
@@ -112,5 +119,34 @@ pub struct ResponseGetUserRole {
     pub rol : RolDeUsuario,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BloquedUser {
+    pub nombre : String,
+    pub dni: u64,
+}
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseGetBloquedAccounts {
+    pub bloqued_users : Vec<BloquedUser>,
+}
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryUnlockAccount {
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseUnlockAccount {
+    pub bloqued_users : Vec<BloquedUser>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryChangeUserRole {
+    pub dni: u64,
+    pub new_role: RolDeUsuario,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseChangeUserRole {
+    pub changed: bool,
+}

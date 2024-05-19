@@ -8,3 +8,5 @@ pub mod create_office_page;
 pub mod delete_office_page;
 pub mod edit_personal_info_page;
 pub mod privileged_actions_page;
+pub mod unlock_account_page;
+pub mod change_user_rol_page;
