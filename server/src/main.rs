@@ -88,7 +88,7 @@ async fn main() {
         .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
         .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
-        .route("/api/obtener_mis_publicaciones", post(obtener_datos_de_mi_publicacion))
+        .route("/api/obtener_publicaciones", post(obtener_publicaciones))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -401,16 +401,23 @@ Json(query): Json<QueryTogglePublicationPause>
     Json(ResponseTogglePublicationPause{changed : true})
 }
 
+async fn alternar_pausa_publicacion( State(state): State<SharedState>,
+Json(query): Json<QueryTogglePublicationPause>
+) -> Json<ResponseTogglePublicationPause>{
+    let mut state = state.write().await;
+    let id = query.id.parse().unwrap();
+    state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : true})
+}
 
-async fn obtener_datos_de_mi_publicacion( 
+
+async fn obtener_publicaciones( 
     State(state): State<SharedState>,
-    Json(query): Json<QueryPublicacionesUsuario>
-) -> Json<ResponsePublicacionesUsuario>{
-    let mut state = state.read().await;
-    let response = state.db.obtener_publicaciones_de_usuario(query.dni);
-    let response = Json(response);
-    response
-  
+    Json(query): Json<QueryPublicacionesFiltradas>
+) -> Json<ResponsePublicacionesFiltradas>{
+    let state = state.read().await;
+    let response = state.db.obtener_publicaciones(query);
+    Json(response)
 }
 
 async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>

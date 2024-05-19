@@ -164,13 +164,15 @@ impl Database {
         }
     }
 
-    pub fn obtener_publicaciones_de_usuario(&self ,dni:u64)->Vec<String>{
-        let publicaciones_de_usuario = self.publicaciones.iter()
-        .filter(|publicacion| publicacion.1.dni_usuario == dni)
-        .map(|publicacion| publicacion.0.to_string())
-        .collect();
-    
-        publicaciones_de_usuario
+    pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
+        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
+        self.publicaciones.iter()
+            .filter(|(_, p)| {
+                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            })
+            // FALTA HACER EL RESTO DE FILTROS
+            .map(|(&id, _)| id)
+            .collect()
     }
 
 

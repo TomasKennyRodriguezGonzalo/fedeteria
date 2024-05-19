@@ -1,11 +1,16 @@
 use reqwasm::http::Request;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use crate::components::publication_thumbnail::PublicationThumbnail;
-use datos_comunes::{Publicacion, QueryPublicacionesUsuario, ResponsePublicacionesUsuario};
+use yew_hooks::use_effect_once;
+use crate::{components::publication_thumbnail::PublicationThumbnail, request_post};
+use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 use crate::store::UserStore;
+
+
+
 
 #[function_component(MyPublicationsPage)]
 pub fn my_publications_page() -> Html {
@@ -14,41 +19,28 @@ pub fn my_publications_page() -> Html {
     let (store, dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
-    let publication_list_state: UseStateHandle<Vec<String>> = use_state(|| Vec::new());
+    let publication_list_state: UseStateHandle<Vec<usize>> = use_state(|| Vec::new());
 
-    let first_load = use_state(|| true);
+    
+
 
     let cloned_dni = dni.clone();
     let cloned_publication_list_state = publication_list_state.clone();
-    let cloned_first_load = first_load.clone();
-    use_effect(move || {
-        if (&*cloned_first_load).clone() {
-            // traigo todas las publicaciones
-            spawn_local(async move{
-                let query = QueryPublicacionesUsuario{dni : cloned_dni.clone().unwrap()};
-                let respuesta = Request::post("/api/obtener_mis_publicaciones").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
-                match respuesta{
-                Ok(respuesta) => {
-                    let respuesta: Result<ResponsePublicacionesUsuario, reqwasm::Error> = respuesta.json().await;
-                    match respuesta{
-                        Ok(respuesta) => {
-                                let publicaciones = respuesta;
-                                log::info!("ids de todas las publicaciones: {publicaciones:?}");
-                                cloned_publication_list_state.set(publicaciones);
-                            }
-                        Err(error)=>{
-                            log::error!("Error en deserializacion: {}", error);
-                        }
-                    }
-                }
-                Err(error)=>{
-                    log::error!("Error en llamada al backend: {}", error);
-                }
-            }
-            });
-            
-            cloned_first_load.set(false)
-        }
+    use_effect_once(move || {
+        // traigo todas las publicaciones
+        let query = QueryPublicacionesFiltradas
+        {
+            filtro_dni : Some(cloned_dni.clone().unwrap()),
+            filtro_nombre: None,
+            filtro_fecha_min: None,
+            filtro_fecha_max: None,
+        };
+        request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
+            let publicaciones = respuesta;
+            log::info!("ids de todas las publicaciones: {publicaciones:?}");
+            cloned_publication_list_state.set(publicaciones);
+        });
+        || {}
     });
 
     html!(
@@ -62,7 +54,7 @@ pub fn my_publications_page() -> Html {
                     {
                         (&*publication_list_state).iter().enumerate().map(|(index, id)| {
                             html! {
-                                <li><PublicationThumbnail id={id.clone()}/></li>
+                                <li><PublicationThumbnail id={id.to_string()}/></li>
                             }
                         }).collect::<Html>()
                     }
