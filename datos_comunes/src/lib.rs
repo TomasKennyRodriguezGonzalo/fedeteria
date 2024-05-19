@@ -190,4 +190,3 @@ pub struct QueryTogglePublicationPause {
 pub struct ResponseTogglePublicationPause {
     pub changed: bool,
 }
-

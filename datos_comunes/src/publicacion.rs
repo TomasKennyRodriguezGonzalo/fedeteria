@@ -44,7 +44,7 @@ pub enum ErrorPublicacion {
 pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
 
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct QueryPublicacionesFiltradas {
     pub filtro_dni: Option<u64>,
     pub filtro_nombre: Option<String>,
