@@ -19,6 +19,13 @@ use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecul
 use crate::components::generic_button::GenericButton;
 
 
+#[derive(PartialEq,Clone,Copy)]
+pub enum CambiarDatosUsuarioError{
+    SinError,
+    EmailInvalido,
+    NombreConNumeros,
+}
+
 
 
 
@@ -27,40 +34,63 @@ pub fn edit_personal_info_molecule() -> Html {
 
     //comprobaciones de first render
     let default_local_date: DateTime<Local> = Local.with_ymd_and_hms(1,1,1,1,1,1).unwrap();
-    let user_state = use_state(|| User::new("default".to_string(), "default".to_string(), default_local_date));
-    let cloned_user_state = user_state.clone();
     let first_render_state = use_state(|| true);
     let cloned_first_render_state = first_render_state.clone();
     
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
-
+    
     
     let show_button_state = use_state(|| false);
     
     let navigator = use_navigator().unwrap();   
+    
+    
+    let name_state:UseStateHandle<String> = use_state(|| "default".to_string());   
+    let cloned_name_state = name_state.clone();  
+    
+    let email_state = use_state(|| "default".to_string());    
+    let cloned_email_state = email_state.clone(); 
+   
+    let cloned_dni = dni.clone();
+   
+    let born_date_state = use_state(|| default_local_date);    
+    let cloned_born_date_state = born_date_state.clone(); 
+    
+    let user_state = use_state(|| User::new("default".to_string(), "default".to_string(), default_local_date));
+    let cloned_user_state = user_state.clone();
     use_effect(move ||{
         let cloned_first_render_state = cloned_first_render_state.clone();
         if (&*cloned_first_render_state).clone(){
-            let cloned_dni = dni.clone();
             let cloned_dni = cloned_dni.clone();
+            let cloned_born_date_state = cloned_born_date_state.clone();
+            let cloned_name_state = cloned_name_state.clone();
+            let cloned_email_state = cloned_email_state.clone();
             let cloned_user_state = cloned_user_state.clone(); {
                 let cloned_dni = cloned_dni.clone();
                 spawn_local(async move {
                     let cloned_dni = cloned_dni.clone();
                     let cloned_user_state = cloned_user_state.clone();
+                    let cloned_name_state = cloned_name_state.clone();
+                    let cloned_email_state = cloned_email_state.clone();
+                    let cloned_born_date_state = cloned_born_date_state.clone();
                     let query = QueryGetUserInfo { dni : cloned_dni.unwrap() };
-                    log::info!("entre al spawn local");
                     let respuesta = Request::post("/api/get_user_info").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
                     match respuesta{
                         Ok(respuesta) =>{
                             let response:Result<Option<ResponseGetUserInfo>, reqwasm::Error> = respuesta.json().await;
-                            log::info!("deserailice la respuesta {:?}",response);
                             match response{
                                 Ok(respuesta) => {  
                                     if respuesta.is_some(){
-                                        let user_info = User::new(respuesta.clone().unwrap().nombre_y_ap, respuesta.clone().unwrap().email, respuesta.clone().unwrap().nacimiento);
-                                        cloned_user_state.set(user_info);
+                                        let cloned_name_state = cloned_name_state.clone();
+                                        let cloned_email_state = cloned_email_state.clone();
+                                        let cloned_user_state = cloned_user_state.clone();
+                                        let cloned_born_date_state = cloned_born_date_state.clone();
+                                        let nombre_traido = respuesta.clone().unwrap().nombre_y_ap;
+                                        cloned_user_state.set(User::new(nombre_traido, respuesta.clone().unwrap().email, respuesta.clone().unwrap().nacimiento));
+                                        cloned_name_state.set(respuesta.clone().unwrap().nombre_y_ap);
+                                        cloned_email_state.set(respuesta.clone().unwrap().email);
+                                        cloned_born_date_state.set(respuesta.unwrap().nacimiento);
                                     }    else{
                                         log::error!("user not found (frontend)");
                                     }     
@@ -85,6 +115,7 @@ pub fn edit_personal_info_molecule() -> Html {
         ||{}
         
     });
+
     
     
     
@@ -109,38 +140,43 @@ pub fn edit_personal_info_molecule() -> Html {
     
     //cloned_user_state tiene los datos de la persona que esta en la pagina
     let cloned_user_state = user_state.clone();
-
+    let cloned_name_state = name_state.clone();
 
     //usuario preparado para recibir los cambios al final
-    let user_state_before_confirm = use_state(|| User::new("".to_string(), "".to_string(), default_local_date));
-    let cloned_user_state_before_confirm = user_state_before_confirm.clone();
 
 
 
     //cambio de nombre
-    let name_state:UseStateHandle<String> = use_state(|| (cloned_user_state_before_confirm.full_name).clone());    
-    let cloned_name_state = name_state.clone(); 
 
-    let full_name_changed = Callback::from(move |new_name|{
+    let cloned_user_state = user_state.clone();
+    let full_name_changed = Callback::from(move |new_name:String|{
+        let cloned_user_state = cloned_user_state.clone();
         let cloned_name_state = cloned_name_state.clone();
-        cloned_name_state.set(new_name);
+        if new_name != cloned_user_state.full_name {
+            cloned_name_state.set(new_name);
+        } else{
+            cloned_name_state.set((&*cloned_user_state).clone().full_name);
+        }
     });
 
     //cambio de email
-    let email_state = use_state(|| (cloned_user_state_before_confirm.email).clone());    
-    let cloned_email_state = email_state.clone(); 
-    
-    let full_email_changed:Callback<String> = Callback::from(move |new_email|{
+
+    let cloned_email_state = email_state.clone();
+    let cloned_user_state = user_state.clone();
+    let cloned_user_state = user_state.clone();
+    let full_email_changed:Callback<String> = Callback::from(move |new_email:String|{
+        //let cloned_user_state = cloned_user_state.clone();
         let cloned_email_state = cloned_email_state.clone();
-        cloned_email_state.set(new_email);
+       //     cloned_email_state.set((&*cloned_user_state).clone().email);
+            cloned_email_state.set(new_email);
+        
     });
     
     
     //cambio de fecha HACER
     
-    let born_date_state = use_state(|| (cloned_user_state_before_confirm.born_date).clone());    
-    let cloned_born_date_state = born_date_state.clone(); 
    
+   let cloned_born_date_state = born_date_state.clone();
 
     let full_born_date_changed:Callback<String> = Callback::from(move |new_date:String|{
         let parsed_date = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d");
@@ -156,7 +192,16 @@ pub fn edit_personal_info_molecule() -> Html {
     });
 
 
+
+    // creo el state de error
+    let my_error_state = use_state(|| CambiarDatosUsuarioError::SinError);
+    let cloned_my_error_state = my_error_state.clone();
+
+
+
+    
     //traigo los nuevos valores
+    let cloned_user_state = user_state.clone();
     let cloned_email_state = email_state.clone(); 
     let cloned_name_state = name_state.clone(); 
     let cloned_born_date_state = born_date_state.clone(); 
@@ -167,56 +212,60 @@ pub fn edit_personal_info_molecule() -> Html {
     let (store, dispatch) = use_store::<UserStore>();
     let cloned_dispatch = dispatch.clone();
     let change_user = Callback::from(move |e:MouseEvent|{
+        let cloned_my_error_state = cloned_my_error_state.clone();
         let cloned_dispatch = cloned_dispatch.clone();
-        log::info!("el nombre que se va a enviar es: {:?}", (&*cloned_name_state).clone());
         let cloned_born_date_state = cloned_born_date_state.clone(); 
         let cloned_email_state = cloned_email_state.clone(); 
         let cloned_name_state = cloned_name_state.clone(); 
         let cloned_show_button_state = cloned_show_button_state.clone();
-        let cloned_user_state_before_confirm = user_state_before_confirm.clone();
-        let cloned_user_state = cloned_user_state.clone();
-        let new_user = User::new((*cloned_name_state).clone(), (*cloned_email_state).clone(), (cloned_user_state_before_confirm.born_date).clone());
-        cloned_user_state.set(new_user);
-        cloned_show_button_state.set(false);
-            spawn_local(async move {
-                let cloned_dispatch = cloned_dispatch.clone();
-                let cloned_born_date_state = cloned_born_date_state.clone(); 
+        let cloned_user_state_before_confirm = cloned_user_state.clone();
+        if !(*cloned_email_state).contains("@") || !(*cloned_email_state).contains(".com") {
+            cloned_my_error_state.set(CambiarDatosUsuarioError::EmailInvalido);
+        } else if (*cloned_name_state).contains("1") || (*cloned_name_state).contains("2") || (*cloned_name_state).contains("3") || (*cloned_name_state).contains("4") || (*cloned_name_state).contains("5") || (*cloned_name_state).contains("6") || (*cloned_name_state).contains("7") || (*cloned_name_state).contains("8") || (*cloned_name_state).contains("9") || (*cloned_name_state).contains("0"){
+            cloned_my_error_state.set(CambiarDatosUsuarioError::NombreConNumeros);
+        } else {
                 let cloned_user_state = cloned_user_state.clone();
-                let cloned_dni = cloned_dni.clone();
-                log::info!("El dni es: {:?}", cloned_dni);
-                log::info!("la nueva local date es: {:?}", &*cloned_born_date_state);
-                let query = QueryCambiarDatosUsuario { dni : cloned_dni.unwrap(), full_name : (&*cloned_name_state).clone(), email : (&*cloned_email_state).clone(), born_date : (&*cloned_born_date_state).clone() };
-                let response = Request::post("/api/cambiar_usuario").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
-                match response{
-                    Ok(response) => {
-                        let response:Result<ResponseCambiarDatosUsuario, reqwasm::Error> = response.json().await;
-                        log::info!("deserialice la respuesta {:?}", response);
-                        match response{
-                            Ok(response) => {  
-                                if response.datos_cambiados{
-                                    log::info!("datos cambiados con exito");
-                                    let cloned_dispatch = cloned_dispatch.clone();
-                                    cloned_dispatch.reduce_mut(|store|{
-                                        store.nombre = (&*cloned_name_state).clone();
-                                    });
-                                    
-                                    if let Some(window) = window() {
-                                        window.location().reload().unwrap();
-                                    }
-                                }else{
-                                    log::error!("ERROR EN EL CAMBIO DE USUARIO");
-                                }     
-                            }
-                            Err(error)=>{
-                                log::error!("Error en deserializacion: {}", error);
+                let new_user = User::new((&*cloned_name_state).clone(), (&*cloned_email_state).clone(), (cloned_user_state_before_confirm.born_date).clone());
+                cloned_user_state.set(new_user);
+                cloned_show_button_state.set(false);
+                spawn_local(async move {
+                    let cloned_dispatch = cloned_dispatch.clone();
+                    let cloned_born_date_state = cloned_born_date_state.clone(); 
+                    let cloned_user_state = cloned_user_state.clone();
+                    let cloned_dni = cloned_dni.clone();
+                    let query = QueryCambiarDatosUsuario { dni : cloned_dni.unwrap(), full_name : (&*cloned_name_state).clone(), email : (&*cloned_email_state).clone(), born_date : (&*cloned_born_date_state).clone() };
+                    let response = Request::post("/api/cambiar_usuario").header("Content-Type", "application/json").body(serde_json::to_string(&query).unwrap()).send().await;
+                    match response{
+                        Ok(response) => {
+                            let response:Result<ResponseCambiarDatosUsuario, reqwasm::Error> = response.json().await;
+                            log::info!("deserialice la respuesta {:?}", response);
+                            match response{
+                                Ok(response) => {  
+                                    if response.datos_cambiados{
+                                        log::info!("datos cambiados con exito");
+                                        let cloned_dispatch = cloned_dispatch.clone();
+                                        cloned_dispatch.reduce_mut(|store|{
+                                            store.nombre = (&*cloned_name_state).clone();
+                                        });
+                                        
+                                        if let Some(window) = window() {
+                                            window.location().reload().unwrap();
+                                        }
+                                    }else{
+                                        log::error!("ERROR EN EL CAMBIO DE USUARIO");
+                                    }     
+                                }
+                                Err(error)=>{
+                                    log::error!("Error en deserializacion: {}", error);
+                                }
                             }
                         }
+                        Err(error)=>{
+                            log::error!("Error en llamada al backend: {}", error);
+                        }
                     }
-                    Err(error)=>{
-                        log::error!("Error en llamada al backend: {}", error);
-                    }
-                }
-            });
+                });
+            }
             
         });
         
@@ -225,25 +274,42 @@ pub fn edit_personal_info_molecule() -> Html {
             let cloned_show_button_state = cloned_show_button_state.clone();
             cloned_show_button_state.set(false);
         });
-
+        
         let cloned_show_button_state = show_button_state.clone();
         let change_user_button = Callback::from(move |()|{
             let cloned_show_button_state = cloned_show_button_state.clone();
             cloned_show_button_state.set(true);
         });
 
+    let mut error_text="".to_string();
+    match (*my_error_state){
+        CambiarDatosUsuarioError::EmailInvalido =>{
+            error_text = "email invalido".to_string();
+        }
+        CambiarDatosUsuarioError::NombreConNumeros =>{
+            error_text = "el nombre y apellido no pueden contener numeros!".to_string();
+        }
+        CambiarDatosUsuarioError::SinError => (),
+    }
+
+
     html! {
         <>
-            <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>
-            <GenericInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" handle_on_change = {full_name_changed} />
-            if (&*show_button_state).clone(){
-                <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
-            }
-            <h2 class="information-text">{"email: "} {&*user_state.email}</h2>
-            <GenericInputField name = "full_name_change" label="Ingresa tu nuevo email" tipo = "email" handle_on_change = {full_email_changed} />
-            <h2 class="information-text">{"fecha de nacimiento: "} {(&user_state.born_date).to_string().clone()}</h2>
-            <GenericInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" handle_on_change = {full_born_date_changed} />
-            <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
+            <div>
+                if (*my_error_state) != CambiarDatosUsuarioError::SinError{
+                    <div> {error_text.clone()} </div>
+                }
+                <h2 class="information-text">{"nombre y apellido: "} {&*user_state.full_name}</h2>
+                <GenericInputField name = "full_name_change" label="Ingresa tu nuevo nombre" tipo = "text" handle_on_change = {full_name_changed} />
+                if (&*show_button_state).clone(){
+                    <ConfirmPromptButtonMolecule text = "Seguro de que quiere cambiar su nombre?" confirm_func = {change_user} reject_func = {reject_changes}  />
+                }
+                <h2 class="information-text">{"email: "} {&*user_state.email}</h2>
+                <GenericInputField name = "full_name_change" label="Ingresa tu nuevo email" tipo = "email" handle_on_change = {full_email_changed} />
+                <h2 class="information-text">{"fecha de nacimiento: "} {(&user_state.born_date).to_string().clone()}</h2>
+                <GenericInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" handle_on_change = {full_born_date_changed} />
+                <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
+            </div>
         </>
     
     }
