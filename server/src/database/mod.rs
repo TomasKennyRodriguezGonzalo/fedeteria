@@ -164,4 +164,13 @@ impl Database {
         }
     }
 
+    pub fn obtener_publicaciones_de_usuario(&self ,dni:u64)->Vec<String>{
+        let publicaciones_de_usuario = self.publicaciones.iter()
+        .filter(|publicacion| publicacion.1.dni_usuario == dni)
+        .map(|publicacion| publicacion.0.to_string())
+        .collect();
+    
+        publicaciones_de_usuario
+    }
+
 }

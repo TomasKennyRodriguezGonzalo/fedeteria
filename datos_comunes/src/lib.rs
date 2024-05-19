@@ -128,3 +128,11 @@ pub struct ResponseCambiarDatosUsuario{
 }
 
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResponseObtenerPublicacioneseUsuario{
+    pub datos_cambiados:bool,
+
+}
+
+
+

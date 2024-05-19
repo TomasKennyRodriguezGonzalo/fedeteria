@@ -35,4 +35,15 @@ pub enum ErrorPublicacion {
     PublicacionInexistente,
 }
 
+
+
 pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+pub struct QueryPublicacionesUsuario{
+    pub dni:u64,
+}
+
+
+pub type ResponsePublicacionesUsuario = Vec<String>;
