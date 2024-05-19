@@ -365,10 +365,10 @@ Json(query): Json<QueryGetUserInfo>
     let state = state.read().await;
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
-       let usuario = state.db.obtener_datos_usuario(res);
-       let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
-       log::info!("username found "); 
-       Json(Some(response))
+        let usuario = state.db.obtener_datos_usuario(res);
+        let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
+        log::info!("username found "); 
+        Json(Some(response))
     } else{
         log::info!("username not found "); 
         Json(None)
