@@ -180,3 +180,12 @@ pub struct ResponseTogglePublicationPause {
     pub changed: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarPublicacion{
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarPublicacion{
+    pub ok: bool,
+}
