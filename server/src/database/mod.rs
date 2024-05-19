@@ -76,6 +76,7 @@ impl Database {
         self.guardar();
         Ok(())
     }
+
     pub fn get_ultimo_usuario(&self) -> &Usuario {
         &self.usuarios[self.usuarios.len() - 1]
     }
@@ -134,6 +135,15 @@ impl Database {
 
     pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
         self.sucursales.clone()
+    }
+
+    pub fn agregar_sucursal (&mut self, nueva: QueryAddOffice) -> bool {
+        if self.sucursales.iter().map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
+            self.sucursales.push(Sucursal { nombre: nueva.office_to_add });
+            self.guardar();
+            return true;
+        }
+        false
     }
 
     pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
