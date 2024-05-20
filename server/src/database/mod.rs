@@ -44,7 +44,7 @@ impl Database {
         let db: Database = Default::default();
         let path = Path::new(DB_PATH);
         if path.exists() {
-            log::warn!("Sobreescribiendo database anterior!");
+            log::warn!("Sobreescribiendo database anterior! =)");
         } else {
             log::warn!("Creando una nueva database...");
         }
@@ -102,7 +102,7 @@ impl Database {
     pub fn nacimiento_valido(fecha: DateTime<Local>) -> bool {
         let now = Local::now();
         let diff = date_component::calculate(&fecha, &now);
-        diff.year >= 18
+        fecha < now && diff.year >= 18
     }
     pub fn obtener_datos_usuario(&self, indice: usize) -> &Usuario {
         &self.usuarios[indice]
@@ -158,23 +158,60 @@ impl Database {
         self.sucursales.clone()
     }
 
-    pub fn cambiar_usuario (&mut self, full_name:String, email:String, born_date:DateTime<Local>, index:usize) -> bool {
+    pub fn cambiar_usuario (&mut self,
+        index: usize,
+        full_name: Option<String>,
+        email: Option<String>,
+        born_date: Option<DateTime<Local>>
+    ) -> ResponseCambiarDatosUsuario {
+        if let Some(born_date) = born_date {
+            if !Self::nacimiento_valido(born_date) {
+                return Err(ErrorCambiarDatosUsuario::MenorA18)
+            }
+        }
+        if let Some(email) = &email {
+            if let Some(index_email) = self.encontrar_email(email) {
+                // No debe dar error si ingresó el mismo email (supongo, u otro error? eh)
+                if index_email != index {
+                    return Err(ErrorCambiarDatosUsuario::EmailExistente)
+                }
+            }
+        }
         let usuario_a_modificar = self.usuarios.get_mut(index);
-        if let Some(user) = usuario_a_modificar{
-            user.nombre_y_apellido = full_name.clone();
-            user.email = email;
-            user.nacimiento = born_date;
-            log::info!("el parametro es: {}",full_name); 
-            log::info!("el nuevo nombre es: {}",self.usuarios.get(index).unwrap().nombre_y_apellido); 
+        if let Some(user) = usuario_a_modificar {
+            if let Some(full_name) = full_name {
+                user.nombre_y_apellido = full_name;
+            }
+            if let Some(email) = email {
+                user.email = email;
+            }
+            if let Some(born_date) = born_date {
+                user.nacimiento = born_date;
+            }
             self.guardar();
-            return true;
+            Ok(())
         } else{
             log::info!("backend error"); 
-            return false;
+            Err(ErrorCambiarDatosUsuario::ErrorIndeterminado)
         }
     }
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
+        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
+        let query_nombre = query.filtro_nombre.clone();
+        self.publicaciones.iter()
+            .filter(|(_, p)| {
+                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            })
+            .filter(|(_, publication)| {
+                query_nombre.as_ref().map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true)
+            })
+            // FALTA HACER EL RESTO DE FILTROS
+            .map(|(&id, _)| id)
+            .collect()
+    }
+
+    /*pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
         self.publicaciones.iter()
             .filter(|(_, p)| {
@@ -183,8 +220,7 @@ impl Database {
             // FALTA HACER EL RESTO DE FILTROS
             .map(|(&id, _)| id)
             .collect()
-    }
-
+    } */
 
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())

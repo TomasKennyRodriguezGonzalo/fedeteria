@@ -5,11 +5,13 @@ use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
-use crate::information_store::InformationStore;
+use crate::{components::generic_button::GenericButton, information_store::InformationStore};
 use crate::store::UserStore;
 use crate::router::Route;
 use crate::components::indexed_button::IndexedButton;
+use crate::components::checked_input_field::CheckedInputField;
 use reqwasm::http::Request;
+use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{
@@ -17,13 +19,12 @@ pub fn navbar() -> Html{
     let navigator = use_navigator().unwrap();
     let (store, dispatch) = use_store::<UserStore>();
     
-    
-    
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
     
+    let navigator_cloned = navigator.clone();
     let logout = Callback::from(move|_event| {
         dispatch.reduce_mut(|store| {store.dni = None; store.nombre = "".to_string()});
-        navigator.push(&Route::Home);
+        navigator_cloned.push(&Route::Home);
         // Refreshes to reset the first load states all over the code
         if let Some(window) = window() {
             window.location().reload().unwrap();
@@ -81,18 +82,40 @@ pub fn navbar() -> Html{
         ||{}
     });
         
-        let (information_store, information_dispatch) = use_store::<InformationStore>();
-        let messages = information_store.messages.clone();
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let messages = information_store.messages.clone();
         
-        let onclick = Callback::from(move |button_index:usize|{
-            information_dispatch.reduce_mut(|store| store.messages.remove(button_index));
-        });
+    let onclick = Callback::from(move |button_index:usize|{
+        information_dispatch.reduce_mut(|store| store.messages.remove(button_index));
+    });
+
+    let state_product_to_search = use_state(|| "".to_string());
+    let state_product_to_search_cloned = state_product_to_search.clone();
+    let product_name_change = Callback::from(move |value: String| {
+        state_product_to_search_cloned.set(value);
+    });
+    let state_product_to_search_clone = state_product_to_search.clone();
+    let navigator_cloned = navigator.clone();
+
+    let search_products = Callback::from(move |()| {
+        let state_product_to_search_string = &*state_product_to_search_clone;
+        let search_query = QueryPublicacionesFiltradas {filtro_dni: None, filtro_nombre: Some(state_product_to_search_string.clone()), filtro_fecha_min: None, filtro_fecha_max: None};
+        navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
+
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
+    });
         
     html!{
         <>
             <header class="navbar">
                 <div class="logo">
                     <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
+                </div>
+                <div class="search-bar">
+                    <CheckedInputField name="product-name" label="Buscador por nombre" tipo="text" on_change={product_name_change}/>
+                    <GenericButton text="Buscar" onclick_event={search_products}/>
                 </div>
                 if dni.is_some() && (&*role_state).clone().is_some() {
                     <div>
