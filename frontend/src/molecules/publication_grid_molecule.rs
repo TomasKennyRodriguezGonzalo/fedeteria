@@ -28,6 +28,8 @@ pub fn publication_grid_molecule(props: &Props) -> Html {
                 filtro_nombre: None,
                 filtro_fecha_min: None,
                 filtro_fecha_max: None,
+                filtro_precio_max: None,
+                filtro_precio_min: None,
             };
         if let Some(query_options) = props_clone {
             query = query_options;
