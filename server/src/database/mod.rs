@@ -201,7 +201,7 @@ impl Database {
         let query_nombre = query.filtro_nombre.clone();
         self.publicaciones.iter()
             .filter(|(_, p)| {
-                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
             })
             .filter(|(_, publication)| {
                 query_nombre.as_ref().map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true)
