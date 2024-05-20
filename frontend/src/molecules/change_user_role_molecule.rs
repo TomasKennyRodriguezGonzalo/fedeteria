@@ -219,6 +219,9 @@ fn change_role (dni: u64, rol: RolDeUsuario) {
                                                             .body(serde_json::to_string(&query).unwrap())
                                                             .send()
                                                             .await;
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         });
     }
 }
