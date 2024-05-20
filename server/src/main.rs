@@ -433,7 +433,8 @@ async fn obtener_cuentas_bloqueadas (State(state): State<SharedState>
 async fn desbloquear_cuenta (State(state): State<SharedState>, 
 Json(query): Json<QueryUnlockAccount>) -> Json<ResponseUnlockAccount> {
     let mut state = state.write().await;
-    let respuesta = ResponseUnlockAccount { blocked_users: state.db.desbloquear_cuenta(query) };
+    let respuesta = state.db.desbloquear_cuenta(query);
+
     Json(respuesta)
 }
 

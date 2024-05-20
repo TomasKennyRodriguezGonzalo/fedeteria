@@ -5,7 +5,7 @@ use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
 
-use self::{usuario::Usuario};
+use self::usuario::{EstadoCuenta, Usuario};
 
 pub mod usuario;
 
@@ -192,11 +192,23 @@ impl Database {
                             .collect()
     }
 
-    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Vec<BlockedUser> {
-        let index = self.usuarios.iter().position(|usuario| usuario.dni == cuenta.dni).unwrap();
-        self.usuarios.get_mut(index).unwrap().estado.desbloquear();
+    pub fn desbloquear_cuenta (&mut self, cuenta: QueryUnlockAccount) -> Result<Vec<BlockedUser>, DuringBlockError> {
+        let index = self.usuarios.iter()
+            .filter(|usuario| usuario.estado == EstadoCuenta::Bloqueada)
+            .position(|usuario| usuario.dni == cuenta.dni);
+        log::info!("el inedx encontrado es: {:?}",index);
+        if index.is_none(){
+            return Err(DuringBlockError::UserNotFound);
+        }
+        let unlock_index= self.usuarios
+        .iter()
+        .position(|user| user.dni == cuenta.dni)
+        .unwrap();
+
+        self.usuarios.get_mut(unlock_index).unwrap().estado.desbloquear();
         self.guardar();
-        self.obtener_usuarios_bloqueados()
+        let nuevos_usuarios_bloqueados = self.obtener_usuarios_bloqueados();
+        Ok(nuevos_usuarios_bloqueados)
     }
 
     pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {

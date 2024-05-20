@@ -165,10 +165,16 @@ pub struct QueryUnlockAccount {
     pub dni: u64,
 }
 
+
+
+pub type ResponseUnlockAccount = Result<Vec<BlockedUser>, DuringBlockError>;
+
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResponseUnlockAccount {
-    pub blocked_users : Vec<BlockedUser>,
+pub enum DuringBlockError{
+    UserNotFound,
 }
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryChangeUserRole {
