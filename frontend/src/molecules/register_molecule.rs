@@ -1,9 +1,10 @@
 use chrono::{Local, NaiveDate, TimeZone};
-use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseRegistrarUsuario};
+use datos_comunes::{CrearUsuarioError, QueryRegistrarUsuario, ResponseGetOffices, ResponseRegistrarUsuario, Sucursal};
 use reqwasm::http::Request;
 use web_sys::{FormData, HtmlFormElement, HtmlInputElement};
 use wasm_bindgen::JsCast;
 use yew::{platform::spawn_local, prelude::*};
+use yew_hooks::use_effect_once;
 use yew_router::prelude::use_navigator;
 use yewdux::prelude::*;
 
@@ -51,7 +52,11 @@ pub fn register_molecule()-> Html {
         dni_state_cloned.set(input.value().parse::<u64>().expect("error dni parse"));
     });
     
+ 
     let loading_state = use_state(|| false);
+
+    let select_value_state = use_state(|| -1);
+    let select_value_state_cloned = select_value_state.clone();
 
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
@@ -60,6 +65,7 @@ pub fn register_molecule()-> Html {
     let information_dispatch = information_dispatch.clone();
     let loading_state_cloned = loading_state.clone();
     let onsubmit = Callback::from(move |event:SubmitEvent|{
+        let selected_value_state_cloned = select_value_state_cloned.clone();
         let loading_state = loading_state_cloned.clone();
         loading_state.set(true);
         log::info!("Loading started");
@@ -77,12 +83,14 @@ pub fn register_molecule()-> Html {
         let str_nacimiento: String = form_data.get("nacimiento").try_into().unwrap();
         let fecha = NaiveDate::parse_from_str(&str_nacimiento, "%Y-%m-%d").unwrap();
         let nacimiento = Local.from_local_datetime(&fecha.into()).unwrap();
+        let sucursal_usuario = (&*select_value_state_cloned).clone();
         let query = QueryRegistrarUsuario {
             nombre_y_apellido: form_data.get("nombre").try_into().unwrap(),
             dni,
             email: form_data.get("email").try_into().unwrap(),
             contraseña: form_data.get("contraseña").try_into().unwrap(),
             nacimiento,
+            sucursal_usuario,
         };
         let cloned_error_state = cloned_error_state.clone();
         let loading_state = loading_state.clone();
@@ -137,6 +145,55 @@ pub fn register_molecule()-> Html {
         });
     });
 
+
+    let state_office_list:UseStateHandle<Vec<Sucursal>> = use_state(||Vec::new());
+    let state_office_list_clone = state_office_list.clone();
+
+    use_effect_once(move || {
+        let state_office_list_clone = state_office_list_clone.clone();
+        spawn_local(async move {
+            let state_office_list_clone = state_office_list_clone.clone();
+            log::info!("entre al spawn local");
+            let respuesta = Request::get("/api/obtener_sucursales")
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+        match respuesta{
+            Ok(respuesta) =>{
+                let response:Result<ResponseGetOffices, reqwasm::Error> = respuesta.json().await;
+                log::info!("deserailice la respuesta {:?}",response);
+                match response{
+                    Ok(respuesta) => {           
+                        state_office_list_clone.set(respuesta.office_list);
+                        }
+                        Err(error)=>{
+                            log::error!("Error en deserializacion: {}", error);
+                        }
+                    }
+                }
+                Err(error)=>{
+                    log::error!("Error en llamada al backend: {}", error);
+                }
+            }
+        });   
+    
+
+        ||{}
+
+
+    });
+
+    let select_value_state_cloned = select_value_state.clone();
+    let select_onchange = Callback::from(move|event: Event| {
+        let select_value_state_cloned = select_value_state_cloned.clone();
+        let target = event.target().unwrap();
+        let input:HtmlInputElement = target.unchecked_into();
+        let value: i32 = input.value().parse().unwrap();
+        select_value_state_cloned.set(value);
+        log::info!("Select changed to {}", value)
+    });
+
+
     html! {
         <>
         <div class = "login-box">
@@ -153,6 +210,17 @@ pub fn register_molecule()-> Html {
 
                 <CheckedInputField name = "contraseña" label="Contraseña:" tipo = "password" on_change = {password_changed} />
 
+                <label for="select-employee">{"Seleccione la sucursal mas cercana"}</label>
+                <br/>
+                <select value="select-employee" id="sucursales" onchange={select_onchange}>
+                    <option value="-1">{"---"}</option>
+                    {
+                        (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
+                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
+                        }).collect::<Html>()
+                    }
+                </select>
+
                 <div>
                     <label> {"Fecha de nacimiento:"} </label>
                 </div>
@@ -161,7 +229,7 @@ pub fn register_molecule()-> Html {
                 if !(name_state.is_empty()) && !(password_state.is_empty()) && (*dni_state != 0) && !(mail_state.is_empty()) && !(&*date_state).is_empty() {
                     <input type="submit" value="Confirmar"/>
                 } else {
-                    <button class="disabled-dyn-element">{"Confirmar"}</button>
+                    <a class="disabled-dyn-element">{"Confirmar"}</a>
                 }
             </form>
             if !error_state.is_empty(){

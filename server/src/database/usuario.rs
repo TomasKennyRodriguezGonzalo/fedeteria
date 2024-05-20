@@ -14,6 +14,7 @@ pub struct Usuario {
     pub nacimiento: DateTime<Local>,
     pub rol: RolDeUsuario,
     pub estado: EstadoCuenta,
+    pub sucursal_usuario: i32,
 }
 
 
@@ -60,7 +61,7 @@ impl EstadoCuenta{
 }
 
 impl Usuario {
-    pub fn new(nombre_y_apellido: String, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>) -> Self {
+    pub fn new(nombre_y_apellido: String, dni: u64, email: String, contraseña: String, nacimiento: DateTime<Local>, sucursal_usuario:i32) -> Self {
         let contraseña = hash_str(&contraseña);
         Usuario {
             nombre_y_apellido,
@@ -69,7 +70,8 @@ impl Usuario {
             contraseña,
             nacimiento,
             rol: RolDeUsuario::Normal,
-            estado: EstadoCuenta::Activa { intentos: 3 }
+            estado: EstadoCuenta::Activa { intentos: 3 },
+            sucursal_usuario : sucursal_usuario
         }
     }
 }

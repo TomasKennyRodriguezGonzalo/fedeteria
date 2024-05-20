@@ -71,7 +71,7 @@ impl Database {
         if self.encontrar_email(&datos.email).is_some() {
             return Err(CrearUsuarioError::EmailExistente)
         }
-        let u = Usuario::new(datos.nombre_y_apellido, datos.dni, datos.email, datos.contraseña, datos.nacimiento);
+        let u = Usuario::new(datos.nombre_y_apellido, datos.dni, datos.email, datos.contraseña, datos.nacimiento, datos.sucursal_usuario);
         self.usuarios.push(u);
         self.guardar();
         Ok(())

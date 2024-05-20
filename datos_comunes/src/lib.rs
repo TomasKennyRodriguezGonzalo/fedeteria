@@ -12,6 +12,7 @@ pub struct QueryRegistrarUsuario {
     pub email: String,
     pub contraseña: String,
     pub nacimiento: DateTime<Local>,
+    pub sucursal_usuario: i32,
 }
 
 pub type ResponseRegistrarUsuario = Result<(), CrearUsuarioError>;
