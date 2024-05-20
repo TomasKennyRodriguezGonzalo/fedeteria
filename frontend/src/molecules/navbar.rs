@@ -258,9 +258,9 @@ pub fn navbar() -> Html{
                             //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
                             //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
                             <CheckedInputField name="product-name" placeholder="Titulo" tipo="text" on_change={product_name_change}/>
-                            <DniInputField dni = "dni" placeholder="Filtro de DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
-                            <DniInputField dni = "precio-minimo" placeholder="Filtro de precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
-                            <DniInputField dni = "precio-maximo" placeholder="Filtro de precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
+                            <DniInputField dni = "dni" placeholder="DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
+                            <DniInputField dni = "precio-minimo" placeholder="Precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
+                            <DniInputField dni = "precio-maximo" placeholder="Precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
                         </div>
                         <GenericButton text="Buscar" onclick_event={search_products}/>
                     </div>
