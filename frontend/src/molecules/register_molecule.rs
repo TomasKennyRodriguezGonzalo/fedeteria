@@ -55,9 +55,6 @@ pub fn register_molecule()-> Html {
  
     let loading_state = use_state(|| false);
 
-    let select_value_state = use_state(|| -1);
-    let select_value_state_cloned = select_value_state.clone();
-
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
     
@@ -65,7 +62,6 @@ pub fn register_molecule()-> Html {
     let information_dispatch = information_dispatch.clone();
     let loading_state_cloned = loading_state.clone();
     let onsubmit = Callback::from(move |event:SubmitEvent|{
-        let selected_value_state_cloned = select_value_state_cloned.clone();
         let loading_state = loading_state_cloned.clone();
         loading_state.set(true);
         log::info!("Loading started");
@@ -83,14 +79,12 @@ pub fn register_molecule()-> Html {
         let str_nacimiento: String = form_data.get("nacimiento").try_into().unwrap();
         let fecha = NaiveDate::parse_from_str(&str_nacimiento, "%Y-%m-%d").unwrap();
         let nacimiento = Local.from_local_datetime(&fecha.into()).unwrap();
-        let sucursal_usuario = (&*select_value_state_cloned).clone();
         let query = QueryRegistrarUsuario {
             nombre_y_apellido: form_data.get("nombre").try_into().unwrap(),
             dni,
             email: form_data.get("email").try_into().unwrap(),
             contraseña: form_data.get("contraseña").try_into().unwrap(),
             nacimiento,
-            sucursal_usuario,
         };
         let cloned_error_state = cloned_error_state.clone();
         let loading_state = loading_state.clone();
@@ -183,16 +177,6 @@ pub fn register_molecule()-> Html {
 
     });
 
-    let select_value_state_cloned = select_value_state.clone();
-    let select_onchange = Callback::from(move|event: Event| {
-        let select_value_state_cloned = select_value_state_cloned.clone();
-        let target = event.target().unwrap();
-        let input:HtmlInputElement = target.unchecked_into();
-        let value: i32 = input.value().parse().unwrap();
-        select_value_state_cloned.set(value);
-        log::info!("Select changed to {}", value)
-    });
-
 
     html! {
         <>
@@ -209,17 +193,6 @@ pub fn register_molecule()-> Html {
                 <CheckedInputField name = "email" label="Correo electrónico:" tipo = "email" on_change = {mail_changed} />
 
                 <CheckedInputField name = "contraseña" label="Contraseña:" tipo = "password" on_change = {password_changed} />
-
-                <label for="select-employee">{"Seleccione la sucursal mas cercana"}</label>
-                <br/>
-                <select value="select-employee" id="sucursales" onchange={select_onchange}>
-                    <option value="-1">{"---"}</option>
-                    {
-                        (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
-                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
-                        }).collect::<Html>()
-                    }
-                </select>
 
                 <div>
                     <label> {"Fecha de nacimiento:"} </label>
