@@ -5,6 +5,7 @@ use yew_router::hooks::use_navigator;
 use yewdux::prelude::*;
 extern crate chrono;
 use chrono::prelude::*;
+use crate::information_store::InformationStore;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use datos_comunes::{self, QueryCambiarDatosUsuario, QueryGetUserInfo, ResponseCambiarDatosUsuario, ResponseGetUserInfo};
@@ -38,6 +39,7 @@ pub fn edit_personal_info_molecule() -> Html {
     let email_state = use_state(|| Some("".to_string()));    
     let birth_date_state = use_state(|| None);    
     let datos_viejos: UseStateHandle<Option<(String, String, String)>> = use_state(|| None);
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
    
     let datos_viejos_c = datos_viejos.clone();
     // Me traigo los datos actuales del usuario
@@ -104,6 +106,7 @@ pub fn edit_personal_info_molecule() -> Html {
     let email_state_c = email_state.clone();
     let birth_date_state_c = birth_date_state.clone();
     let show_button_state_c = show_button_state.clone();
+    let information_dispatch_c = information_dispatch.clone();
     let change_user = Callback::from(move |_: MouseEvent| {
         let my_error_state = cloned_my_error_state.clone();
         let store_dispatch = store_dispatch.clone();
@@ -111,6 +114,7 @@ pub fn edit_personal_info_molecule() -> Html {
         let birth_date_state = birth_date_state_c.clone();
         let email_state = email_state_c.clone();
         let show_button_state = show_button_state_c.clone();
+        let information_dispatch = information_dispatch_c.clone();
         show_button_state.set(false);
         if let Some(email) = email_state.as_deref() {
             let name = (*name_state).clone();
@@ -123,7 +127,8 @@ pub fn edit_personal_info_molecule() -> Html {
             request_post("/api/cambiar_usuario", query, move |response: ResponseCambiarDatosUsuario| {
                 match response {
                     Ok(()) => {
-                        log::info!("datos cambiados con exito");
+                        let mensaje = "Tus datos personales se han cambiado con éxito.".to_string();
+                        information_dispatch.reduce_mut(|store| store.messages.push(mensaje));
                         store_dispatch.reduce_mut(|store|{
                             store.nombre.clone_from(&(*name_state));
                         });
