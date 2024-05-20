@@ -148,9 +148,6 @@ pub fn publication_molecule(props : &Props) -> Html {
         });
     });
 
-
-
-
     let activate_delete_publication_state = use_state(||false);
     let cloned_activate_delete_publication_state = activate_delete_publication_state.clone();
 
@@ -159,13 +156,11 @@ pub fn publication_molecule(props : &Props) -> Html {
         cloned_activate_delete_publication_state.set(true);
     });
 
-
     let cloned_activate_delete_publication_state = activate_delete_publication_state.clone();
     let reject_func = Callback::from(move |_e:MouseEvent|{
         let cloned_activate_delete_publication_state = cloned_activate_delete_publication_state.clone();
         cloned_activate_delete_publication_state.set(false);
     });
-
 
     html!{
         <div class="publication-box">
