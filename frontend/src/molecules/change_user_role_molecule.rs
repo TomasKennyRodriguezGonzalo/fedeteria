@@ -18,14 +18,15 @@ pub fn change_user_rol_molecule () -> Html {
 
     let dni_state = use_state(|| 0);
     let cloned_dni_state = dni_state.clone();
+    let role_state = use_state(|| None);
+    let cloned_role_state = role_state.clone();
     let dni_state_changed = Callback::from(move |dni:String|{
         cloned_dni_state.set(dni.parse::<u64>().unwrap());
+        cloned_role_state.set(None);
     });
     
     let select_value_state = use_state(|| -1);
     
-    let role_state = use_state(|| None);
-    let cloned_role_state = role_state.clone();
     
     let informe = use_state(|| "".to_string());
     let informe_cloned = informe.clone();
@@ -36,6 +37,7 @@ pub fn change_user_rol_molecule () -> Html {
     let state_office_list: UseStateHandle<Vec<Sucursal>> = use_state(|| Vec::new());
     let state_office_list_clone = state_office_list.clone();
     
+    let cloned_role_state = role_state.clone();
     
     let dni_state_cloned = dni_state.clone();
     let search_user = Callback::from(move |()| {

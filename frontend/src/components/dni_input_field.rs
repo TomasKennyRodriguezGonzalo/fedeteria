@@ -35,7 +35,7 @@ pub fn generic_field(props: &Props)-> Html{
                 <label for={id.clone()}>{&props.label}</label>
             </div>
             <div>
-                <input placeholder={props.placeholder.clone()} type = {props.tipo.clone()} name = {props.dni.clone()} onchange={onchange} />
+                <input placeholder={props.placeholder.clone()} type = {props.tipo.clone()} min="0" name = {props.dni.clone()} onchange={onchange} />
             </div>
         </>
     }
