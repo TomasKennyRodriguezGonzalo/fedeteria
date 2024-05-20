@@ -43,7 +43,6 @@ pub fn navbar() -> Html{
     let cloned_dni = dni.clone();
     use_effect( move || {
         let cloned_dni = cloned_dni.clone();
-        let username = store.nombre.clone();
         let cloned_first_render_state = cloned_first_render_state.clone();
         if *cloned_first_render_state{
             let cloned_dni = cloned_dni.clone();

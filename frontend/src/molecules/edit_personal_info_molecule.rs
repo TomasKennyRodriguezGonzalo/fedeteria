@@ -34,7 +34,6 @@ pub fn edit_personal_info_molecule() -> Html {
     
     let navigator = use_navigator().unwrap();   
     
-    
     let name_state = use_state(|| "".to_string());   
     let email_state = use_state(|| Some("".to_string()));    
     let birth_date_state = use_state(|| None);    
@@ -56,9 +55,6 @@ pub fn edit_personal_info_molecule() -> Html {
         
         || {}
     });
-    
-    
-    
     
     let navigator = navigator.clone();
     use_effect(move || {
@@ -130,7 +126,9 @@ pub fn edit_personal_info_molecule() -> Html {
                         let mensaje = "Tus datos personales se han cambiado con éxito.".to_string();
                         information_dispatch.reduce_mut(|store| store.messages.push(mensaje));
                         store_dispatch.reduce_mut(|store|{
-                            store.nombre.clone_from(&(*name_state));
+                            if !(&*name_state).clone().is_empty(){
+                                store.nombre.clone_from(&(*name_state));
+                            }
                         });
                         
                         if let Some(window) = window() {

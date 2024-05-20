@@ -180,9 +180,11 @@ impl Database {
         let usuario_a_modificar = self.usuarios.get_mut(index);
         if let Some(user) = usuario_a_modificar {
             if let Some(full_name) = full_name {
+                log::info!("Nombre de usuario cambiado a : [{}]", full_name);
                 user.nombre_y_apellido = full_name;
             }
             if let Some(email) = email {
+                log::info!("Email de usuario cambiado a : [{}]", email);
                 user.email = email;
             }
             if let Some(born_date) = born_date {

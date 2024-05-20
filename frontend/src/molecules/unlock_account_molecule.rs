@@ -2,31 +2,31 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use datos_comunes::{self, DuringBlockError, QueryUnlockAccount, ResponseUnlockAccount};
 use reqwasm::http::Request;
+use yewdux::use_store;
 use crate::components::dni_input_field::DniInputField;
 use crate::components::generic_button::GenericButton;
+use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 use datos_comunes::ResponseGetBlockedAccounts;
 
 #[function_component(UnlockAccountMolecule)]
 pub fn unlock_account_molecule () -> Html {
 
-    let dni_state:UseStateHandle<u64> = use_state(|| 0);
+    let (information_store, information_dispatch) = use_store::<InformationStore>();
+
+    let dni_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_dni_state = dni_state.clone();
     let dni_changed = Callback::from(move |dni:String|{
-        let dni = dni.parse().unwrap();
+        let dni = Some(dni.parse().unwrap());
         let cloned_dni_state = cloned_dni_state.clone();
         cloned_dni_state.set(dni);
     });
 
-    let state_blocked_accounts = use_state(|| Vec::new());
+    let state_blocked_accounts: UseStateHandle<Option<Vec<datos_comunes::BlockedUser> >> = use_state(|| None);
     let state_blocked_accounts_clone = state_blocked_accounts.clone();
-
-    let clicks = use_state(|| 0);
-    let clicks_cloned = clicks.clone();
 
     let get_blocked_users = Callback::from(move |()| {
         let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
-        clicks_cloned.set(1);
         {
             spawn_local(async move {
                 log::info!("entre al spawn local");
@@ -37,10 +37,10 @@ pub fn unlock_account_molecule () -> Html {
                 match respuesta{
                     Ok(respuesta) =>{
                         let response:Result<ResponseGetBlockedAccounts, reqwasm::Error> = respuesta.json().await;
-                        log::info!("deserailice la respuesta {:?}",response);
+                        log::info!("deserialice la respuesta {:?}",response);
                         match response{
                             Ok(respuesta) => {           
-                                    state_blocked_accounts_clone.set(respuesta.blocked_users);
+                                    state_blocked_accounts_clone.set(Some(respuesta.blocked_users));
                             }
                             Err(error)=>{
                                 log::error!("Error en deserializacion: {}", error);
@@ -78,6 +78,7 @@ pub fn unlock_account_molecule () -> Html {
     let user_not_found_state = use_state(||false);
     let cloned_user_not_found_state = user_not_found_state.clone();
 
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_show_button_state = show_button_state.clone();
     let cloned_dni_state = dni_state.clone();
     let unlock_account = Callback::from(move |_e: MouseEvent| {
@@ -88,11 +89,12 @@ pub fn unlock_account_molecule () -> Html {
         cloned_show_button_state.set(false);
         let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
         let informe_cloned = informe_cloned.clone();
+        let information_dispatch = cloned_information_dispatch.clone();
         {
             spawn_local(async move {
                 let cloned_user_not_found_state = cloned_user_not_found_state.clone();
                 let cloned_dni_state = cloned_dni_state.clone();
-                let account_to_unlock = (&*cloned_dni_state).clone();
+                let account_to_unlock = (&*cloned_dni_state).clone().unwrap();
                 let state_blocked_accounts_clone = state_blocked_accounts_clone.clone();
                 log::info!("entre al spawn local");
                 let query = QueryUnlockAccount {dni: account_to_unlock};
@@ -107,16 +109,16 @@ pub fn unlock_account_molecule () -> Html {
                         log::info!("deserailice la respuesta {:?}",response);
                         match response{
                             Ok(respuesta) => {
-                                match respuesta{
-                                    Ok(respuesta)=> {
-                                        state_blocked_accounts_clone.set(respuesta.clone());
-                                        informe_cloned.set("Sucursal Eliminada".to_string());
-                                        log::info!("{:?}", respuesta.clone());
+                                    match respuesta{
+                                        Ok(respuesta)=> {
+                                            state_blocked_accounts_clone.set(Some(respuesta.clone()));
+                                            information_dispatch.reduce_mut( |store | store.messages.push(format!("Se desbloqueó la cuenta del DNI {}", (&*cloned_dni_state).clone().unwrap())));
+                                            log::info!("{:?}", respuesta.clone());
+                                        }
+                                        Err(error)=>{
+                                            cloned_user_not_found_state.set(true);
+                                        }
                                     }
-                                    Err(DuringBlockError::UserNotFound)=>{
-                                        cloned_user_not_found_state.set(true);
-                                    }
-                                }
                             }
                             Err(error)=>{
                                 log::error!("Error en deserializacion: {}", error);
@@ -133,48 +135,45 @@ pub fn unlock_account_molecule () -> Html {
         }
     });
 
-
-
-    let state_blocked_accounts_clone = &*state_blocked_accounts.clone();
-    log::info!("state blocked users value: {:?}",*state_blocked_accounts_clone);
-
+    let state_blocked_accounts_clone= (*state_blocked_accounts).clone();
+    log::info!("state blocked users value: {:?}",state_blocked_accounts_clone);
 
 
     html!(
-        <div class="unlock_account_box">
-            <h1>{"Desbloquear Usuario"}</h1>
+        <div class="unlock-account-box">
+            <h1 class="title">{"Desbloquear Usuario"}</h1>
             <section>
                 <DniInputField dni = "dni" label="Dni a desbloquear:" tipo = "number" handle_on_change = {dni_changed} />
-                <GenericButton text="Desbloquear Usuario" onclick_event={change_show_button_state.clone()}/>
+                if (&*dni_state).clone().is_some() {
+                    <GenericButton text="Desbloquear Usuario" onclick_event={change_show_button_state.clone()}/>
+                } else {
+                    <button class="disabled-dyn-element">{"Desbloquear Usuario"}</button>
+                }
                 <GenericButton text="Mostrar usuarios bloqueados" onclick_event={get_blocked_users}/>
-                <ul class="blocked_account_list">
-                if &*clicks != &0 {
-                    if !state_blocked_accounts_clone.is_empty() {
-                        <div class="showing-blocked-accounts">
+                if state_blocked_accounts_clone.clone().is_some() {
+                    <ul class="blocked-account-list">
+                    if !state_blocked_accounts_clone.clone().unwrap().is_empty() {
                         {
-                            state_blocked_accounts_clone.iter().enumerate().map(|(_index, account)| {
+                            state_blocked_accounts_clone.clone().unwrap().iter().enumerate().map(|(_index, account)| {
                                 html!(
-                                    <div class="show-blocked-account">
+                                    <li class="blocked-account">
                                         <h2>{ format!("DNI: {}, Nombre: {}", account.dni, account.nombre) }</h2>
-                                        //<IndexedButton text="Desbloquear Cuenta" index={index.clone()} onclick_event={change_index_account_to_unlock.clone()}/>
-                                    </div>
+                                    </li>
                                 )
                             }).collect::<Html>()
                         }
-                        if (&*show_button_state).clone(){
-                            <h2> {"¿Desea desbloquear la cuenta seleccionada?"}</h2>
-                            <ConfirmPromptButtonMolecule text = "¿Desea desbloquear la cuenta seleccionada?" confirm_func = {unlock_account.clone()} reject_func = {reject_account_to_unlock.clone()}  />
-                        }
-                        </div>
                     } else{
-                    <h1>{"No hay usuarios bloqueados"}</h1>
+                        <h1>{"No hay usuarios bloqueados"}</h1>
                     }
+                    </ul>
                 }
                 if (&*user_not_found_state).clone(){
-                    <h2>{"El dni ingresado no pertenece a un usuario bloqueado"}</h2>
+                    <h1 class="error-text">{"El dni ingresado no pertenece a un usuario bloqueado"}</h1>
                 }
-                </ul>
             </section>
+            if (&*show_button_state).clone(){
+                <ConfirmPromptButtonMolecule text = "¿Desea desbloquear la cuenta seleccionada?" confirm_func = {unlock_account.clone()} reject_func = {reject_account_to_unlock.clone()}  />
+            }
         </div>
     )
 }
