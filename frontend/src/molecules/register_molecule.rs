@@ -19,10 +19,19 @@ pub fn register_molecule()-> Html {
     let dni_state = use_state(|| {0});
     let mail_state = use_state(|| {"".to_string()});
     let password_state = use_state(|| {"".to_string()});
+    let date_state = use_state(|| {"".to_string()});
 
     let name_state_cloned = name_state.clone();
     let name_changed = Callback::from(move |name| {
         name_state_cloned.set(name);
+    });
+
+    let date_state_cloned = date_state.clone();
+    let date_changed = Callback::from(move |event : Event| {
+        let target = event.target().unwrap();
+        let input:HtmlInputElement = target.unchecked_into();
+        let input_value = input.value();
+        date_state_cloned.set(input_value);
     });
     
     let mail_state_cloned = mail_state.clone();
@@ -42,13 +51,18 @@ pub fn register_molecule()-> Html {
         dni_state_cloned.set(input.value().parse::<u64>().expect("error dni parse"));
     });
     
+    let loading_state = use_state(|| false);
+
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
     
     let (information_store, information_dispatch) = use_store::<InformationStore>();
     let information_dispatch = information_dispatch.clone();
-    
+    let loading_state_cloned = loading_state.clone();
     let onsubmit = Callback::from(move |event:SubmitEvent|{
+        let loading_state = loading_state_cloned.clone();
+        loading_state.set(true);
+        log::info!("Loading started");
         let information_dispatch = information_dispatch.clone();
         let navigator = navigator.clone();
         event.prevent_default();
@@ -71,6 +85,7 @@ pub fn register_molecule()-> Html {
             nacimiento,
         };
         let cloned_error_state = cloned_error_state.clone();
+        let loading_state = loading_state.clone();
         spawn_local(async move {
             log::info!("query de registro: {query:?}");
             let respuesta = Request::post("/api/registrar_usuario")
@@ -117,6 +132,8 @@ pub fn register_molecule()-> Html {
                     log::error!("error en llamada al backend");
                 } 
             }; 
+            loading_state.set(false);
+            log::info!("Loading finished");
         });
     });
 
@@ -139,9 +156,9 @@ pub fn register_molecule()-> Html {
                 <div>
                     <label> {"Fecha de nacimiento:"} </label>
                 </div>
-                <input type="date" name="nacimiento"/>
+                <input type="date" name="nacimiento" onchange={date_changed}/>
                 <br/>
-                if !(name_state.is_empty()) && !(password_state.is_empty()) && (*dni_state != 0) && !(mail_state.is_empty()) {
+                if !(name_state.is_empty()) && !(password_state.is_empty()) && (*dni_state != 0) && !(mail_state.is_empty()) && !(&*date_state).is_empty() {
                     <input type="submit" value="Confirmar"/>
                 } else {
                     <button class="disabled-dyn-element">{"Confirmar"}</button>
@@ -151,6 +168,10 @@ pub fn register_molecule()-> Html {
             <h2 class="error-text">
                 {&*error_state}
             </h2>
+            }
+            if (&*loading_state).clone() {
+                <div class="loading">
+                </div>
             }
         </div>
         </>

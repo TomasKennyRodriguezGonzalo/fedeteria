@@ -24,6 +24,8 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let navigator = use_navigator().unwrap();
 
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
@@ -31,10 +33,12 @@ pub fn publication_molecule(props : &Props) -> Html {
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
 
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     use_effect_once(move || {
         if dni.is_none(){
             navigator.push(&Route::LogInPage);
+            cloned_information_dispatch.reduce_mut(|store| store.messages.push("Para acceder a una publicación debes iniciar sesión".to_string()))
         } else {
             let id = cloned_id;
             spawn_local(async move {
@@ -89,14 +93,8 @@ pub fn publication_molecule(props : &Props) -> Html {
             information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
             log::info!("resultado de eliminar publicacion : {ok}");
             cloned_navigator.push(&Route::Home);
-
         });
-
-
     });
-
-
-
 
     let cloned_datos_publicacion = datos_publicacion.clone();
     
