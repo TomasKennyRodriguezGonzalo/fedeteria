@@ -94,13 +94,13 @@ pub fn profile_page() -> Html {
         });
         
         html! (
-            <div class="profile-page">
-            <div class="profile-information-box">
-                <h1 class="title">{"Tu información"}</h1>
-                <h2 class="information-text">{"Nombre y apellido: "} {&*user_state.full_name}</h2>
-                <h2 class="information-text">{"Email: "} {&*user_state.email}</h2>
-                <h2 class="information-text">{"Fecha de nacimiento: "} {(&user_state.born_date).clone().format("%Y-%m-%d")}</h2>
-            </div>
+            <div class="profile-page-box">
+                <div class="profile-information-box">
+                    <h1 class="title">{"Tu información"}</h1>
+                    <h2 class="information-text">{"Nombre y apellido: "} {&*user_state.full_name}</h2>
+                    <h2 class="information-text">{"Email: "} {&*user_state.email}</h2>
+                    <h2 class="information-text">{"Fecha de nacimiento: "} {(&user_state.born_date).clone().format("%Y-%m-%d")}</h2>
+                </div>
             <div class="profile-actions-box">
                 <h1 class="title">{"Acciones"}</h1>
                 <ul>

@@ -141,28 +141,29 @@ pub fn create_office_molecule() -> Html {
 
     html!(
         <div class="create-office-box">
+            <h1 class="title">{"Agregar Sucursal"}</h1>
             <form onsubmit={onsubmit}>
                 <GenericButton text="Ver Sucursales Actuales" onclick_event={get_offices}/>
                 if &*clicks != &0 {
                     if !state_office_list_clone.is_empty() {
-                        <div class="showing-offices">
+                        <ul class="showing-offices">
                         {
                             state_office_list_clone.iter().enumerate().map(|(index, sucursal)| {
                                 html!(
-                                    <div class="show-office">
+                                    <li class="show-office">
                                         <h2>{ format!("Nº{}: Sucursal {}", index, sucursal.nombre.clone()) }</h2>
-                                    </div>
+                                    </li>
                                 )
                             }).collect::<Html>()
                         }
-                        </div>
+                        </ul>
                     } else{
                         <h1>{"No existen sucursales"}</h1>
                     }
                 }
                 <CheckedInputField name="office-name" label="Ingrese el nombre de la sucursal: " tipo="text" on_change={office_name_changed}/>
                 <GenericButton text="Cargar Sucursal" onclick_event={show_button}/>
-                <h2>{&*informe_cloned}</h2>
+                <h2 class="error-text">{&*informe_cloned}</h2>
             </form>
             if (&*show_button_state).clone() {
                 <ConfirmPromptButtonMolecule text = "¿Desea agregar la sucursal ingresada?" confirm_func = {add_office} reject_func = {hide_button}  />

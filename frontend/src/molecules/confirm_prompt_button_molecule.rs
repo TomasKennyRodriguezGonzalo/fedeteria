@@ -17,12 +17,14 @@ pub fn log_in_button(props: &Props)-> Html{
 
     html! {
             <div class="confirm-prompt">
-                <div>
+                <div class="solid-background">
+                    <div>
                     <h1 class="title">{props.text.clone()}</h1>
-                </div>
-                <div>
+                    </div>
+                    <div>
                     <button onclick={move |e: MouseEvent|  confirm_func.emit(e)}>  {"confirmar"} </button>
-                    <button onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
+                    <button style="background-color : red" onclick={move |e: MouseEvent|  reject_func.emit(e)}>  {"rechazar"} </button>
+                    </div>
                 </div>
             </div>
 
