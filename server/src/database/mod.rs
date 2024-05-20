@@ -184,6 +184,12 @@ impl Database {
             .filter(|(_, publication)| {
                 query_nombre.as_ref().map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true)
             })
+            .filter(|(_, publication)| {
+                query.filtro_precio_min.as_ref().map(|precio| publication.precio >= Some(*precio)).unwrap_or(true)
+            })
+            .filter(|(_, publication)| {
+                query.filtro_precio_max.as_ref().map(|precio| publication.precio >= Some(*precio)).unwrap_or(true)
+            })
             // FALTA HACER EL RESTO DE FILTROS
             .map(|(&id, _)| id)
             .collect()
