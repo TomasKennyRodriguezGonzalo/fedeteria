@@ -8,7 +8,10 @@ use web_sys::HtmlInputElement;
 pub struct Props {
     #[prop_or(0)]
     pub maxlength : usize,
+    #[prop_or_default]
+    pub placeholder : String,
     pub name: String,
+    #[prop_or_default]
     pub label: String,
     pub tipo: String,
     #[prop_or_default]
@@ -58,9 +61,9 @@ pub fn generic_field(props: &Props)-> Html{
             </div>
             <div>
                 if props.maxlength == 0 {
-                    <input type = {props.tipo.clone()} name = {props.name.clone()} onchange={onchange} />
+                    <input type = {props.tipo.clone()} placeholder={props.placeholder.clone()} name = {props.name.clone()} onchange={onchange} />
                 } else {
-                    <input type = {props.tipo.clone()} name = {props.name.clone()} maxlength = {props.maxlength.to_string()} onchange={onchange} />
+                    <input type = {props.tipo.clone()} placeholder={props.placeholder.clone()} name = {props.name.clone()} maxlength = {props.maxlength.to_string()} onchange={onchange} />
                 }
             </div>
         </>
