@@ -102,7 +102,7 @@ impl Database {
     pub fn nacimiento_valido(fecha: DateTime<Local>) -> bool {
         let now = Local::now();
         let diff = date_component::calculate(&fecha, &now);
-        diff.year >= 18
+        fecha < now && diff.year >= 18
     }
     pub fn obtener_datos_usuario(&self, indice: usize) -> &Usuario {
         &self.usuarios[indice]
@@ -158,19 +158,41 @@ impl Database {
         self.sucursales.clone()
     }
 
-    pub fn cambiar_usuario (&mut self, full_name:String, email:String, born_date:DateTime<Local>, index:usize) -> bool {
+    pub fn cambiar_usuario (&mut self,
+        index: usize,
+        full_name: Option<String>,
+        email: Option<String>,
+        born_date: Option<DateTime<Local>>
+    ) -> ResponseCambiarDatosUsuario {
+        if let Some(born_date) = born_date {
+            if !Self::nacimiento_valido(born_date) {
+                return Err(ErrorCambiarDatosUsuario::MenorA18)
+            }
+        }
+        if let Some(email) = &email {
+            if let Some(index_email) = self.encontrar_email(email) {
+                // No debe dar error si ingresó el mismo email (supongo, u otro error? eh)
+                if index_email != index {
+                    return Err(ErrorCambiarDatosUsuario::EmailExistente)
+                }
+            }
+        }
         let usuario_a_modificar = self.usuarios.get_mut(index);
-        if let Some(user) = usuario_a_modificar{
-            user.nombre_y_apellido = full_name.clone();
-            user.email = email;
-            user.nacimiento = born_date;
-            log::info!("el parametro es: {}",full_name); 
-            log::info!("el nuevo nombre es: {}",self.usuarios.get(index).unwrap().nombre_y_apellido); 
+        if let Some(user) = usuario_a_modificar {
+            if let Some(full_name) = full_name {
+                user.nombre_y_apellido = full_name;
+            }
+            if let Some(email) = email {
+                user.email = email;
+            }
+            if let Some(born_date) = born_date {
+                user.nacimiento = born_date;
+            }
             self.guardar();
-            return true;
+            Ok(())
         } else{
             log::info!("backend error"); 
-            return false;
+            Err(ErrorCambiarDatosUsuario::ErrorIndeterminado)
         }
     }
 

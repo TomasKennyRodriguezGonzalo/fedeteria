@@ -14,7 +14,10 @@ pub struct Props {
     #[prop_or_default]
     pub on_change: Option<Callback<String>>,
     #[prop_or_default]
-    pub on_change_checked: Option<Callback<Option<String>>>,
+    /// El valor Err() NO contiene el error, sino el valor que da error, por si igual lo necesitas
+    pub on_change_checked: Option<Callback<Result<String, String>>>,
+    #[prop_or_default]
+    pub on_change_validity: Option<Callback<bool>>,
 
 }
 
@@ -23,6 +26,7 @@ pub fn generic_field(props: &Props)-> Html{
     let name = props.name.clone();
     let on_change = props.on_change.clone();
     let on_change_checked = props.on_change_checked.clone();
+    let on_change_validity= props.on_change_validity.clone();
 
     let onchange = Callback::from(move |event:Event|{
         let target = event.target().unwrap();
@@ -30,11 +34,14 @@ pub fn generic_field(props: &Props)-> Html{
         let input_value = input.value();
         log::info!("Onchange: name=[{}] input_value=[{}] valid:{}", name, input_value, input.check_validity());
         // "Returns true if the element's value has no validity problems; otherwise, returns false."
+        if let Some(on_change_validity) = on_change_validity.clone() {
+            on_change_validity.emit(input.check_validity());
+        }
         if let Some(on_change_checked) = on_change_checked.clone() {
             if input.report_validity() {
-                on_change_checked.emit(Some(input_value.clone()));
+                on_change_checked.emit(Ok(input_value.clone()));
             } else {
-                on_change_checked.emit(None)
+                on_change_checked.emit(Err(input_value.clone()))
             }
         }
         if let Some(on_change) = on_change.clone() {

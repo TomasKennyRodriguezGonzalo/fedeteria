@@ -393,13 +393,12 @@ Json(query): Json<QueryCambiarDatosUsuario>
     let mut state = state.write().await;
     let index = state.db.encontrar_dni(query.dni);
     if let Some(index) = index{
-        let response = state.db.cambiar_usuario(query.full_name.clone(), query.email.clone(), query.born_date.clone(), index);
-        let response = ResponseCambiarDatosUsuario{ datos_cambiados : response};
-        log::info!("username found "); 
+        let response = state.db.cambiar_usuario(
+            index, query.full_name.clone(), query.email.clone(), query.born_date.clone()); 
         Json(response)
-    } else{
-        let respuesta = ResponseCambiarDatosUsuario{ datos_cambiados : false};
-        return Json(respuesta);
+    } else {
+        log::error!("Usuario no encontrado!");
+        Json(Err(ErrorCambiarDatosUsuario::ErrorIndeterminado))
     }
 }
 

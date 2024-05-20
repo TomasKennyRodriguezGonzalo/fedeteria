@@ -133,16 +133,22 @@ pub struct ResponseGetUserRole {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryCambiarDatosUsuario{
     pub dni:u64,
-    pub full_name:String,
-    pub email:String,
-    pub born_date:DateTime<Local>,
+    pub full_name: Option<String>,
+    pub email: Option<String>,
+    pub born_date: Option<DateTime<Local>>,
 
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ResponseCambiarDatosUsuario{
-    pub datos_cambiados:bool,
+
+pub type ResponseCambiarDatosUsuario = Result<(), ErrorCambiarDatosUsuario>;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ErrorCambiarDatosUsuario {
+    ErrorIndeterminado,
+    EmailExistente,
+    MenorA18,
 }
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseObtenerPublicacioneseUsuario{
