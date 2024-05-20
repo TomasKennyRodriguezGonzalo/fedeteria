@@ -245,18 +245,20 @@ impl Database {
 
     pub fn cambiar_rol_usuario (&mut self, query: QueryChangeUserRole) -> bool {
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
-        self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role)
+        self.usuarios.get_mut(index).unwrap().rol.cambiar_rol_usuario(query.new_role);
+        self.guardar();
+        true
     }
 
-    pub fn alternar_pausa_publicacion (&mut self, id : &usize){
-        self.publicaciones.get_mut(id).unwrap().alternar_pausa()
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize) {
+        self.publicaciones.get_mut(id).unwrap().alternar_pausa();
+        self.guardar();
     }
 
     pub fn eliminar_publicacion (&mut self, id : usize)->bool{
         self.publicaciones.remove(&id);
         self.guardar();
         true
-
     }
 
 }

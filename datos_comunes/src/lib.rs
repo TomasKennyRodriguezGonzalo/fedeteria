@@ -115,9 +115,8 @@ pub enum RolDeUsuario {
 }
 
 impl RolDeUsuario {
-    pub fn cambiar_rol_usuario (&mut self, new_role: RolDeUsuario) -> bool {
+    pub fn cambiar_rol_usuario (&mut self, new_role: RolDeUsuario) {
         *self = new_role;
-        true
     }
 }
 
