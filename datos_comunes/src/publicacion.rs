@@ -1,3 +1,4 @@
+use chrono::{Date, DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 use crate::QueryAddOffice;
@@ -50,6 +51,8 @@ pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
 pub struct QueryPublicacionesFiltradas {
     pub filtro_dni: Option<u64>,
     pub filtro_nombre: Option<String>,
+    pub filtro_precio_min: Option<u64>,
+    pub filtro_precio_max: Option<u64>,
     // FALTA HACER: filtro por fecha
     pub filtro_fecha_min: Option<()>,
     pub filtro_fecha_max: Option<()>,

@@ -1,3 +1,4 @@
+use chrono::{Date, DateTime, Local, NaiveDate, TimeZone};
 use web_sys::window;
 use datos_comunes::{RolDeUsuario, ResponseGetUserRole, QueryGetUserRole};
 use wasm_bindgen_futures::spawn_local;
@@ -5,6 +6,7 @@ use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
+use crate::components::dni_input_field::DniInputField;
 use crate::{components::generic_button::GenericButton, information_store::InformationStore};
 use crate::store::UserStore;
 use crate::router::Route;
@@ -97,9 +99,91 @@ pub fn navbar() -> Html{
     let state_product_to_search_clone = state_product_to_search.clone();
     let navigator_cloned = navigator.clone();
 
+    /*let default_local_date: DateTime<Local> = Local.with_ymd_and_hms(1,1,1,1,1,1).unwrap();
+    let state_min_date = use_state(|| default_local_date);
+    let state_min_date_cloned = state_min_date.clone();
+    let full_min_date_changed = Callback::from(move |new_date: String|{
+
+        let parsed_date = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d");
+
+
+        let new_date = parsed_date.unwrap();
+
+        // let time = NaiveTime::from_hms_opt(0, 0, 0);
+
+        let naive_datetime = new_date.and_hms_opt(0, 0, 0).unwrap();
+
+        let new_date: DateTime<Local> = Local.from_local_datetime(&naive_datetime)
+
+            .single()
+
+            .expect("Error al convertir NaiveDateTime a DateTime<Local>");
+
+        state_min_date_cloned.set(new_date);
+
+        log::info!("{:?}", (&*state_min_date_cloned))
+    });
+    let state_min_date_cloned = state_min_date.clone();
+
+    let default_local_date: DateTime<Local> = Local.with_ymd_and_hms(1,1,1,1,1,1).unwrap();
+    let state_max_date = use_state(|| default_local_date);
+    let state_max_date_cloned = state_max_date.clone();
+    let full_max_date_changed = Callback::from(move |new_date: String|{
+
+        let parsed_date = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d");
+
+
+        let new_date = parsed_date.unwrap();
+
+        // let time = NaiveTime::from_hms_opt(0, 0, 0);
+
+        let naive_datetime = new_date.and_hms_opt(0, 0, 0).unwrap();
+
+        let new_date: DateTime<Local> = Local.from_local_datetime(&naive_datetime)
+
+            .single()
+
+            .expect("Error al convertir NaiveDateTime a DateTime<Local>");
+
+        state_max_date_cloned.set(new_date);
+        log::info!("{:?}", (&*state_max_date_cloned))
+
+    });
+    let state_max_date_cloned = state_max_date.clone();
+    */
+
+    //PROBARLO
+    let dni_state:UseStateHandle<u64> = use_state(|| 0);
+    let cloned_dni_state = dni_state.clone();
+    let dni_changed = Callback::from(move |dni:String|{
+            cloned_dni_state.set(dni.parse::<u64>().unwrap());
+    });
+    let cloned_dni_state = dni_state.clone();
+
+    //PROBARLO
+    let min_price_state:UseStateHandle<u64> = use_state(|| 0);
+    let cloned_min_price_state = dni_state.clone();
+    let min_price_changed = Callback::from(move |price:String|{
+            cloned_min_price_state.set(price.parse::<u64>().unwrap());
+    });
+    let cloned_min_price_state = min_price_state.clone();
+
+    //PROBARLO
+    let max_price_state:UseStateHandle<u64> = use_state(|| 0);
+    let cloned_max_price_state = dni_state.clone();
+    let max_price_changed = Callback::from(move |price:String|{
+            cloned_max_price_state.set(price.parse::<u64>().unwrap());
+    });
+    let cloned_max_price_state = max_price_state.clone();
+
     let search_products = Callback::from(move |()| {
         let state_product_to_search_string = &*state_product_to_search_clone;
-        let search_query = QueryPublicacionesFiltradas {filtro_dni: None, filtro_nombre: Some(state_product_to_search_string.clone()), filtro_fecha_min: None, filtro_fecha_max: None};
+        //let state_min_date_cloned = (&*state_min_date_cloned).clone();
+        //(let state_max_date_cloned = (&*state_max_date_cloned).clone();
+        let cloned_dni_state = &*cloned_dni_state;
+        let cloned_min_price_state = &*cloned_min_price_state;
+        let cloned_max_price_state = &*cloned_max_price_state;
+        let search_query = QueryPublicacionesFiltradas {filtro_dni: Some(cloned_dni_state.clone()), filtro_nombre: Some(state_product_to_search_string.clone()), filtro_fecha_min: None, filtro_fecha_max: None, filtro_precio_max: Some(cloned_min_price_state.clone()), filtro_precio_min: Some(cloned_max_price_state.clone())};
         navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 
         if let Some(window) = window() {
@@ -114,7 +198,12 @@ pub fn navbar() -> Html{
                     <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
                 </div>
                 <div class="search-bar">
-                    <CheckedInputField name="product-name" label="Buscador por nombre" tipo="text" on_change={product_name_change}/>
+                    <CheckedInputField name="product-name" label="Aplicar buscador por nombre" tipo="text" on_change={product_name_change}/>
+                    //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
+                    //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
+                    <DniInputField dni = "dni" label="Aplicar buscador por DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
+                    <DniInputField dni = "precio-minimo" label="Aplicar buscador precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
+                    <DniInputField dni = "precio-maximo" label="Aplicar buscador precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
                     <GenericButton text="Buscar" onclick_event={search_products}/>
                 </div>
                 if dni.is_some() && (&*role_state).clone().is_some() {

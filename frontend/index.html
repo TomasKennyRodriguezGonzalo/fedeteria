@@ -74,12 +74,23 @@
             padding: 0;
         }
 
-        .confirm-prompt * {
+        .confirm-prompt .solid-background {
+            background-color: antiquewhite;
+            padding: 20px;
+            box-shadow: 0px 0px 20px 0px black;
+            border-radius: 10px;
+        }
+
+        .confirm-prompt .solid-background * {
             margin: 0px 5px;
         }
 
-        .confirm-prompt > * {
-            padding-bottom: 2%;
+        .confirm-prompt .solid-background > * {
+            padding-bottom: 5px;
+        }
+
+        .error-text {
+            color : red;
         }
     
         /* -- NAV BAR -- */
@@ -208,21 +219,17 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding : 10px;
         }
         
         .login-box * {
             justify-content: center;
             align-items: center;
-            padding-bottom : 2%;
+            padding-bottom : 5px;
         }
         
         .login-box * input:focus {
             border-color: #F7F6BB;
-        }
-
-        .login-box .error-text {
-            color : red;
         }
 
         /* -- create-publication -- */
@@ -235,13 +242,13 @@
             align-items: center;
             border-radius: 10px;
             margin: 0.4%;
-            padding : 2%
+            padding : 10px;
         }
 
         .create-publication-box * {
             justify-content: center;
             align-items: center;
-            padding-bottom : 2%
+            padding-bottom : 5px
         }
 
         .create-publication-box .image-list {
@@ -271,13 +278,13 @@
             align-items: center;
             border-radius: 10px;
             margin: 0.4%;
-            padding : 2%
+            padding : 10px;
         }
 
         .create-office-box * {
             justify-content: center;
             align-items: center;
-            padding-bottom : 2%
+            padding-bottom : 5px
         }
 
         /* --- Home Page --- */
@@ -320,7 +327,7 @@
 
 
         /* --- Profile Page --- */
-        .profile-page {
+        .profile-page-box {
             background-color: #114232;
             display: grid;
             color : white;
@@ -329,39 +336,87 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding : 10px;
         }
         
-        .profile-page * {
+        .profile-page-box * {
             justify-content: center;
             align-items: center;
-            padding-bottom : 2%;
+            padding-bottom : 5px;
         }
 
-        .profile-page ul {
+        .profile-page-box ul {
             list-style: none;
         }
 
-        .profile-page .profile-actions-box ul li {
+        .profile-page-box .profile-actions-box ul li {
             padding: 0 5px 25px;
         }
+
+        /* --- Create Office --- */
+        .create-office-box {
+            background-color: #114232;
+            display: grid;
+            color: white;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding: 10px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .create-office-box * {
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px
+        }
+
+        .create-office-box ul {
+            list-style: none;
+        }
+
+        .create-office-box ul li {
+            background: gray;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            padding: 5px 0px;
+        }
+        .create-office-box ul li * {
+            margin-bottom: 2px;
+        }
+        
 
         /* --- Delete Office --- */
         .delete-office-box {
             background-color: #114232;
-            display: grid;
-            color : white;
-            justify-content: center;
+            display: flex;
+            color: white;
             align-items: center;
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding: 10px;
+            justify-content: center;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-content: center;
+        }
+
+        .delete-office-box > * {
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
         }
 
         .delete-office-box * {
-            justify-content: center;
-            align-items: center;
             margin-bottom: 5px;
         }
 
@@ -371,13 +426,13 @@
 
         .delete-office-box ul li {
             background: gray;
-            display: flex;
+            display: grid;
             flex-direction: column;
             align-content: center;
             justify-content: center;
             align-items: center;
             border-radius: 10px;
-            padding: 5px 0px;
+            padding: 10px;
         }
         .delete-office-box ul li * {
             margin-bottom: 2px;
@@ -393,13 +448,13 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding : 10px;
         }
 
         .privileged-actions-box * {
             justify-content: center;
             align-items: center;
-            padding-bottom : 2%;
+            padding-bottom : 5px;
         }
 
         .privileged-actions-box .title {
@@ -428,7 +483,7 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding: 2%;
+            padding: 10px;
             align-content: center;
             flex-direction: column;
             flex-wrap: nowrap;
@@ -500,7 +555,7 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding : 10px;
         }
 
         /* --- edit personal info --- */
@@ -513,7 +568,7 @@
             border-radius: 10px;
             margin: 0.4%;
             margin-bottom: 1%;
-            padding : 2%;
+            padding : 10px;
         }
         
         .edit-personal-info-box > * {
@@ -521,8 +576,44 @@
             align-items: center;
             margin: 2px;
         }
+        
+        /* --- Change User Role --- */
+        .change-user-role-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            padding : 10px;
+        }
 
+        .change-user-role-box .dni-input * {
+            margin: 3px 0px;
+        }
 
+        .change-user-role-box > * {
+            justify-content: center;
+            align-items: center;
+            margin: 5px 0px;
+        }
+
+        .change-user-role-box ul {
+            list-style: none;
+            background-color: #0a271d;
+            border-radius: 10px;
+            margin : 10px 0px;
+            padding: 10px;
+        }
+        
+        .change-user-role-box ul li {
+            padding: 10px 0px 0px 0px;
+        }
+
+        .change-user-role-box ul li .employee-option * {
+            margin-right: 3px;
+        }
 
     </style>
   </head>
