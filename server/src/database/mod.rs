@@ -178,7 +178,7 @@ impl Database {
         // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
         self.publicaciones.iter()
             .filter(|(_, p)| {
-                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
+            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
             })
             // FALTA HACER EL RESTO DE FILTROS
             .map(|(&id, _)| id)
