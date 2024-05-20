@@ -143,9 +143,6 @@ pub fn unlock_account_molecule () -> Html {
     html!(
         <div class="unlock_account_box">
             <h1>{"Desbloquear Usuario"}</h1>
-            if (&*user_not_found_state).clone(){
-                <h2>{"El dni ingresado no pertenece a un usuario bloqueado"}</h2>
-            }
             <section>
                 <DniInputField dni = "dni" label="Dni a desbloquear:" tipo = "number" handle_on_change = {dni_changed} />
                 <GenericButton text="Desbloquear Usuario" onclick_event={change_show_button_state.clone()}/>
@@ -172,6 +169,9 @@ pub fn unlock_account_molecule () -> Html {
                     } else{
                     <h1>{"No hay usuarios bloqueados"}</h1>
                     }
+                }
+                if (&*user_not_found_state).clone(){
+                    <h2>{"El dni ingresado no pertenece a un usuario bloqueado"}</h2>
                 }
                 </ul>
             </section>

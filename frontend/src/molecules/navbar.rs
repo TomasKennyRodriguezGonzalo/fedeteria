@@ -248,12 +248,14 @@ pub fn navbar() -> Html{
                 <div class="search-bar">
                     <h1 class="title">{"Barra de búsqueda"}</h1>
                     <div class="inputs">
-                        <CheckedInputField name="product-name" placeholder="Titulo" tipo="text" on_change={product_name_change}/>
-                        //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
-                        //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
-                        <DniInputField dni = "dni" placeholder="por DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
-                        <DniInputField dni = "precio-minimo" placeholder="precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
-                        <DniInputField dni = "precio-maximo" placeholder="precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
+                        <div class="input-fields">
+                            //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
+                            //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
+                            <CheckedInputField name="product-name" placeholder="Titulo" tipo="text" on_change={product_name_change}/>
+                            <DniInputField dni = "dni" placeholder="por DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
+                            <DniInputField dni = "precio-minimo" placeholder="precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
+                            <DniInputField dni = "precio-maximo" placeholder="precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
+                        </div>
                         <GenericButton text="Buscar" onclick_event={search_products}/>
                     </div>
                 </div>
