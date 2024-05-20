@@ -170,9 +170,13 @@ pub fn publication_molecule(props : &Props) -> Html {
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
                 <div class="info">
-                <img src={
-                    format!("/publication_images/{}", publicacion.imagenes[0])
-                    }/>
+                {
+                    publicacion.imagenes.iter().map(|imagen| {
+                        html! {<img src={
+                            format!("/publication_images/{}", imagen)
+                        }/>}
+                    }).collect::<Html>()
+                }
                     <div class="text">
                     <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="name">{publicacion.titulo.clone()}</h4>
