@@ -161,7 +161,7 @@ pub fn navbar() -> Html{
 
     //PROBARLO
     let min_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
-    let cloned_min_price_state = dni_state.clone();
+    let cloned_min_price_state = min_price_state.clone();
     let min_price_changed = Callback::from(move |price:String|{
             cloned_min_price_state.set(Some(price.parse::<u64>().unwrap()));
     });
@@ -169,7 +169,7 @@ pub fn navbar() -> Html{
 
     //PROBARLO
     let max_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
-    let cloned_max_price_state = dni_state.clone();
+    let cloned_max_price_state = max_price_state.clone();
     let max_price_changed = Callback::from(move |price:String|{
             cloned_max_price_state.set(Some(price.parse::<u64>().unwrap()));
     });
@@ -182,7 +182,14 @@ pub fn navbar() -> Html{
         let cloned_dni_state = &*cloned_dni_state;
         let cloned_min_price_state = &*cloned_min_price_state;
         let cloned_max_price_state = &*cloned_max_price_state;
-        let search_query = QueryPublicacionesFiltradas {filtro_dni: cloned_dni_state.clone(), filtro_nombre: state_product_to_search_string.clone(), filtro_fecha_min: None, filtro_fecha_max: None, filtro_precio_max: cloned_min_price_state.clone(), filtro_precio_min: cloned_max_price_state.clone()};
+        let search_query = QueryPublicacionesFiltradas {
+            filtro_dni: cloned_dni_state.clone(), 
+            filtro_nombre: state_product_to_search_string.clone(), 
+            filtro_fecha_min: None, 
+            filtro_fecha_max: None, 
+            filtro_precio_max: cloned_max_price_state.clone(), 
+            filtro_precio_min: cloned_min_price_state.clone()
+        };
         navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 
         if let Some(window) = window() {
@@ -251,9 +258,9 @@ pub fn navbar() -> Html{
                             //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
                             //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
                             <CheckedInputField name="product-name" placeholder="Titulo" tipo="text" on_change={product_name_change}/>
-                            <DniInputField dni = "dni" placeholder="Filtro de DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
-                            <DniInputField dni = "precio-minimo" placeholder="Filtro de precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
-                            <DniInputField dni = "precio-maximo" placeholder="Filtro de precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
+                            <DniInputField dni = "dni" placeholder="DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
+                            <DniInputField dni = "precio-minimo" placeholder="Precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
+                            <DniInputField dni = "precio-maximo" placeholder="Precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
                         </div>
                         <GenericButton text="Buscar" onclick_event={search_products}/>
                     </div>

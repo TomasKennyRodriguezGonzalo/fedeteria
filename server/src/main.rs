@@ -305,8 +305,11 @@ async fn crear_publicacion (
     let descripcion = multipart.next_field().await.unwrap().unwrap();
     assert_eq!(descripcion.name().unwrap(), "Descripción");
     let descripcion = descripcion.text().await.unwrap();
-    multipart.next_field().await.unwrap().unwrap();
-    let dni = multipart.next_field().await.unwrap().unwrap();
+    
+    let mut dni = multipart.next_field().await.unwrap().unwrap();
+    if (dni.name().unwrap() == "") {
+        dni = multipart.next_field().await.unwrap().unwrap();
+    }
     assert_eq!(dni.name().unwrap(), "dni");
     let dni_str = dni.text().await.unwrap();
     let dni: u64 = dni_str.parse().unwrap();

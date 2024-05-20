@@ -130,7 +130,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::NotFound => [true, true, true, true],
     };
     let navigator = use_navigator().unwrap();
-    use_effect_once(move || {
+    use_effect(move || {
         if let Some(dni) = store.dni {
             let query = QueryGetUserRole {dni};
             request_post("/api/obtener_rol",
@@ -138,8 +138,8 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
                     let rol = response.rol;
                     let num = match rol {
                         datos_comunes::RolDeUsuario::Normal => 1,
-                        datos_comunes::RolDeUsuario::Dueño => 2,
-                        datos_comunes::RolDeUsuario::Empleado { sucursal } => 3,
+                        datos_comunes::RolDeUsuario::Empleado { sucursal } => 2,
+                        datos_comunes::RolDeUsuario::Dueño => 3,
                     };
                     if !allowed_roles[num] {
                         navigator.push(&Route::Home);

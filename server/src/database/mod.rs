@@ -71,7 +71,7 @@ impl Database {
         if self.encontrar_email(&datos.email).is_some() {
             return Err(CrearUsuarioError::EmailExistente)
         }
-        let u = Usuario::new(datos.nombre_y_apellido, datos.dni, datos.email, datos.contraseña, datos.nacimiento, datos.sucursal_usuario);
+        let u = Usuario::new(datos.nombre_y_apellido, datos.dni, datos.email, datos.contraseña, datos.nacimiento);
         self.usuarios.push(u);
         self.guardar();
         Ok(())
@@ -201,20 +201,54 @@ impl Database {
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
 
-        let mut vec_respuesta = Vec::new();
+//        let mut vec_respuesta = Vec::new();
 
         self.publicaciones.iter()
         .filter(|(_, p)| {
-            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true) && query.filtro_nombre.as_ref().map(|nombre| p.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true) && query.filtro_precio_min.as_ref().map(|precio| p.precio >= Some(*precio)).unwrap_or(true) && query.filtro_precio_max.as_ref().map(|precio| p.precio <= Some(*precio)).unwrap_or(true)
+            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
         })
+        .filter(|(_, publication)| {
+            query.filtro_nombre.as_ref()
+            .map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase()))
+            .unwrap_or(true)
+        })
+        .filter(|(_, publication)| {
+            query.filtro_precio_min.as_ref().map(
+                |precio| {
+                    if let Some(publicacion_precio) = publication.precio {
+                        publicacion_precio >= *precio
+                    } else {
+                        false
+                    }
+                }
+            ).unwrap_or(true)
+        })
+        .filter(|(_, publication)| {
+            query.filtro_precio_max.as_ref().map(
+                |precio| {
+                    if let Some(publicacion_precio) = publication.precio {
+                        publicacion_precio <= *precio
+                    } else {
+                        false
+                    }
+                }
+            ).unwrap_or(true)
+        })
+
         // FALTA HACER EL RESTO DE FILTROS
-        .for_each(|(&id, _)| {
+        /* .filter(|(_, p)| {
+            
+        })*/
+        .map(|(i, _)| *i)
+        .collect()
+
+        /* .for_each(|(&id, _)| {
             if !vec_respuesta.contains(&id) {
                 vec_respuesta.push(id)
             }
-        });
+        });*/
 
-        return vec_respuesta;
+        //return vec_respuesta;
            
     }
     
