@@ -51,7 +51,7 @@ pub enum Route {
     DeleteOffice,
     #[at("/test/publication-thumbnail/:id")]
     PublicationThumbnail {id: usize},
-    #[at("/acciones-priviligiadas/desbloquear-cuenta")]
+    #[at("/acciones-privilegiadas/desbloquear-cuenta")]
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
     ChangeUserRole,

@@ -4,7 +4,10 @@ use web_sys::HtmlInputElement;
 
 #[derive(Properties,PartialEq)]
 pub struct Props{
+    #[prop_or_default]
+    pub placeholder : String,
     pub dni:String,
+    #[prop_or_default]
     pub label:String,
     pub tipo:String,
     pub handle_on_change:Callback<String>,
@@ -32,7 +35,7 @@ pub fn generic_field(props: &Props)-> Html{
                 <label for={id.clone()}>{&props.label}</label>
             </div>
             <div>
-                <input type = {props.tipo.clone()} name = {props.dni.clone()} onchange={onchange} />
+                <input placeholder={props.placeholder.clone()} type = {props.tipo.clone()} name = {props.dni.clone()} onchange={onchange} />
             </div>
         </>
     }

@@ -198,36 +198,24 @@ impl Database {
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
-        let query_nombre = query.filtro_nombre.clone();
+
+        let mut vec_respuesta = Vec::new();
+
         self.publicaciones.iter()
-            .filter(|(_, p)| {
-            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
-            })
-            .filter(|(_, publication)| {
-                query_nombre.as_ref().map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true)
-            })
-            .filter(|(_, publication)| {
-                query.filtro_precio_min.as_ref().map(|precio| publication.precio >= Some(*precio)).unwrap_or(true)
-            })
-            .filter(|(_, publication)| {
-                query.filtro_precio_max.as_ref().map(|precio| publication.precio >= Some(*precio)).unwrap_or(true)
-            })
-            // FALTA HACER EL RESTO DE FILTROS
-            .map(|(&id, _)| id)
-            .collect()
+        .filter(|(_, p)| {
+            query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true) && query.filtro_nombre.as_ref().map(|nombre| p.titulo.to_lowercase().contains(&nombre.to_lowercase())).unwrap_or(true) && query.filtro_precio_min.as_ref().map(|precio| p.precio >= Some(*precio)).unwrap_or(true) && query.filtro_precio_max.as_ref().map(|precio| p.precio <= Some(*precio)).unwrap_or(true)
+        })
+        // FALTA HACER EL RESTO DE FILTROS
+        .for_each(|(&id, _)| {
+            if !vec_respuesta.contains(&id) {
+                vec_respuesta.push(id)
+            }
+        });
+
+        return vec_respuesta;
+           
     }
-
-    /*pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
-        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
-        self.publicaciones.iter()
-            .filter(|(_, p)| {
-                query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
-            })
-            // FALTA HACER EL RESTO DE FILTROS
-            .map(|(&id, _)| id)
-            .collect()
-    } */
-
+    
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
         self.usuarios.iter().filter(|usuario| usuario.estado.esta_bloqueada())
                             .map(|usuario| BlockedUser { nombre: usuario.nombre_y_apellido.clone(), dni: usuario.dni.clone()})

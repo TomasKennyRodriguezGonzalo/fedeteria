@@ -91,10 +91,10 @@ pub fn navbar() -> Html{
         information_dispatch.reduce_mut(|store| store.messages.remove(button_index));
     });
 
-    let state_product_to_search = use_state(|| "".to_string());
+    let state_product_to_search = use_state(|| None);
     let state_product_to_search_cloned = state_product_to_search.clone();
     let product_name_change = Callback::from(move |value: String| {
-        state_product_to_search_cloned.set(value);
+        state_product_to_search_cloned.set(Some(value));
     });
     let state_product_to_search_clone = state_product_to_search.clone();
     let navigator_cloned = navigator.clone();
@@ -153,26 +153,26 @@ pub fn navbar() -> Html{
     */
 
     //PROBARLO
-    let dni_state:UseStateHandle<u64> = use_state(|| 0);
+    let dni_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_dni_state = dni_state.clone();
     let dni_changed = Callback::from(move |dni:String|{
-            cloned_dni_state.set(dni.parse::<u64>().unwrap());
+            cloned_dni_state.set(Some(dni.parse::<u64>().unwrap()));
     });
     let cloned_dni_state = dni_state.clone();
 
     //PROBARLO
-    let min_price_state:UseStateHandle<u64> = use_state(|| 0);
+    let min_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_min_price_state = dni_state.clone();
     let min_price_changed = Callback::from(move |price:String|{
-            cloned_min_price_state.set(price.parse::<u64>().unwrap());
+            cloned_min_price_state.set(Some(price.parse::<u64>().unwrap()));
     });
     let cloned_min_price_state = min_price_state.clone();
 
     //PROBARLO
-    let max_price_state:UseStateHandle<u64> = use_state(|| 0);
+    let max_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_max_price_state = dni_state.clone();
     let max_price_changed = Callback::from(move |price:String|{
-            cloned_max_price_state.set(price.parse::<u64>().unwrap());
+            cloned_max_price_state.set(Some(price.parse::<u64>().unwrap()));
     });
     let cloned_max_price_state = max_price_state.clone();
 
@@ -183,7 +183,7 @@ pub fn navbar() -> Html{
         let cloned_dni_state = &*cloned_dni_state;
         let cloned_min_price_state = &*cloned_min_price_state;
         let cloned_max_price_state = &*cloned_max_price_state;
-        let search_query = QueryPublicacionesFiltradas {filtro_dni: Some(cloned_dni_state.clone()), filtro_nombre: Some(state_product_to_search_string.clone()), filtro_fecha_min: None, filtro_fecha_max: None, filtro_precio_max: Some(cloned_min_price_state.clone()), filtro_precio_min: Some(cloned_max_price_state.clone())};
+        let search_query = QueryPublicacionesFiltradas {filtro_dni: cloned_dni_state.clone(), filtro_nombre: state_product_to_search_string.clone(), filtro_fecha_min: None, filtro_fecha_max: None, filtro_precio_max: cloned_min_price_state.clone(), filtro_precio_min: cloned_max_price_state.clone()};
         navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 
         if let Some(window) = window() {
@@ -194,64 +194,69 @@ pub fn navbar() -> Html{
     html!{
         <>
             <header class="navbar">
-                <div class="logo">
-                    <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
-                </div>
-                <div class="search-bar">
-                    <CheckedInputField name="product-name" label="Aplicar buscador por nombre" tipo="text" on_change={product_name_change}/>
-                    //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
-                    //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
-                    <DniInputField dni = "dni" label="Aplicar buscador por DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
-                    <DniInputField dni = "precio-minimo" label="Aplicar buscador precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
-                    <DniInputField dni = "precio-maximo" label="Aplicar buscador precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
-                    <GenericButton text="Buscar" onclick_event={search_products}/>
-                </div>
-                if dni.is_some() && (&*role_state).clone().is_some() {
-                    <div>
-                        <h2>{"Hola " }{username}{"!"}</h2>
+                <div class="core">
+                    <div class="logo">
+                        <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
                     </div>
-                    <nav>
-                            {
-                                match (&*role_state).clone().unwrap() { 
-                                    RolDeUsuario::Dueño => {
-                                        html!{
-                                        <ul class="option_list">
-                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                            <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
-                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                        </ul>
-                                        }
-                                    },
-                                    RolDeUsuario::Empleado{sucursal : _} => {
-                                        html!{
-                                        <ul class="option_list">
-                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                            <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
-                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                        </ul>
-                                        }
-                                    },
-                                    RolDeUsuario::Normal => {
-                                        html!{
-                                        <ul class="option_list">
-                                            <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                            <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                        </ul>
+                    if dni.is_some() && (&*role_state).clone().is_some() {
+                        <div>
+                            <h2>{"Hola " }{username}{"!"}</h2>
+                        </div>
+                        <nav>
+                                {
+                                    match (&*role_state).clone().unwrap() { 
+                                        RolDeUsuario::Dueño => {
+                                            html!{
+                                            <ul class="option_list">
+                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
+                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                            </ul>
+                                            }
+                                        },
+                                        RolDeUsuario::Empleado{sucursal : _} => {
+                                            html!{
+                                            <ul class="option_list">
+                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
+                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                            </ul>
+                                            }
+                                        },
+                                        RolDeUsuario::Normal => {
+                                            html!{
+                                            <ul class="option_list">
+                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                            </ul>
+                                            }
                                         }
                                     }
                                 }
-                            }
-                    </nav>
-                } else {
-                    <div>
-                        <h2>{"No tienes tu sesión iniciada." }</h2>
+                        </nav>
+                    } else {
+                        <div>
+                            <h2>{"No tienes tu sesión iniciada." }</h2>
+                        </div>
+                        <nav>
+                            <ul class="option_list">
+                                <li><Link<Route> to={Route::LogInPage}>{"Iniciar Sesion"}</Link<Route>></li>
+                            </ul>
+                        </nav>
+                    }
+                </div>
+                <div class="search-bar">
+                    <h1 class="title">{"Barra de búsqueda"}</h1>
+                    <div class="inputs">
+                        <CheckedInputField name="product-name" placeholder="Titulo" tipo="text" on_change={product_name_change}/>
+                        //<CheckedInputField name="product-min-date" label="Aplicar filtro por fecha más antigua" tipo="date" on_change={full_min_date_changed}/>
+                        //<CheckedInputField name="product-max-date" label="Aplicar filtro por fecha más reciente" tipo="date" on_change={full_max_date_changed}/>
+                        <DniInputField dni = "dni" placeholder="por DNI" tipo = "camp-dni" handle_on_change = {dni_changed} />
+                        <DniInputField dni = "precio-minimo" placeholder="precio minimo" tipo = "camp-min-price" handle_on_change = {min_price_changed} />
+                        <DniInputField dni = "precio-maximo" placeholder="precio máximo" tipo = "camp-max-price" handle_on_change = {max_price_changed} />
+                        <GenericButton text="Buscar" onclick_event={search_products}/>
                     </div>
-                    <nav>
-                        <ul class="option_list">
-                            <li><Link<Route> to={Route::LogInPage}>{"Iniciar Sesion"}</Link<Route>></li>
-                        </ul>
-                    </nav>
-                }
+                </div>
             </header>
             if !messages.is_empty() {
                 <div class="information-message-list">
