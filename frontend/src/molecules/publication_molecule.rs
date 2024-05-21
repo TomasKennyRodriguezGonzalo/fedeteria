@@ -2,6 +2,7 @@ use std::clone;
 
 use web_sys::window;
 use crate::components::generic_button::GenericButton;
+use crate::components::indexed_button::IndexedButton;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
@@ -32,6 +33,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
+
+    let current_image_state = use_state(|| 0);
 
     let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
@@ -162,18 +165,30 @@ pub fn publication_molecule(props : &Props) -> Html {
         cloned_activate_delete_publication_state.set(false);
     });
 
+    let cloned_current_image_state = current_image_state.clone();
+    let change_current_image = Callback::from(move |index| {
+        cloned_current_image_state.set(index);
+    });
+
+    let cloned_current_image_state = current_image_state.clone();
+
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
                 <div class="info">
-                <div class="image-list">
-                    {
-                        publicacion.imagenes.iter().map(|imagen| {
-                            html! {<img src={
-                                format!("/publication_images/{}", imagen)
-                            }/>}
-                        }).collect::<Html>()
-                    }
+                <div class="image">
+                    <img src={
+                        format!("/publication_images/{}", publicacion.imagenes[*cloned_current_image_state])
+                    }/>
+                    <div class="index-buttons">
+                        {
+                            publicacion.imagenes.iter().enumerate().map(|(index, _imagen)| {
+                                html! {
+                                    <IndexedButton index={index} text="" onclick_event={change_current_image.clone()}></IndexedButton>
+                                }
+                            }).collect::<Html>()
+                        }
+                    </div> 
                 </div> 
                     <div class="text">
                     <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
