@@ -417,7 +417,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-content: center;
+            align-content: center; 
             align-items: center;
             background-color: white;
             margin: 10px 0px 0px 10px;
@@ -434,6 +434,11 @@
         .publication-box .image .index-buttons * {
             margin: 0px 2px;
             background-color: gray;
+        }
+
+        .publication-box .image .index-buttons .selected-button {
+            transform: scale(1.15);
+            transition: 0.5s;
         }
 
         .publication-box .image .index-buttons {

@@ -183,8 +183,14 @@ pub fn publication_molecule(props : &Props) -> Html {
                     <div class="index-buttons">
                         {
                             publicacion.imagenes.iter().enumerate().map(|(index, _imagen)| {
-                                html! {
-                                    <IndexedButton index={index} text="" onclick_event={change_current_image.clone()}></IndexedButton>
+                                if (*cloned_current_image_state == index) {
+                                    html! {
+                                        <button class="selected-button"></button>
+                                    }
+                                } else {
+                                    html! {
+                                        <IndexedButton index={index} text="" onclick_event={change_current_image.clone()}></IndexedButton>
+                                    }
                                 }
                             }).collect::<Html>()
                         }
