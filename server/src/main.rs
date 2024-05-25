@@ -307,7 +307,8 @@ async fn crear_publicacion (
     let descripcion = descripcion.text().await.unwrap();
     
     let mut dni = multipart.next_field().await.unwrap().unwrap();
-    if (dni.name().unwrap() == "") {
+    if (dni.name().unwrap() != "dni") {
+        drop(dni);
         dni = multipart.next_field().await.unwrap().unwrap();
     }
     assert_eq!(dni.name().unwrap(), "dni");
