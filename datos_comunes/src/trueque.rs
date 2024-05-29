@@ -7,8 +7,8 @@ pub struct Trueque {
     //oferta.1 --> coleccion de indices de publicaciones de oferta 
     pub oferta: (u64, Vec<usize>),
     //receptor.0 --> indice del usuario en el vec de usuarios
-    //receptor.1 --> coleccion de indices de publicaciones de receptor 
-    pub receptor: (u64, Vec<usize>),
+    //receptor.1 --> indice de publicacion de receptor 
+    pub receptor: (u64, usize),
     pub sucursal: Option<String>,
     pub horario: Option<DateTime<Local>>,
     pub estado: EstadoTrueque,
@@ -21,12 +21,12 @@ impl Trueque {
                 dni_ofertante: u64, 
                 dni_receptor: u64, 
                 id_publicaciones_ofertante: Vec<usize>, 
-                id_publicaciones_receptor: Vec<usize>
+                id_publicacion_receptor: usize
 
             ) -> Trueque {
         Trueque {   
                     oferta: ((dni_ofertante, id_publicaciones_ofertante)), 
-                    receptor: ((dni_receptor, id_publicaciones_receptor)),
+                    receptor: ((dni_receptor, id_publicacion_receptor)),
                     sucursal: None,
                     horario: None,
                     estado: EstadoTrueque::Oferta,
@@ -79,7 +79,7 @@ impl Trueque {
         if (ofertante_iguales) && (receptor_iguales) {
             Some(self);
         }
-        
+
         None
     }
 }
