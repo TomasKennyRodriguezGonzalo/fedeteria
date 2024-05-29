@@ -91,6 +91,8 @@ async fn main() {
         .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
         .route("/api/obtener_publicaciones", post(obtener_publicaciones))
         .route("/api/eliminar_publicacion", post(eliminar_publicacion))
+        .route("/api/obtener_notificaciones", post(obtener_notificaciones))
+       // .route("/api/eliminar_notificacion", post(eliminar_notificacion))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -457,6 +459,13 @@ Json(query): Json<QueryEliminarPublicacion>) -> Json<ResponseEliminarPublicacion
 }
 
 
+async fn obtener_notificaciones( State(state): State<SharedState>,
+Json(query): Json<QueryGetNotificaciones>
+) -> Json<ResponseNotificaciones>{
+    let mut state = state.write().await;
+    let respuesta = state.db.obtener_notificaciones(&query);
+    Json(ResponseNotificaciones{notificaciones: respuesta})
+}
 
 
 

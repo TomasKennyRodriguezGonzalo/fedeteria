@@ -12,3 +12,4 @@ pub mod my_publications_page;
 pub mod unlock_account_page;
 pub mod change_user_rol_page;
 pub mod search_results_page;
+pub mod notifications_page;

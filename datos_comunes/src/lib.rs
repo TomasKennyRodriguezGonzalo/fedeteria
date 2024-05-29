@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
 mod publicacion;
 pub use publicacion::*;
+mod notificacion;
+pub use notificacion::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {
@@ -170,8 +172,6 @@ pub struct QueryUnlockAccount {
     pub dni: u64,
 }
 
-
-
 pub type ResponseUnlockAccount = Result<Vec<BlockedUser>, DuringBlockError>;
 
 
@@ -211,3 +211,23 @@ pub struct QueryEliminarPublicacion{
 pub struct ResponseEliminarPublicacion{
     pub ok: bool,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryGetNotificaciones{
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseNotificaciones{
+    pub notificaciones:Vec<Notificacion>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarNotificacion{
+    pub dni:u64,
+    pub index:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarNotificacion{
+    pub notificaciones:Vec<Notificacion>,
+}
+

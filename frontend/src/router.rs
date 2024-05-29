@@ -1,3 +1,4 @@
+use crate::pages::notifications_page::NotificationsPage;
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
@@ -61,6 +62,8 @@ pub enum Route {
     ChangeUserRole,
     #[at("/resultados-busqueda")]
     SearchResults,
+    #[at("/notificaciones")]
+    Notifications,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -90,6 +93,7 @@ pub fn switch(routes: Route) -> Html {
             Route::UnlockAccount => html!(<UnlockAccountPage/>), 
             Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>},
             Route::SearchResults => html!(<SearchResultsPage/>),
+            Route::Notifications => html!(<NotificationsPage/>),
         }}
     </>}
 }
@@ -128,6 +132,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::ChangeUserRole => [false, false, false, true],
         Route::SearchResults => [true, true, true, true],
         Route::NotFound => [true, true, true, true],
+        Route::Notifications => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {
