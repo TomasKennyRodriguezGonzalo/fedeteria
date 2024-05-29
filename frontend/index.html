@@ -413,6 +413,43 @@
             padding: 0 5px 25px;
         }
 
+        .publication-box .image {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-content: center; 
+            align-items: center;
+            background-color: white;
+            margin: 10px 0px 0px 10px;
+            border-radius: 10px;
+        }
+        .publication-box .image img{
+            width: 400px;
+            height: 300px;
+            margin-left: 10px;
+            border-radius: 10px;
+            margin: 10px;
+        }
+
+        .publication-box .image .index-buttons * {
+            margin: 0px 2px;
+            background-color: gray;
+        }
+
+        .publication-box .image .index-buttons .selected-button {
+            transform: scale(1.15);
+            transition: 0.5s;
+        }
+
+        .publication-box .image .index-buttons {
+            background-color: lightgray;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-items: center;
+            padding: 5px 10px;
+        }
+
         /* --- Create Office --- */
         .create-office-box {
             background-color: #114232;
@@ -740,6 +777,49 @@
             padding : 10px;
         }
 
+        /* --- Notifications Thumbnail --- */
+        .notification-thumbnail {
+            background-color: #114232;
+            padding: 10px;
+            width: 70vw;
+        }
+        
+        .notification-thumbnail a {
+            all : initial;
+        }
+
+        .notification-thumbnail h1,h4 {
+            color: white;
+        }
+
+        /* notifications-box */
+        .notifications-box {
+            background-color: #114232;
+            display: flex;
+            color: white;
+            justify-content: start;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding: 10px;
+            align-content: center;
+            flex-direction: column;
+            flex-wrap: nowrap;
+        }
+        
+        .notifications-box ul {
+            list-style: none;
+            background-color: #0a271d;
+            border-radius: 10px;
+            margin : 10px 0px;
+            padding: 10px;
+        }
+        
+        .notifications-box ul li {
+            padding: 30px 0px 0px 0px;
+            display: flex;
+            flex-direction: row;
+        }
 
     </style>
   </head>
