@@ -6,6 +6,8 @@ mod publicacion;
 pub use publicacion::*;
 mod notificacion;
 pub use notificacion::*;
+mod trueque;
+pub use trueque::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {

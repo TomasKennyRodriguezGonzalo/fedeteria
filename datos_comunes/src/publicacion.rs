@@ -1,7 +1,7 @@
 use chrono::{Date, DateTime, Local};
 use serde::{Deserialize, Serialize};
 
-use crate::QueryAddOffice;
+use crate::{QueryAddOffice, Trueque};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Publicacion {
@@ -12,6 +12,7 @@ pub struct Publicacion {
     pub imagenes: Vec<String>,
     pub precio: Option<u64>,
     pub pausada: bool,
+    pub ofertas: Vec<Trueque>,
 }
 
 impl Publicacion {
@@ -23,6 +24,7 @@ impl Publicacion {
             dni_usuario,
             precio: None,
             pausada: true,
+            ofertas: Vec::new(),
         }
     }
 

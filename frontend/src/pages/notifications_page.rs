@@ -61,7 +61,7 @@ let delete_notification = Callback::from(move |index| {
                         html! {
                             <li>
                                 <NotificationThumbnail id={index} dni={dni.clone()}/>
-                                log::info!("el index es: {}",index);
+                                //log::info!("el index es: {}",index);
                                 <IndexedButton text={"X".to_string()} onclick_event={delete_notification.clone()} index={index} />
                             </li>
                         }
