@@ -24,7 +24,6 @@ pub fn notification_thumbnail(props : &Props) -> Html {
             index : id.clone(),
         };
         request_post(("/api/datos_notificacion?id={id}"), query, move |respuesta: ResponseNotificacion|{
-            log::info!("{respuesta:?}");
             cloned_notification_state.set(respuesta.notificacion);
         });
         
@@ -33,14 +32,14 @@ pub fn notification_thumbnail(props : &Props) -> Html {
 
     html! {
         <div class="notification-thumbnail">
-            <a href="/">
-                if let Some(notificacion) = &*notification_state {
+        if let Some(notificacion) = &*notification_state {
+                    <a href={notificacion.clone().url.clone()}>
                     <h1 class="notification-title">{notificacion.titulo.clone()}</h1>
                     <h4 class="notification-detail">{notificacion.detalle.clone()}</h4>
+                    </a>
                 } else {
                     {"Cargando..."}
                 }
-            </a>
         </div>
     }
 }
