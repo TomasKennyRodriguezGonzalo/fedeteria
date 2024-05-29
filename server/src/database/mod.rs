@@ -295,4 +295,13 @@ impl Database {
         true
     }
 
+    pub fn obtener_notificaciones(&mut self, query:&QueryGetNotificaciones)->Vec<Notificacion>{
+        let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
+        let nueva_notificacion = Notificacion { titulo : "Entraste a notificaciones".to_string() , detalle: "Hola!! estas en notificaciones".to_string(), url: "http://[::1]:8080/".to_string()};
+        self.usuarios.get_mut(index).unwrap().notificaciones.push(nueva_notificacion);
+        let notificaciones = self.usuarios.get(index).unwrap().notificaciones.clone();
+
+        notificaciones
+    }
+
 }

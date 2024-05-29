@@ -1,20 +1,62 @@
+use datos_comunes::{Notificacion, QueryEliminarNotificacion, QueryGetNotificaciones, ResponseEliminarNotificacion, ResponseNotificaciones};
 use yew::prelude::*;
-use crate::components::{indexed_button::IndexedButton, notification_thumbnail::NotificationThumbnail};
+use yew_hooks::use_effect_once;
+use yewdux::use_store;
+use crate::{components::{indexed_button::IndexedButton, notification_thumbnail::NotificationThumbnail}, request_post, store::UserStore};
 
 
 #[function_component(NotificationsPage)]
 pub fn notifications_page() -> Html {
 
-    let notification_list = use_state(|| vec!["".to_string(), "".to_string(), "".to_string()]);
+    let notification_list:UseStateHandle<Vec<Notificacion>> = use_state(|| vec![]);
 
-    use_effect(
-        // Traerme la lista de notificaciones del usuario
-        || {}
-    );
+    let (store, store_dispatch) = use_store::<UserStore>();
+    let dni = store.dni.unwrap();
+    
+   
 
-    let delete_notification = Callback::from(|index| {
-        // Elimino la notificación con el indice recibido de IndexedButton y el dni del usuario del UserStore
+
+    let cloned_notification_list = notification_list.clone();
+    let cloned_dni = dni.clone();
+    use_effect_once( move || {
+    let dni = cloned_dni.clone();
+    
+    // Traerme la lista de notificaciones del usuario
+    let notification_list = cloned_notification_list.clone();
+    let query = QueryGetNotificaciones
+    {
+        dni : dni,
+    };
+    request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
+        let notificaciones = respuesta;
+        notification_list.set(notificaciones.notificaciones);
     });
+    
+    || {}
+}
+);
+
+let cloned_dni = dni.clone();
+let cloned_notification_list = notification_list.clone();
+let delete_notification = Callback::from(move |index| {
+    // Elimino la notificación con el indice recibido de IndexedButton y el dni del usuario del UserStore
+    let dni = cloned_dni.clone();
+    let notification_list = cloned_notification_list.clone();
+    let query = QueryEliminarNotificacion
+    {
+        dni : (dni).clone(),
+        index: index,
+    };
+    request_post("/api/eliminar_notificacion", query, move |respuesta: ResponseEliminarNotificacion|{
+        let notificaciones = respuesta;
+        notification_list.set(notificaciones.notificaciones);
+    });
+    
+    
+    
+    
+});
+
 
     html! {
         <div class="notifications-box">
@@ -24,7 +66,7 @@ pub fn notifications_page() -> Html {
                     (&*notification_list).iter().enumerate().map(|(index, _notification)| {
                         html! {
                             <li>
-                                <NotificationThumbnail id={1}/>
+                                <NotificationThumbnail id={index}/>
                                 <IndexedButton text={"X".to_string()} onclick_event={delete_notification.clone()} index={index} />
                             </li>
                         }

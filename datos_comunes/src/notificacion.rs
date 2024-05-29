@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize,Debug)]
 pub struct Notificacion {
-    titulo : String,
-    detalle : String,
-    url : String,
+    pub titulo : String,
+    pub detalle : String,
+    pub url : String,
 }

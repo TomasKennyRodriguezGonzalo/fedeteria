@@ -211,3 +211,23 @@ pub struct QueryEliminarPublicacion{
 pub struct ResponseEliminarPublicacion{
     pub ok: bool,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryGetNotificaciones{
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseNotificaciones{
+    pub notificaciones:Vec<Notificacion>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarNotificacion{
+    pub dni:u64,
+    pub index:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarNotificacion{
+    pub notificaciones:Vec<Notificacion>,
+}
+

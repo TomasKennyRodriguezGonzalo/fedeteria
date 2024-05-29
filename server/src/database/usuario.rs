@@ -1,7 +1,7 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 use chrono::{DateTime, Local};
-use datos_comunes::{LogInError, RolDeUsuario};
+use datos_comunes::{LogInError, Notificacion, RolDeUsuario};
 use serde::{Deserialize, Serialize};
 
 
@@ -14,6 +14,7 @@ pub struct Usuario {
     pub nacimiento: DateTime<Local>,
     pub rol: RolDeUsuario,
     pub estado: EstadoCuenta,
+    pub notificaciones: Vec<Notificacion>,
 }
 
 
@@ -70,6 +71,7 @@ impl Usuario {
             nacimiento,
             rol: RolDeUsuario::Normal,
             estado: EstadoCuenta::Activa { intentos: 3 },
+            notificaciones : Vec::new(),
         }
     }
 }
