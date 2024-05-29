@@ -8,33 +8,30 @@ use crate::{components::{indexed_button::IndexedButton, notification_thumbnail::
 #[function_component(NotificationsPage)]
 pub fn notifications_page() -> Html {
 
-    let notification_list:UseStateHandle<Vec<Notificacion>> = use_state(|| vec![]);
+    let notification_list:UseStateHandle<Vec<usize>> = use_state(|| vec![]);
 
     let (store, store_dispatch) = use_store::<UserStore>();
     let dni = store.dni.unwrap();
     
-   
-
 
     let cloned_notification_list = notification_list.clone();
     let cloned_dni = dni.clone();
     use_effect_once( move || {
-    let dni = cloned_dni.clone();
-    
-    // Traerme la lista de notificaciones del usuario
-    let notification_list = cloned_notification_list.clone();
-    let query = QueryGetNotificaciones
-    {
-        dni : dni,
-    };
-    request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
-        let notificaciones = respuesta;
-        notification_list.set(notificaciones.notificaciones);
+        let dni = cloned_dni.clone();
+        
+        // Traerme la lista de notificaciones del usuario
+        let notification_list = cloned_notification_list.clone();
+        let query = QueryGetNotificaciones {
+            dni : dni,
+        };
+        request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
+            log::info!("{respuesta:?}");
+            let notificaciones = respuesta;
+            notification_list.set(notificaciones.notificaciones);
+        });
+        
+        || {}
     });
-    
-    || {}
-}
-);
 
 let cloned_dni = dni.clone();
 let cloned_notification_list = notification_list.clone();
@@ -48,13 +45,10 @@ let delete_notification = Callback::from(move |index| {
         index: index,
     };
     request_post("/api/eliminar_notificacion", query, move |respuesta: ResponseEliminarNotificacion|{
-        let notificaciones = respuesta;
+        log::info!("{respuesta:?}");
+        let notificaciones: ResponseEliminarNotificacion = respuesta;
         notification_list.set(notificaciones.notificaciones);
     });
-    
-    
-    
-    
 });
 
 
@@ -66,7 +60,8 @@ let delete_notification = Callback::from(move |index| {
                     (&*notification_list).iter().enumerate().map(|(index, _notification)| {
                         html! {
                             <li>
-                                <NotificationThumbnail id={index}/>
+                                <NotificationThumbnail id={index} dni={dni.clone()}/>
+                                log::info!("el index es: {}",index);
                                 <IndexedButton text={"X".to_string()} onclick_event={delete_notification.clone()} index={index} />
                             </li>
                         }
