@@ -218,7 +218,7 @@ pub struct QueryGetNotificaciones{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseNotificaciones{
-    pub notificaciones:Vec<Notificacion>,
+    pub notificaciones:Vec<usize>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryEliminarNotificacion{
@@ -228,6 +228,16 @@ pub struct QueryEliminarNotificacion{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseEliminarNotificacion{
-    pub notificaciones:Vec<Notificacion>,
+    pub notificaciones:Vec<usize>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryNotificacion{
+    pub dni:u64,
+    pub index:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseNotificacion{
+    pub notificacion : Option<Notificacion>
+}

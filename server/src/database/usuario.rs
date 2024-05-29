@@ -5,7 +5,7 @@ use datos_comunes::{LogInError, Notificacion, RolDeUsuario};
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Usuario {
     pub nombre_y_apellido: String,
     pub dni: u64,

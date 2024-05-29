@@ -215,6 +215,7 @@ pub fn navbar() -> Html{
                                             html!{
                                             <ul class="option_list">
                                                 <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
                                                 <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
                                                 <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
                                             </ul>
@@ -224,6 +225,7 @@ pub fn navbar() -> Html{
                                             html!{
                                             <ul class="option_list">
                                                 <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
                                                 <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
                                                 <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
                                             </ul>
@@ -233,6 +235,7 @@ pub fn navbar() -> Html{
                                             html!{
                                             <ul class="option_list">
                                                 <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
                                                 <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
                                             </ul>
                                             }

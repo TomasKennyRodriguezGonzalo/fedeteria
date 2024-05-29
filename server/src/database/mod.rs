@@ -199,10 +199,6 @@ impl Database {
     }
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
-        // type tipo = Option<Fn((usize, &Publicacion)) -> bool>;
-
-//        let mut vec_respuesta = Vec::new();
-
         self.publicaciones.iter()
         .filter(|(_, p)| {
             query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
@@ -241,14 +237,6 @@ impl Database {
         })*/
         .map(|(i, _)| *i)
         .collect()
-
-        /* .for_each(|(&id, _)| {
-            if !vec_respuesta.contains(&id) {
-                vec_respuesta.push(id)
-            }
-        });*/
-
-        //return vec_respuesta;
            
     }
     
@@ -295,13 +283,33 @@ impl Database {
         true
     }
 
-    pub fn obtener_notificaciones(&mut self, query:&QueryGetNotificaciones)->Vec<Notificacion>{
+    pub fn obtener_notificaciones(&mut self, query:&QueryGetNotificaciones)->Vec<usize>{
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
         let nueva_notificacion = Notificacion { titulo : "Entraste a notificaciones".to_string() , detalle: "Hola!! estas en notificaciones".to_string(), url: "http://[::1]:8080/".to_string()};
         self.usuarios.get_mut(index).unwrap().notificaciones.push(nueva_notificacion);
         let notificaciones = self.usuarios.get(index).unwrap().notificaciones.clone();
+        self.guardar();
+        notificaciones.iter().enumerate().map(|(i, _)| i).collect()
+    }
 
-        notificaciones
+    pub fn get_notificacion(&self, query : &QueryNotificacion) -> Option<Notificacion> {
+        if let Some(usuario) = self.usuarios.clone().iter().find(|usuario| usuario.dni == query.dni) {
+            if let Some(notificacion) = usuario.notificaciones.get(query.index) {
+                return Some(notificacion.clone());
+            }
+        }
+        None
+    }
+
+    pub fn eliminar_notificacion(&mut self, query:&QueryEliminarNotificacion) -> Vec<usize>{
+        if let Some(usuario) = self.usuarios.iter_mut().find(|usuario| usuario.dni == query.dni) {
+            if let Some(notificacion) = usuario.notificaciones.get_mut(query.index) {
+                usuario.notificaciones.remove(query.index);
+            }
+        }
+        let notificaciones = self.usuarios.get(query.index).unwrap().notificaciones.clone();
+        self.guardar();
+        notificaciones.iter().enumerate().map(|(i, _)| i).collect()
     }
 
 }

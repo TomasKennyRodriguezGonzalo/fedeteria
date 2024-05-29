@@ -780,17 +780,25 @@
         /* --- Notifications Thumbnail --- */
         .notification-thumbnail {
             background-color: #114232;
-            padding: 10px;
-            width: 70vw;
+            width: 100vw;
+            border-radius: 10px;
         }
         
         .notification-thumbnail a {
             all : initial;
+            cursor: pointer;
         }
 
-        .notification-thumbnail h1,h4 {
+        .notification-thumbnail a * {
             color: white;
+            padding: 5px 20px;
         }
+        
+        .notification-thumbnail a h4 {
+            padding : inherit calc(inherit + 5px);
+        }
+
+
 
         /* notifications-box */
         .notifications-box {
