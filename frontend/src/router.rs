@@ -1,5 +1,4 @@
 use crate::pages::notifications_page::NotificationsPage;
-use crate::pages::publication_selector_page::PublicationSelectorPage;
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
@@ -48,8 +47,6 @@ pub enum Route {
     EditPersonalInfo,
     #[at("/publicacion/:id")]
     Publication {id: usize},
-    #[at("/publicacion/:id/selector-publicaciones")]
-    PublicationSelector, //{id: usize},
     #[at("/register")]
     Register,
     #[at("/acciones-privilegiadas")]
@@ -98,7 +95,6 @@ pub fn switch(routes: Route) -> Html {
                 Route::SearchResults => html!(<SearchResultsPage/>),
                 Route::Notifications => html!(<NotificationsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
-                Route::PublicationSelector => html!(<PublicationSelectorPage/>),
             }}
     </>}
 }
@@ -138,7 +134,6 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],
         Route::AwaitingPricePublication => [false, false, true, true],
-        Route::PublicationSelector => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

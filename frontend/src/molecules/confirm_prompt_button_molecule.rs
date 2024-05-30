@@ -10,7 +10,7 @@ pub struct Props{
 
 
 #[function_component(ConfirmPromptButtonMolecule)]
-pub fn log_in_button(props: &Props)-> Html{
+pub fn confirm_prompt_button(props: &Props)-> Html{
  
     let confirm_func = (props.confirm_func).clone();
     let reject_func = (props.reject_func).clone();

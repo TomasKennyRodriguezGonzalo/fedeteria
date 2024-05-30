@@ -512,3 +512,4 @@ Json(query): Json<QueryEnviarNotificacion>
     Json(ResponseEnviarNotificacion{enviada: respuesta})
 }
 
+

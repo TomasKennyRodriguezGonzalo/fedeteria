@@ -9,13 +9,14 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryPublicacionesFiltradas, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponsePublicacionesFiltradas, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryObtenerPrecioMaxDeRango, QueryPublicacionesFiltradas, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponsePublicacionesFiltradas, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, ResponseObtenerPrecioMaxDeRango};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
+use crate::molecules::publication_selector_molecule::PublicationSelectorMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -193,7 +194,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     let dni_cloned = dni.clone();
     
     //estado que mantiene las props que se enviaran a la publication grid
-    let props_state: UseStateHandle<Option<QueryPublicacionesFiltradas>> = use_state(|| None);
+    let props_state: UseStateHandle<Option<u64>> = use_state(|| None);
     let props_state_cloned = props_state.clone();
 
     //estado boton de mostrar publcaciones
@@ -203,23 +204,15 @@ pub fn publication_molecule(props : &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let navigator_cloned = navigator.clone();
 
+    let cloned_datos_publicacion = datos_publicacion.clone();
     let change_to_selector = Callback::from(move |()| {
-        log::info!("Entre al boton");
         //se podria agregar los precios de los rangos
-        let query = QueryPublicacionesFiltradas {
-                                                        filtro_dni: dni_cloned, 
-                                                        filtro_precio_max: None, 
-                                                        filtro_precio_min: None, 
-                                                        filtro_fecha_max: None, 
-                                                        filtro_fecha_min: None, 
-                                                        filtro_nombre: None,
-                                                        filtro_pausadas: true};
-        props_state_cloned.set(Some(query.clone()));
-        button_show_publication_cloned.set(!&*button_show_publication_cloned);
-        navigator_cloned.push_with_query(&Route::PublicationSelector, &query);
+        log::info!("Setteo en true");
+        button_show_publication_cloned.set(true);
     });
 
-    let props = &*props_state.clone();
+    let props = *props_state.clone();
+    log::info!("Las props tienen {:?}", props.clone());
     let navigator = use_navigator().unwrap();
     //este es el estado del input, el que va cambiando dinamicamente
     let input_publication_price_state = use_state(|| None);
@@ -269,7 +262,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     Err(err) => log::error!("Failed to get href: {:?}", err),
                 };
 
-                    window.location().reload().unwrap();
+                   window.location().reload().unwrap();
                 }
             });
         }
@@ -318,22 +311,18 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                <div class="seccion-trueques">
+                <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
+                        //change to selector activa el button_show_publication el cual permite que se desplieguen todas mis publicaciones para seleccionarlas
                         <GenericButton text="Agregar publicacion a oferta" onclick_event={change_to_selector}/>
-                        //navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
-
                         if *button_show_publication { 
-                            //<PublicationGridMolecule query={props.clone()}/>
+                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()}/>
                         }
                     }
                 </div>
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
                     <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
-                    if (&*activate_delete_publication_state).clone(){
-                        <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />
-                    }
                     if publicacion.precio.is_some() {
                         if publicacion.pausada {
                             <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
@@ -346,7 +335,20 @@ pub fn publication_molecule(props : &Props) -> Html {
                 {
                     match (&*role_state).clone().unwrap() { 
                         RolDeUsuario::Dueño => {
-                            html! {<GenericButton text="Tasar Publicación" onclick_event={assign_price}/>}
+                            if publicacion.precio.is_none(){
+                                html! {
+                                    <>  
+                                        <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
+                                        <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                    </>
+                                }
+                            } else {
+                                html! {
+                                    <>  
+                                        <div>{"Publicacion ya tasada"}</div>  
+                                    </>
+                                }
+                            }
                         },
                         RolDeUsuario::Empleado{sucursal : _} => {
                             if publicacion.precio.is_none(){
@@ -359,7 +361,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                             } else{
                                 html! {
                                     <>  
-                                    <div>{"Publicacion ya tasada"}</div>  
+                                        <div>{"Publicacion ya tasada"}</div>  
                                     </>
                                 }
                             }
@@ -368,6 +370,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                             html!{}
                         }
                     }
+                }
+                if (&*activate_delete_publication_state).clone(){
+                    <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />
                 }
             } else {
                 {"Cargando..."}

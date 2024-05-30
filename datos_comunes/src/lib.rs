@@ -290,4 +290,13 @@ pub struct ResponseEnviarNotificacion{
     pub enviada:bool
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerPrecioMaxDeRango{
+    pub rango:Option<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerPrecioMaxDeRango{
+    pub precio_max:Option<u64>,
+}
 

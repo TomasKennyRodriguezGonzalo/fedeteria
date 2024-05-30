@@ -335,15 +335,13 @@ impl Database {
         let publicacion = self.publicaciones
         .get_mut(&query.id);
 
-        if publicacion.is_none(){
-            log::error!("error en la busqueda de id!");
-            return false
+        if let Some(publicacion) = publicacion {
+            publicacion.precio = query.precio;
+            self.guardar();  
+            true
+        } else {
+            false
         }
-
-
-        publicacion.unwrap().precio = query.precio;
-
-        true
     }
 
 
@@ -362,6 +360,7 @@ impl Database {
         self.guardar();
         true
     }
+
 
 
 
