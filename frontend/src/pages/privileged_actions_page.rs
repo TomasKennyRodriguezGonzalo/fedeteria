@@ -82,6 +82,7 @@ pub fn privileged_actions_page() -> Html {
                         }},
                         RolDeUsuario::Empleado { sucursal : _ } => {html! {
                             <ul class="option-list">
+                                <li><Link<Route> to={Route::AwaitingPricePublication}>{"Ver Publicaciones Esperando Tasación"}</Link<Route>></li>
                             </ul>
                         }},
                     }            

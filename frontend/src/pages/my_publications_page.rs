@@ -36,6 +36,7 @@ pub fn my_publications_page() -> Html {
             filtro_fecha_max: None,
             filtro_precio_max: None,
             filtro_precio_min: None,
+            filtro_pausadas:false,
         };
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
             let publicaciones = respuesta;

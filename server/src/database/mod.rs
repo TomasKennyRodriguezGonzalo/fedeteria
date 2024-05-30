@@ -4,6 +4,7 @@ use chrono::{DateTime, Local};
 use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
+use tracing_subscriber::filter::combinator::Not;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -199,7 +200,7 @@ impl Database {
     }
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
-        self.publicaciones.iter()
+        let publicaciones = self.publicaciones.iter()
         .filter(|(_, p)| {
             query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
         })
@@ -229,14 +230,21 @@ impl Database {
                     }
                 }
             ).unwrap_or(true)
-        })
+        });
 
-        // FALTA HACER EL RESTO DE FILTROS
-        /* .filter(|(_, p)| {
-            
-        })*/
-        .map(|(i, _)| *i)
-        .collect()
+        //si el filtro de pausadas esta activo entonces elimino las pausadas del retorno
+        if query.filtro_pausadas{
+            publicaciones
+            .filter(|(_,publicacion)|{
+                !publicacion.pausada
+            })
+            .map(|(i, _)| *i)
+            .collect()
+        } else{
+            publicaciones
+            .map(|(i, _)| *i)
+            .collect()
+        }
            
     }
     
@@ -285,8 +293,6 @@ impl Database {
 
     pub fn obtener_notificaciones(&mut self, query:&QueryGetNotificaciones)->Vec<usize>{
         let index = self.usuarios.iter().position(|usuario| usuario.dni == query.dni).unwrap();
-        let nueva_notificacion = Notificacion { titulo : "Entraste a notificaciones".to_string() , detalle: "Hola!! estas en notificaciones".to_string(), url: "http://[::1]:8080/".to_string()};
-        self.usuarios.get_mut(index).unwrap().notificaciones.push(nueva_notificacion);
         let notificaciones = self.usuarios.get(index).unwrap().notificaciones.clone();
         self.guardar();
         notificaciones.iter().enumerate().map(|(i, _)| i).collect()
@@ -323,5 +329,40 @@ impl Database {
         log::info!("{lista:?}");
         lista
     }
+
+
+    pub fn tasar_publicacion(&mut self, query:QueryTasarPublicacion)-> bool{
+        let publicacion = self.publicaciones
+        .get_mut(&query.id);
+
+        if publicacion.is_none(){
+            log::error!("error en la busqueda de id!");
+            return false
+        }
+
+
+        publicacion.unwrap().precio = query.precio;
+
+        true
+    }
+
+
+    pub fn enviar_notificacion(&mut self, query:QueryEnviarNotificacion, index:Option<usize>)-> bool{
+        if index.is_none(){
+            log::error!("index de usuario inexistente!");
+            return false
+        }
+        let usuario = self.usuarios.get_mut(index.unwrap());
+        let nueva_notificacion = Notificacion{
+            titulo : query.titulo,
+            detalle : query.detalle,
+            url : query.url,
+        };
+        usuario.unwrap().notificaciones.push(nueva_notificacion);
+        self.guardar();
+        true
+    }
+
+
 
 }

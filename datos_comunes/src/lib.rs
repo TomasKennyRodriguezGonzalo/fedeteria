@@ -264,3 +264,30 @@ pub struct ResponsePublicacionesSinTasar{
     pub publicaciones:Vec<usize>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryTasarPublicacion{
+    pub id:usize,
+    pub precio:Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTasarPublicacion{
+    //podria no tener respuesta, charlar
+    pub tasado:bool
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEnviarNotificacion{
+    pub dni:u64,
+    pub titulo:String,
+    pub detalle:String,
+    pub url:String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEnviarNotificacion{
+    //podria no tener respuesta, charlar
+    pub enviada:bool
+}
+
+

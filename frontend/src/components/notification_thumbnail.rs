@@ -19,7 +19,7 @@ pub fn notification_thumbnail(props : &Props) -> Html {
     let cloned_notification_state = notification_state.clone();
     use_effect_once( move || {
         // Traigo la información de la notificación desde el backend con el id recibido
-        let query = QueryNotificacion {
+        let query = QueryNotificacion {     
             dni : dni.clone(),
             index : id.clone(),
         };

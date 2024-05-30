@@ -182,7 +182,8 @@ pub fn navbar() -> Html{
             filtro_fecha_min: None, 
             filtro_fecha_max: None, 
             filtro_precio_max: cloned_max_price_state.clone(), 
-            filtro_precio_min: cloned_min_price_state.clone()
+            filtro_precio_min: cloned_min_price_state.clone(),
+            filtro_pausadas : true,
         };
         navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 

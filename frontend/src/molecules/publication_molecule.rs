@@ -3,11 +3,12 @@ use std::clone;
 use web_sys::window;
 use crate::components::generic_button::GenericButton;
 use crate::components::indexed_button::IndexedButton;
+use crate::convenient_request::send_notification;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTogglePublicationPause, RolDeUsuario};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -194,20 +195,55 @@ pub fn publication_molecule(props : &Props) -> Html {
     let input_publication_price_state = use_state(|| None);
     let cloned_input_publication_price_state = input_publication_price_state.clone();
 
-    let price_changed = CallBack::from(move |precio:Option<u64>|{
-        let input_publication_price_state = cloned_input_publication_price_state.clone();
-        input_publication_price_state.set(precio);
-        log::info!("{:?}",precio);
+    //recordar que html retorna un string aunque sea tipo number por eso hay que hacer la conversion
+    let price_changed = Callback::from(move |precio:String|{
+        match precio.parse::<u64>() {
+            Ok(numero) => {
+                log::info!("{:?}",numero.clone());
+                let input_publication_price_state = cloned_input_publication_price_state.clone();
+                input_publication_price_state.set(Some(numero));
+            },
+            Err(e) => log::error!("Error al convertir: {}", e),
+        }
     });
 
     //este es el estado de la publicacion en si, el que cambia cuando se aprieta el boton "tasar publicacion"
     let cloned_input_publication_price_state = input_publication_price_state.clone();
-    let publication_price_state = use_state(|| None);
+    let publication_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_publication_price_state = publication_price_state.clone();
-    let assign_price = CallBack::from(move |()|{
+    let cloned_id = id.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let assign_price = Callback::from(move |()|{
+        let cloned_datos_publicacion = cloned_datos_publicacion.clone();
+        let cloned_publication_price_state = cloned_publication_price_state.clone();
+        let cloned_id = cloned_id.clone();
         let publication_price_state = cloned_publication_price_state.clone();
         let input_publication_price_state = cloned_input_publication_price_state.clone();
+        if (&*input_publication_price_state).is_some(){
+            let query = QueryTasarPublicacion{
+                id : cloned_id,
+                precio : (&*input_publication_price_state).clone(),
+            };
+            let input_publication_price_state = cloned_input_publication_price_state.clone();
+            request_post("/api/tasar_publicacion", query, move |respuesta:ResponseTasarPublicacion|{
+                let input_publication_price_state = input_publication_price_state.clone();
+                let cloned_datos_publicacion = cloned_datos_publicacion.clone();
+                let cloned_publication_price_state = cloned_publication_price_state.clone();
+                let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
+                if let Some(window) = window() {
+                match window.location().href() {
+                    Ok(href) => {
+                        log::info!("la href es {}",href);
+                        send_notification("Publicación tasada!".to_string(), format!("tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!", (&*input_publication_price_state).clone().unwrap()), href, dni_usuario);
+                    },
+                    Err(err) => log::error!("Failed to get href: {:?}", err),
+                };
 
+                    window.location().reload().unwrap();
+                }
+            });
+        }
+        publication_price_state.set((&*input_publication_price_state).clone());
     });
 
 
@@ -264,31 +300,34 @@ pub fn publication_molecule(props : &Props) -> Html {
                         } else {
                             <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
                         }
-                    }  else {
-                        {
-                            {
-                                match (&*role_state).clone().unwrap() { 
-                                    RolDeUsuario::Dueño => {
-                                        html! {<GenericButton text="Tasar Publicación" onclick_event={assign_price}/>}
-                                    },
-                                    RolDeUsuario::Empleado{sucursal : _} => {
-                                        html! {
-                                            <>
-                                                <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                                <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                            </>
-                                        }
-                                    },
-                                    RolDeUsuario::Normal => {
-                                        html!{}
-                                    }
+                    }  
+                </div>
+                }
+                {
+                    match (&*role_state).clone().unwrap() { 
+                        RolDeUsuario::Dueño => {
+                            html! {<GenericButton text="Tasar Publicación" onclick_event={assign_price}/>}
+                        },
+                        RolDeUsuario::Empleado{sucursal : _} => {
+                            if publicacion.precio.is_none(){
+                                html! {
+                                    <>  
+                                        <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
+                                        <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                    </>
+                                }
+                            } else{
+                                html! {
+                                    <>  
+                                    <div>{"Publicacion ya tasada"}</div>  
+                                    </>
                                 }
                             }
-
-                                
+                        },
+                        RolDeUsuario::Normal => {
+                            html!{}
                         }
                     }
-                </div>
                 }
             } else {
                 {"Cargando..."}

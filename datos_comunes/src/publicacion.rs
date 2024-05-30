@@ -58,6 +58,7 @@ pub struct QueryPublicacionesFiltradas {
     // FALTA HACER: filtro por fecha
     pub filtro_fecha_min: Option<()>,
     pub filtro_fecha_max: Option<()>,
+    pub filtro_pausadas:bool,
 }
 
 
