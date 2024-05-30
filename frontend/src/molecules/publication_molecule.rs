@@ -7,13 +7,14 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponsePublicacion, ResponseTogglePublicationPause};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTogglePublicationPause, RolDeUsuario};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
+use crate::components::checked_input_field::CheckedInputField;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -29,6 +30,23 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
+
+    let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
+    let cloned_role_state = role_state.clone();
+    let cloned_dni = dni.clone();
+    use_effect_once(move || {
+        let cloned_role_state = cloned_role_state.clone();
+        let cloned_dni = cloned_dni.clone();
+        if cloned_dni.is_some() {
+            let query = QueryGetUserRole { dni : cloned_dni.unwrap() };
+            request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
+                cloned_role_state.set(Some(respuesta.rol));
+            });
+        }
+
+        || {}
+    });
+
     
     let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
@@ -172,6 +190,27 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let cloned_current_image_state = current_image_state.clone();
 
+    //este es el estado del input, el que va cambiando dinamicamente
+    let input_publication_price_state = use_state(|| None);
+    let cloned_input_publication_price_state = input_publication_price_state.clone();
+
+    let price_changed = CallBack::from(move |precio:Option<u64>|{
+        let input_publication_price_state = cloned_input_publication_price_state.clone();
+        input_publication_price_state.set(precio);
+        log::info!("{:?}",precio);
+    });
+
+    //este es el estado de la publicacion en si, el que cambia cuando se aprieta el boton "tasar publicacion"
+    let cloned_input_publication_price_state = input_publication_price_state.clone();
+    let publication_price_state = use_state(|| None);
+    let cloned_publication_price_state = publication_price_state.clone();
+    let assign_price = CallBack::from(move |()|{
+        let publication_price_state = cloned_publication_price_state.clone();
+        let input_publication_price_state = cloned_input_publication_price_state.clone();
+
+    });
+
+
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
@@ -225,7 +264,30 @@ pub fn publication_molecule(props : &Props) -> Html {
                         } else {
                             <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
                         }
-                    }  
+                    }  else {
+                        {
+                            {
+                                match (&*role_state).clone().unwrap() { 
+                                    RolDeUsuario::Dueño => {
+                                        html! {<GenericButton text="Tasar Publicación" onclick_event={assign_price}/>}
+                                    },
+                                    RolDeUsuario::Empleado{sucursal : _} => {
+                                        html! {
+                                            <>
+                                                <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
+                                                <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                            </>
+                                        }
+                                    },
+                                    RolDeUsuario::Normal => {
+                                        html!{}
+                                    }
+                                }
+                            }
+
+                                
+                        }
+                    }
                 </div>
                 }
             } else {

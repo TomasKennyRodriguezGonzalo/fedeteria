@@ -253,3 +253,14 @@ pub struct QueryTieneNotificacion{
 pub struct ResponseTieneNotificacion{
     pub tiene_notificacion : bool
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryPublicacionesSinTasar{
+    pub dni:u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponsePublicacionesSinTasar{
+    pub publicaciones:Vec<usize>,
+}
+

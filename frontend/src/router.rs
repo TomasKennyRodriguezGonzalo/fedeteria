@@ -19,6 +19,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     edit_personal_info_page::EditPersonalInfoPage,
     privileged_actions_page::PrivilegedActionsPage,
     my_publications_page::MyPublicationsPage,
+    awaiting_price_publication::AwaitingPricePublicationPage,
 };
 
 use crate::components::publication_thumbnail::PublicationThumbnail;
@@ -60,6 +61,8 @@ pub enum Route {
     UnlockAccount,
     #[at("/acciones-privilegiadas/cambiar-rol")]
     ChangeUserRole,
+    #[at("/acciones-privilegiadas/esperando-tasacion")]
+    AwaitingPricePublication,
     #[at("/resultados-busqueda")]
     SearchResults,
     #[at("/notificaciones")]
@@ -71,30 +74,31 @@ pub enum Route {
 
 pub fn switch(routes: Route) -> Html {
     html! {<>
-        <RouteCheckPage route={routes.clone()}/>
-        {match routes {
-            Route::Home => html! { <HomePage/> },
-            Route::LogInPage => html! { <LogInPage /> },
-            Route::MyPublications => html! { < MyPublicationsPage /> },
-            Route::Publication { id } => html! { <PublicationPage id={id}/>},
-            Route::Profile => html! { <ProfilePage/> },
-            Route::EditPersonalInfo => html! {<EditPersonalInfoPage/>},
-            Route::Register => html! {<RegisterPage/>},
-            Route::CreateOffice => html! { <CreateOfficePage/> },
-            Route::CreatePublication => html! { <CreatePublicationPage/> },
-            Route::DeleteOffice => html! {<DeleteOffice/>},
-            Route::NotFound => html! { <h1>{"Error 404 página no existente!"}</h1>},
-            Route::SavedPublications => html! {"Publicaciones guardadas"},
-            Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
-            Route::MyPendingTrades => html! {"Trueques Pendientes"},
-            Route::MyCompletedTrades => html! {"Trueques concretados"},
-            Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
-            Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
-            Route::UnlockAccount => html!(<UnlockAccountPage/>), 
-            Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>},
-            Route::SearchResults => html!(<SearchResultsPage/>),
-            Route::Notifications => html!(<NotificationsPage/>),
-        }}
+            <RouteCheckPage route={routes.clone()}/>
+            {match routes {
+                Route::Home => html! { <HomePage/> },
+                Route::LogInPage => html! { <LogInPage /> },
+                Route::MyPublications => html! { < MyPublicationsPage /> },
+                Route::Publication { id } => html! { <PublicationPage id={id}/>},
+                Route::Profile => html! { <ProfilePage/> },
+                Route::EditPersonalInfo => html! {<EditPersonalInfoPage/>},
+                Route::Register => html! {<RegisterPage/>},
+                Route::CreateOffice => html! { <CreateOfficePage/> },
+                Route::CreatePublication => html! { <CreatePublicationPage/> },
+                Route::DeleteOffice => html! {<DeleteOffice/>},
+                Route::NotFound => html! { <h1>{"Error 404 página no existente!"}</h1>},
+                Route::SavedPublications => html! {"Publicaciones guardadas"},
+                Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
+                Route::MyPendingTrades => html! {"Trueques Pendientes"},
+                Route::MyCompletedTrades => html! {"Trueques concretados"},
+                Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
+                Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
+                Route::UnlockAccount => html!(<UnlockAccountPage/>), 
+                Route::PublicationThumbnail {id} => html! {<PublicationThumbnail id={id}/>},
+                Route::SearchResults => html!(<SearchResultsPage/>),
+                Route::Notifications => html!(<NotificationsPage/>),
+                Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
+            }}
     </>}
 }
 
@@ -133,6 +137,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::SearchResults => [true, true, true, true],
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],
+        Route::AwaitingPricePublication => [false, false, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {
