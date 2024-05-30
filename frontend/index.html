@@ -194,10 +194,10 @@
             transition: all 0.3s
         }
 
-        .navbar .core .option_list li:hover {
+        .navbar .core .option_list li a:hover {
             transform: scale(1.1);
         }
-        
+
         .information-message {
             background-color: lightcoral;
             display: flex;
@@ -384,7 +384,6 @@
             all: initial;
             cursor: pointer;
         }
-
 
         /* --- Profile Page --- */
         .profile-page-box {
@@ -798,8 +797,6 @@
             padding : inherit calc(inherit + 5px);
         }
 
-
-
         /* notifications-box */
         .notifications-box {
             background-color: #114232;
@@ -828,6 +825,35 @@
             display: flex;
             flex-direction: row;
         }
+
+        /* --- awaiting-price-publications-box --- */
+        .awaiting-price-publications-box {
+            background-color: #114232;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding : 10px; 
+        }
+
+        .awaiting-price-publications-box ul{
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .awaiting-price-publications-box ul li{
+            margin: 1% 10px 0px 0px;
+        }
+        .awaiting-price-publications-box ul li a{
+            all: initial;
+            cursor: pointer;
+        }
+
 
     </style>
   </head>

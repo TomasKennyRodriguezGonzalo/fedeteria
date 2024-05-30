@@ -12,29 +12,11 @@ pub struct Trueque {
     pub sucursal: Option<String>,
     pub horario: Option<DateTime<Local>>,
     pub estado: EstadoTrueque,
-    pub hash_ofertante: Option<u64>,
-    pub hash_receptor: Option<u64>,
+    pub codigo_ofertante: Option<u64>,
+    pub codigo_receptor: Option<u64>,
 }
 
 impl Trueque {
-    pub fn new (    
-                dni_ofertante: u64, 
-                dni_receptor: u64, 
-                id_publicaciones_ofertante: Vec<usize>, 
-                id_publicacion_receptor: usize
-
-            ) -> Trueque {
-        Trueque {   
-                    oferta: ((dni_ofertante, id_publicaciones_ofertante)), 
-                    receptor: ((dni_receptor, id_publicacion_receptor)),
-                    sucursal: None,
-                    horario: None,
-                    estado: EstadoTrueque::Oferta,
-                    hash_ofertante: None,
-                    hash_receptor: None,
-                }
-    }
-
     pub fn aceptar (&mut self) {
         //verifico que no este finalizada para que por algun error inesperado, no se vuelva a un estado previo
         if self.estado != EstadoTrueque::Finalizado {
@@ -44,20 +26,19 @@ impl Trueque {
         }
     }
 
-    pub fn definir (    
-                        &mut self, 
+    pub fn definir (&mut self, 
                         horario: DateTime<Local>, 
                         sucursal_elegida: String, 
-                        hash_ofertante: u64, 
-                        hash_receptor: u64
+                        codigo_ofertante: u64, 
+                        codigo_receptor: u64
                     ) {
          //verifico que no este finalizada para que por algun error inesperado, no se vuelva a un estado previo
         if self.estado != EstadoTrueque::Finalizado {
             self.sucursal = Some(sucursal_elegida);
             self.horario = Some(horario);
             self.estado = EstadoTrueque::Definido;
-            self.hash_ofertante = Some(hash_ofertante);
-            self.hash_receptor = Some(hash_receptor);
+            self.codigo_ofertante = Some(codigo_ofertante);
+            self.codigo_receptor = Some(codigo_receptor);
         }
     }
 
@@ -65,22 +46,8 @@ impl Trueque {
         self.estado = EstadoTrueque::Finalizado
     }
 
-    pub fn verificar_codigos (&self, hash_ofertante: u64, hash_receptor: u64) -> Option<Trueque> {
-        let mut ofertante_iguales = false;
-        let mut receptor_iguales = false;
-
-        if let Some(ofertante) = self.hash_ofertante {
-            ofertante_iguales = ofertante == hash_ofertante;
-        }
-        if let Some(receptor) = self.hash_receptor {
-            receptor_iguales = receptor == hash_receptor;
-        }
-
-        if (ofertante_iguales) && (receptor_iguales) {
-            Some(self);
-        }
-
-        None
+    pub fn verificar_codigos (&self, codigo_ofertante: u64, codigo_receptor: u64) -> bool{
+        (self.codigo_ofertante == Some(codigo_ofertante)) && (self.codigo_receptor == Some(codigo_receptor))
     }
 }
 

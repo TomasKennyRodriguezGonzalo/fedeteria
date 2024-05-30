@@ -313,4 +313,15 @@ impl Database {
         notificaciones.iter().enumerate().map(|(i, _)| i).collect()
     }
 
+
+    pub fn obtener_publicaciones_sin_tasar(&self) -> Vec<usize> {
+        let lista = self.publicaciones
+            .iter()
+            .filter(|(_, publicacion)| publicacion.precio.is_none())
+            .map(|(i, _)| *i)
+            .collect();
+        log::info!("{lista:?}");
+        lista
+    }
+
 }

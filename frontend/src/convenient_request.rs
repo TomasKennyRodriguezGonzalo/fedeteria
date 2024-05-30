@@ -18,6 +18,7 @@ pub fn request_post<Q, R>(
 
         match respuesta {
             Ok(respuesta) => {
+                log::info!("Convenient Request recibió {respuesta:?}");
                 let respuesta: Result<R, reqwasm::Error> = respuesta.json().await;
                 match respuesta{
                     Ok(respuesta) => {

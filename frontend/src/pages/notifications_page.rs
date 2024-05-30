@@ -50,7 +50,6 @@ let delete_notification = Callback::from(move |index| {
     });
 });
 
-
     html! {
         <div class="notifications-box">
             <h1 class="title">{"Notificaciones"}</h1>

@@ -94,6 +94,7 @@ async fn main() {
         .route("/api/obtener_notificaciones", post(obtener_notificaciones))
         .route("/api/datos_notificacion", post(get_notificacion))
         .route("/api/eliminar_notificacion", post(eliminar_notificacion))
+        .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -468,8 +469,6 @@ Json(query): Json<QueryGetNotificaciones>
     Json(ResponseNotificaciones{notificaciones: respuesta})
 }
 
-
-
 async fn get_notificacion( State(state): State<SharedState>,
 Json(query): Json<QueryNotificacion>
 ) -> Json<ResponseNotificacion>{
@@ -486,6 +485,10 @@ Json(query): Json<QueryEliminarNotificacion>
     Json(ResponseEliminarNotificacion{notificaciones: respuesta})
 }
 
-
-
-
+async fn obtener_publicaciones_sin_tasar( State(state): State<SharedState>,
+Json(query): Json<QueryPublicacionesSinTasar>
+) -> Json<ResponsePublicacionesSinTasar>{
+    let mut state = state.write().await;
+    let respuesta = state.db.obtener_publicaciones_sin_tasar();
+    Json(ResponsePublicacionesSinTasar{publicaciones: respuesta})
+}
