@@ -307,7 +307,8 @@ impl Database {
                 usuario.notificaciones.remove(query.index);
             }
         }
-        let notificaciones = self.usuarios.get(query.index).unwrap().notificaciones.clone();
+        let usuario = self.usuarios.iter().find(|usuario| usuario.dni == query.dni);
+        let notificaciones = usuario.unwrap().notificaciones.clone();
         self.guardar();
         notificaciones.iter().enumerate().map(|(i, _)| i).collect()
     }
