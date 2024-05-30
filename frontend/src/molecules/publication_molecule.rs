@@ -1,21 +1,21 @@
 use std::clone;
 
+use yew_router::hooks::use_location;
 use web_sys::window;
-use crate::components::generic_button::GenericButton;
-use crate::components::indexed_button::IndexedButton;
+use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
+use crate::molecules::publication_grid_molecule::PublicationGridMolecule;
 use crate::convenient_request::send_notification;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryPublicacionesFiltradas, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponsePublicacionesFiltradas, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
-use crate::components::checked_input_field::CheckedInputField;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -31,7 +31,7 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
-
+    
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
@@ -48,7 +48,6 @@ pub fn publication_molecule(props : &Props) -> Html {
         || {}
     });
 
-    
     let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
@@ -191,6 +190,37 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let cloned_current_image_state = current_image_state.clone();
 
+    let dni_cloned = dni.clone();
+    
+    //estado que mantiene las props que se enviaran a la publication grid
+    let props_state: UseStateHandle<Option<QueryPublicacionesFiltradas>> = use_state(|| None);
+    let props_state_cloned = props_state.clone();
+
+    //estado boton de mostrar publcaciones
+    let button_show_publication = use_state(|| false);
+    let button_show_publication_cloned = button_show_publication.clone();
+
+    let navigator = use_navigator().unwrap();
+    let navigator_cloned = navigator.clone();
+
+    let change_to_selector = Callback::from(move |()| {
+        log::info!("Entre al boton");
+        //se podria agregar los precios de los rangos
+        let query = QueryPublicacionesFiltradas {
+                                                        filtro_dni: dni_cloned, 
+                                                        filtro_precio_max: None, 
+                                                        filtro_precio_min: None, 
+                                                        filtro_fecha_max: None, 
+                                                        filtro_fecha_min: None, 
+                                                        filtro_nombre: None,
+                                                        filtro_pausadas: true};
+        props_state_cloned.set(Some(query.clone()));
+        button_show_publication_cloned.set(!&*button_show_publication_cloned);
+        navigator_cloned.push_with_query(&Route::PublicationSelector, &query);
+    });
+
+    let props = &*props_state.clone();
+    let navigator = use_navigator().unwrap();
     //este es el estado del input, el que va cambiando dinamicamente
     let input_publication_price_state = use_state(|| None);
     let cloned_input_publication_price_state = input_publication_price_state.clone();
@@ -286,7 +316,17 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                         }</h2>
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
-                        </div>
+                    </div>
+                    </div>
+                <div class="seccion-trueques">
+                    if publicacion.dni_usuario != dni.clone().unwrap() {
+                        <GenericButton text="Agregar publicacion a oferta" onclick_event={change_to_selector}/>
+                        //navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
+
+                        if *button_show_publication { 
+                            //<PublicationGridMolecule query={props.clone()}/>
+                        }
+                    }
                 </div>
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
