@@ -1,12 +1,14 @@
 use chrono::{Date, DateTime, Local, NaiveDate, TimeZone};
 use web_sys::window;
-use datos_comunes::{RolDeUsuario, ResponseGetUserRole, QueryGetUserRole};
+use datos_comunes::{QueryGetUserRole, QueryTieneNotificacion, ResponseGetUserRole, ResponseTieneNotificacion, RolDeUsuario};
 use wasm_bindgen_futures::spawn_local;
+use yew_hooks::use_effect_once;
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use crate::components::dni_input_field::DniInputField;
+use crate::request_post;
 use crate::{components::generic_button::GenericButton, information_store::InformationStore};
 use crate::store::UserStore;
 use crate::router::Route;
@@ -33,19 +35,14 @@ pub fn navbar() -> Html{
         }
     });
     
-    let first_render_state = use_state(|| true);
-    let cloned_first_render_state = first_render_state.clone();
-    
     let dni = store.dni;
     let username = store.nombre.clone();
-
+    
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
-    use_effect( move || {
+    use_effect_once( move || {
         let cloned_dni = cloned_dni.clone();
-        let cloned_first_render_state = cloned_first_render_state.clone();
-        if *cloned_first_render_state{
-            let cloned_dni = cloned_dni.clone();
+        let cloned_dni = cloned_dni.clone();
             if cloned_dni.is_some() {
                 spawn_local(async move {
                     let cloned_dni = cloned_dni.clone();
@@ -77,9 +74,6 @@ pub fn navbar() -> Html{
                     }
                 });
             }
-            cloned_first_render_state.set(false);
-        }
-
         ||{}
     });
         
@@ -196,6 +190,7 @@ pub fn navbar() -> Html{
             window.location().reload().unwrap();
         }
     });
+
         
     html!{
         <>
@@ -205,43 +200,29 @@ pub fn navbar() -> Html{
                         <Link<Route> to={Route::Home}><img src="/assets/img/Fedeteria_Solo_Logo.svg" alt="fedeteria"/></Link<Route>>
                     </div>
                     if dni.is_some() && (&*role_state).clone().is_some() {
-                        <div>
-                            <h2>{"Hola " }{username}{"!"}</h2>
-                        </div>
                         <nav>
-                                {
-                                    match (&*role_state).clone().unwrap() { 
-                                        RolDeUsuario::Dueño => {
-                                            html!{
-                                            <ul class="option_list">
-                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
-                                                <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
-                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                            </ul>
+                            {
+                                html!{
+                                    <ul class="option_list">
+                                        <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
+                                        <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
+                                            {
+                                                match (&*role_state).clone().unwrap() { 
+                                                    RolDeUsuario::Dueño => {
+                                                        html!{<li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>}
+                                                    },
+                                                    RolDeUsuario::Empleado{sucursal : _} => {
+                                                        html!{<li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>}
+                                                    },
+                                                    RolDeUsuario::Normal => {
+                                                        html!{}
+                                                    }
+                                                }
                                             }
-                                        },
-                                        RolDeUsuario::Empleado{sucursal : _} => {
-                                            html!{
-                                            <ul class="option_list">
-                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
-                                                <li><Link<Route> to={Route::PrivilegedActions}>{"Menú de acciones"}</Link<Route>></li>
-                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                            </ul>
-                                            }
-                                        },
-                                        RolDeUsuario::Normal => {
-                                            html!{
-                                            <ul class="option_list">
-                                                <li><Link<Route> to={Route::Profile}>{"Perfil"}</Link<Route>></li>
-                                                <li><Link<Route> to={Route::Notifications}>{"Notificaciones"}</Link<Route>></li>
-                                                <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
-                                            </ul>
-                                            }
-                                        }
-                                    }
+                                        <li><a onclick={logout}>{"Cerrar Sesion"}</a></li>
+                                    </ul>
                                 }
+                            }
                         </nav>
                     } else {
                         <div>

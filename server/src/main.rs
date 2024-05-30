@@ -468,8 +468,6 @@ Json(query): Json<QueryGetNotificaciones>
     Json(ResponseNotificaciones{notificaciones: respuesta})
 }
 
-
-
 async fn get_notificacion( State(state): State<SharedState>,
 Json(query): Json<QueryNotificacion>
 ) -> Json<ResponseNotificacion>{
@@ -485,7 +483,3 @@ Json(query): Json<QueryEliminarNotificacion>
     let respuesta = state.db.eliminar_notificacion(&query);
     Json(ResponseEliminarNotificacion{notificaciones: respuesta})
 }
-
-
-
-
