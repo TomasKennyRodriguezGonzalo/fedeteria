@@ -1,10 +1,9 @@
-use std::{borrow::BorrowMut, collections::HashMap, fs, ops::Deref, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 use chrono::{DateTime, Local};
 use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
-use tracing_subscriber::filter::combinator::Not;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -309,7 +308,7 @@ impl Database {
 
     pub fn eliminar_notificacion(&mut self, query:&QueryEliminarNotificacion) -> Vec<usize>{
         if let Some(usuario) = self.usuarios.iter_mut().find(|usuario| usuario.dni == query.dni) {
-            if let Some(notificacion) = usuario.notificaciones.get_mut(query.index) {
+            if let Some(_notificacion) = usuario.notificaciones.get_mut(query.index) {
                 usuario.notificaciones.remove(query.index);
             }
         }
@@ -367,8 +366,5 @@ impl Database {
         }
         return false
     }
-
-
-
 
 }

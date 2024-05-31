@@ -1,7 +1,7 @@
 
 use axum::body::Body;
 use axum::http::{Response, StatusCode};
-use axum::extract::{Multipart, Query, Request, State};
+use axum::extract::{Multipart, Query, State};
 use axum::routing::post;
 use axum::Json;
 use axum::{body::Bytes, BoxError};
@@ -17,7 +17,7 @@ use tokio::io::BufWriter;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use std::hash::{Hash, Hasher, DefaultHasher};
-use std::{io, path};
+use std::io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -314,7 +314,7 @@ async fn crear_publicacion (
     let descripcion = descripcion.text().await.unwrap();
     
     let mut dni = multipart.next_field().await.unwrap().unwrap();
-    if (dni.name().unwrap() != "dni") {
+    if dni.name().unwrap() != "dni" {
         drop(dni);
         dni = multipart.next_field().await.unwrap().unwrap();
     }
@@ -475,7 +475,7 @@ Json(query): Json<QueryGetNotificaciones>
 async fn get_notificacion( State(state): State<SharedState>,
 Json(query): Json<QueryNotificacion>
 ) -> Json<ResponseNotificacion>{
-    let mut state = state.write().await;
+    let state = state.write().await;
     let respuesta = state.db.get_notificacion(&query);
     Json(ResponseNotificacion{notificacion: respuesta})
 }
@@ -491,7 +491,7 @@ Json(query): Json<QueryEliminarNotificacion>
 async fn obtener_publicaciones_sin_tasar( State(state): State<SharedState>,
 Json(query): Json<QueryPublicacionesSinTasar>
 ) -> Json<ResponsePublicacionesSinTasar>{
-    let mut state = state.write().await;
+    let state = state.write().await;
     let respuesta = state.db.obtener_publicaciones_sin_tasar();
     Json(ResponsePublicacionesSinTasar{publicaciones: respuesta})
 }

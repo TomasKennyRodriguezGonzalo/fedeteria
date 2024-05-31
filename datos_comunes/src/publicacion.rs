@@ -1,9 +1,8 @@
-use std::ops::{Range, RangeInclusive};
+use std::ops::RangeInclusive;
 
-use chrono::{Date, DateTime, Local};
 use serde::{Deserialize, Serialize};
 
-use crate::{QueryAddOffice, Trueque};
+use crate::Trueque;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Publicacion {

@@ -1,8 +1,7 @@
 use datos_comunes::{Notificacion, ResponseNotificacion, QueryNotificacion};
-use serde::de::Error;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
-use crate::{components::generic_button::GenericButton, request_post};
+use crate::request_post;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -23,7 +22,7 @@ pub fn notification_thumbnail(props : &Props) -> Html {
             dni : dni.clone(),
             index : id.clone(),
         };
-        request_post(("/api/datos_notificacion?id={id}"), query, move |respuesta: ResponseNotificacion|{
+        request_post("/api/datos_notificacion?id={id}", query, move |respuesta: ResponseNotificacion|{
             cloned_notification_state.set(respuesta.notificacion);
         });
         

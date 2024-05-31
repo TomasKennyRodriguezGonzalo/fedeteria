@@ -41,15 +41,13 @@ pub fn request_post<Q, R>(
 pub fn send_notification(titulo:String, detalle:String, url:String, dni:u64){
     
     let query= QueryEnviarNotificacion {
-        dni: dni,
-        titulo: titulo,
-        detalle: detalle,
-        url: url,
+        dni,
+        titulo,
+        detalle,
+        url,
     };
 
-    request_post("/api/enviar_notificacion", query, |respuesta:ResponseEnviarNotificacion|{
-
-    });
+    request_post("/api/enviar_notificacion", query, |_respuesta:ResponseEnviarNotificacion|{});
 
 
 

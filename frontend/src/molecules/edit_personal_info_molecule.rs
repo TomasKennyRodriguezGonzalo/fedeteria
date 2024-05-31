@@ -38,7 +38,7 @@ pub fn edit_personal_info_molecule() -> Html {
     let email_state = use_state(|| Some("".to_string()));    
     let birth_date_state = use_state(|| None);    
     let datos_viejos: UseStateHandle<Option<(String, String, String)>> = use_state(|| None);
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
    
     let datos_viejos_c = datos_viejos.clone();
     // Me traigo los datos actuales del usuario

@@ -61,7 +61,7 @@ pub fn log_in_molecule()-> Html{
     
     let dispatch_cloned = dispatch.clone();
     
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
     let information_dispatch = information_dispatch.clone();
     
     let submit_clicked_example = Callback::from(move |()| {

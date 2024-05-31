@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use yew::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;

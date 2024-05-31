@@ -6,13 +6,12 @@ use yewdux::use_store;
 use reqwasm::http::Request;
 use web_sys::{File, FormData, HtmlFormElement, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*, virtual_dom::VNode};
-use wasm_bindgen::JsCast;
 use crate::store::UserStore;
 
 #[function_component(CreatePublicationMolecule)]
 pub fn create_publication_molecule() -> Html {
     let (store, _dispatch) = use_store::<UserStore>();
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
     let navigator = use_navigator().unwrap();
 
     let title_state = use_state(|| "".to_owned());

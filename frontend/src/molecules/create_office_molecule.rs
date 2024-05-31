@@ -9,7 +9,7 @@ use crate::{components::{checked_input_field::CheckedInputField, generic_button:
 #[function_component(CreateOfficeMolecule)]
 pub fn create_office_molecule() -> Html {
 
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
 
     let state_office_list = use_state(|| Vec::new());
     let state_office_list_clone = state_office_list.clone();

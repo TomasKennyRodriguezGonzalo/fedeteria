@@ -334,43 +334,45 @@ pub fn publication_molecule(props : &Props) -> Html {
                 </div>
                 }
                 {
-                    match (&*role_state).clone().unwrap() { 
-                        RolDeUsuario::Dueño => {
-                            if publicacion.precio.is_none(){
-                                html! {
-                                    <>  
-                                        <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                        <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                    </>
+                    if let Some(role) = &*role_state{
+                        match role { 
+                            RolDeUsuario::Dueño => {
+                                if publicacion.precio.is_none(){
+                                    html! {
+                                        <>  
+                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
+                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                        </>
+                                    }
+                                } else {
+                                    html! {
+                                        <>  
+                                            <div>{"Publicacion ya tasada"}</div>  
+                                        </>
+                                    }
                                 }
-                            } else {
-                                html! {
-                                    <>  
-                                        <div>{"Publicacion ya tasada"}</div>  
-                                    </>
+                            },
+                            RolDeUsuario::Empleado{sucursal : _} => {
+                                if publicacion.precio.is_none(){
+                                    html! {
+                                        <>  
+                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
+                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                        </>
+                                    }
+                                } else{
+                                    html! {
+                                        <>  
+                                            <div>{"Publicacion ya tasada"}</div>  
+                                        </>
+                                    }
                                 }
+                            },
+                            RolDeUsuario::Normal => {
+                                html!{}
                             }
-                        },
-                        RolDeUsuario::Empleado{sucursal : _} => {
-                            if publicacion.precio.is_none(){
-                                html! {
-                                    <>  
-                                        <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                        <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                    </>
-                                }
-                            } else{
-                                html! {
-                                    <>  
-                                        <div>{"Publicacion ya tasada"}</div>  
-                                    </>
-                                }
-                            }
-                        },
-                        RolDeUsuario::Normal => {
-                            html!{}
                         }
-                    }
+                    } else {html!{}}
                 }
                 if (&*activate_delete_publication_state).clone(){
                     <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />

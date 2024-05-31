@@ -3,11 +3,10 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use datos_comunes::{self, QueryChangeUserRole, QueryDeleteOffice, QueryGetUserRole, ResponseDeleteOffice, ResponseGetOffices, ResponseGetUserRole, RolDeUsuario, Sucursal};
+use datos_comunes::{self, QueryChangeUserRole, QueryGetUserRole,ResponseGetOffices, ResponseGetUserRole, RolDeUsuario, Sucursal};
 use reqwasm::http::Request;
 use yewdux::use_store;
 use crate::components::dni_input_field::DniInputField;
-use crate::components::checked_input_field::CheckedInputField;
 use crate::components::generic_button::GenericButton;
 use crate::information_store::InformationStore;
 

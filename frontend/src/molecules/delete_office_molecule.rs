@@ -14,7 +14,7 @@ pub fn delete_office_molecule () -> Html {
     let state_office_list = use_state(|| Vec::new());
     let state_office_list_clone = state_office_list.clone();
 
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
     
     let clicks = use_state(|| 0);
     let clicks_cloned = clicks.clone();
