@@ -17,6 +17,7 @@ pub struct Database {
 
     publicaciones_auto_incremental: usize,
     publicaciones: HashMap<usize, Publicacion>,
+    trueques: Vec<Trueque>,
 
 }
 
