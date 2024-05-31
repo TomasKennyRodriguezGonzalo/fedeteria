@@ -11,3 +11,4 @@ pub mod unlock_account_molecule;
 pub mod change_user_role_molecule;
 pub mod publication_molecule;
 pub mod publication_selector_molecule;
+pub mod trueque_molecule;

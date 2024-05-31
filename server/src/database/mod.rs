@@ -368,4 +368,22 @@ impl Database {
         return false
     }
 
+    pub fn obtener_trueques_por_estado (&self, query: QueryObtenerTruequesEstado) -> Vec<usize> {
+        let obtenidos = self.trueques.iter().
+                        enumerate().
+                        filter(|(_, trueque)| trueque.estado == query.estado).
+                        map(|(indice, _)| indice).
+                        collect();
+        log::info!("Indices de trueques filtrados: {:?}", obtenidos);
+        obtenidos
+    }
+
+    pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
+        self.trueques.get(id)
+    }
+
+    pub fn agregar_trueque(&mut self, trueque: Trueque) {
+        self.trueques.push(trueque);
+        self.guardar();
+    }
 }

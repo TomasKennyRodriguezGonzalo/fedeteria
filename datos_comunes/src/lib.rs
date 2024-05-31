@@ -313,3 +313,13 @@ pub struct ResponseCrearOferta{
     pub estado : bool,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerTruequesEstado {
+    pub estado: EstadoTrueque,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerTruequesEstado {
+    //indice de los trueques en el vec
+    pub trueques: Vec<usize>
+}

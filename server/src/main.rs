@@ -98,6 +98,8 @@ async fn main() {
         .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
         .route("/api/enviar_notificacion", post(enviar_notificacion))
         .route("/api/crear_oferta", post(crear_oferta))
+        .route("/api/obtener_trueques_por_estado", post(obtener_trueques_por_estado))
+        .route("/api/obtener_trueque", get(get_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -521,4 +523,23 @@ Json(query): Json<QueryCrearOferta>
     Json(ResponseCrearOferta{estado: respuesta})
 }
 
+async fn obtener_trueques_por_estado ( State(state): State<SharedState>,
+Json(query): Json<QueryObtenerTruequesEstado>
+) -> Json<ResponseObtenerTruequesEstado> {
+    let state = state.read().await;
+    let respuesta = state.db.obtener_trueques_por_estado(query);
+    Json(ResponseObtenerTruequesEstado{trueques: respuesta})
+}
 
+async fn get_trueque (
+    State(state): State<SharedState>,
+    Query(query): Query<QueryObtenerTrueque>
+) -> Json<ResponseObtenerTrueque> {
+    let id = query.id;
+    let state = state.read().await;
+    if let Some(trueque) = state.db.get_trueque(id) {
+        Json(Ok(trueque.clone()))
+    } else {
+        Json(Err(ErrorObtenerTrueque::TruequeInexistente))
+    }
+}
