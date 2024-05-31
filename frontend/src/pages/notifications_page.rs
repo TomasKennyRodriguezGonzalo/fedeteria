@@ -37,12 +37,11 @@ let cloned_notification_list = notification_list.clone();
 let delete_notification = Callback::from(move |index| {
     log::info!("el index a borrar es {}",index);
     // Elimino la notificación con el indice recibido de IndexedButton y el dni del usuario del UserStore
-    let dni = cloned_dni.clone();
     let notification_list = cloned_notification_list.clone();
     let query = QueryEliminarNotificacion
     {
-        dni : (dni).clone(),
-        index: index,
+        dni : cloned_dni,
+        index
     };
     request_post("/api/eliminar_notificacion", query, move |respuesta: ResponseEliminarNotificacion|{
         let notificaciones: ResponseEliminarNotificacion = respuesta;
