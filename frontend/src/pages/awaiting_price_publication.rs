@@ -1,4 +1,5 @@
 use datos_comunes::{QueryPublicacionesSinTasar, ResponsePublicacionesSinTasar};
+use yew_hooks::use_effect_once;
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use yewdux::use_store;
@@ -21,10 +22,14 @@ pub fn awaiting_price_publication_page()-> Html {
         dni : dni.unwrap_or_default(),
     };
 
-    request_post("/api/obtener_publicaciones_sin_tasar", query, move |respuesta:ResponsePublicacionesSinTasar|{
-        let cloned_publications_list_state = cloned_publications_list_state.clone();
-        let publicaciones = respuesta.publicaciones;
-        cloned_publications_list_state.set(publicaciones);
+    use_effect_once( move || {
+        request_post("/api/obtener_publicaciones_sin_tasar", query, move |respuesta:ResponsePublicacionesSinTasar|{
+            let cloned_publications_list_state = cloned_publications_list_state.clone();
+            let publicaciones = respuesta.publicaciones;
+            cloned_publications_list_state.set(publicaciones);
+        });
+        
+        || {}
     });
 
     html!{

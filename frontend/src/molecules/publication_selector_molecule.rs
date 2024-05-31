@@ -1,4 +1,5 @@
 use std::clone;
+use std::ops::Deref;
 
 use yew_router::hooks::use_location;
 use web_sys::window;
@@ -33,13 +34,12 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
     let price_range = calcular_rango(cloned_price); 
 
     let selected_publications_list_state: UseStateHandle<Vec<usize>> = use_state(|| vec![]);
-    let cloned_selected_publications_list_state = selected_publications_list_state.clone();
-
+    
     let filtered_publications = use_state(|| Vec::new());
     let filtered_publications_cloned = filtered_publications.clone();
     let cloned_price_range = price_range.clone();
     use_effect_once(move || {
-
+        
         let query = QueryPublicacionesFiltradas {
             filtro_dni : dni,
             filtro_nombre : None,
@@ -49,19 +49,37 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
             filtro_fecha_min : None,
             filtro_pausadas : true,
         };
-
+        
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
             filtered_publications_cloned.set(respuesta)
         });
         ||{}
     });
-
+    
     let filtered_publications_cloned = filtered_publications.clone();
-
-    let publication_selected = Callback::from( move |index| {
+    
+    let cloned_selected_publications_list_state = selected_publications_list_state.clone();
+    let publication_selected = Callback::from( move |id| {
         // Logica de seleccion de una publicacion
+        if (*cloned_selected_publications_list_state).len() <= 1 {
+            let mut new_vec = cloned_selected_publications_list_state.deref().clone();
+            new_vec.push(id);
+            cloned_selected_publications_list_state.set(new_vec);
+        }
     });
+    
+    let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
+    let publication_unselected = Callback::from( move|id| {
+        let mut new_vec = cloned_selected_publications_list_state.deref().clone();
+        if let Some(index) = new_vec.iter().position(|index| *index == id) {
+            new_vec.remove(index);
+        } else {
 
+        }
+        cloned_selected_publications_list_state.set(new_vec);
+    });
+    let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
+    
     html! {
         <div class="publication-selector-box">
             if !filtered_publications_cloned.is_empty() {
@@ -71,12 +89,12 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                             html! {
                                 <li>
                                     <a class="link-duller">
-                                        <PublicationThumbnail id={id}/>
+                                        <PublicationThumbnail id={id} linkless={true}/>
                                     </a>
-                                    if !(&*cloned_selected_publications_list_state).contains(&index) {
-                                        <IndexedButton text="Seleccionar" index={index} onclick_event={publication_selected.clone()}/>
+                                    if !(&*cloned_selected_publications_list_state.clone()).contains(&id) {
+                                        <IndexedButton text="Seleccionar" index={id.clone()} onclick_event={publication_selected.clone()}/>
                                     } else {
-                                        <button class="disabled-dyn-element">{"Seleccionada"}</button>
+                                        <IndexedButton text="Seleccionada" index={id.clone()} onclick_event={publication_unselected.clone()}/>
                                     }
                                 </li>
                             }

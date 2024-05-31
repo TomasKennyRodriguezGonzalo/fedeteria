@@ -1,15 +1,11 @@
-use std::clone;
-
-use yew_router::hooks::use_location;
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
-use crate::molecules::publication_grid_molecule::PublicationGridMolecule;
 use crate::convenient_request::send_notification;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryObtenerPrecioMaxDeRango, QueryPublicacionesFiltradas, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponsePublicacionesFiltradas, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, ResponseObtenerPrecioMaxDeRango};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -142,7 +138,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                         let information_dispatch = information_dispatch.clone();
                         if response.changed {
-                            let nombre = ((&*cloned_datos_publicacion).clone().unwrap().titulo.clone());
+                            let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
                             let publicacion_pausada = (&*cloned_datos_publicacion).clone().unwrap().pausada.clone();
                             let information_dispatch = information_dispatch.clone();
                             if (publicacion_pausada).clone() {
@@ -190,21 +186,14 @@ pub fn publication_molecule(props : &Props) -> Html {
     });
 
     let cloned_current_image_state = current_image_state.clone();
-
-    let dni_cloned = dni.clone();
     
     //estado que mantiene las props que se enviaran a la publication grid
     let props_state: UseStateHandle<Option<u64>> = use_state(|| None);
-    let props_state_cloned = props_state.clone();
 
     //estado boton de mostrar publcaciones
     let button_show_publication = use_state(|| false);
     let button_show_publication_cloned = button_show_publication.clone();
 
-    let navigator = use_navigator().unwrap();
-    let navigator_cloned = navigator.clone();
-
-    let cloned_datos_publicacion = datos_publicacion.clone();
     let change_to_selector = Callback::from(move |()| {
         //se podria agregar los precios de los rangos
         log::info!("Setteo en true");
@@ -213,7 +202,6 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let props = *props_state.clone();
     log::info!("Las props tienen {:?}", props.clone());
-    let navigator = use_navigator().unwrap();
     //este es el estado del input, el que va cambiando dinamicamente
     let input_publication_price_state = use_state(|| None);
     let cloned_input_publication_price_state = input_publication_price_state.clone();
@@ -248,10 +236,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                 precio : (&*input_publication_price_state).clone(),
             };
             let input_publication_price_state = cloned_input_publication_price_state.clone();
-            request_post("/api/tasar_publicacion", query, move |respuesta:ResponseTasarPublicacion|{
+            request_post("/api/tasar_publicacion", query, move |_respuesta:ResponseTasarPublicacion|{
                 let input_publication_price_state = input_publication_price_state.clone();
                 let cloned_datos_publicacion = cloned_datos_publicacion.clone();
-                let cloned_publication_price_state = cloned_publication_price_state.clone();
                 let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
                 if let Some(window) = window() {
                 match window.location().href() {
@@ -281,7 +268,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     <div class="index-buttons">
                         {
                             publicacion.imagenes.iter().enumerate().map(|(index, _imagen)| {
-                                if (*cloned_current_image_state == index) {
+                                if *cloned_current_image_state == index {
                                     html! {
                                         <button class="selected-button"></button>
                                     }
@@ -296,8 +283,8 @@ pub fn publication_molecule(props : &Props) -> Html {
                 </div> 
                     <div class="text">
                     <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
-                    <h4 class="name">{publicacion.titulo.clone()}</h4>
-                    <h2 class="price">{
+                    <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
+                    <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
                             if publicacion.pausada {
                                 "Publicación Pausada".to_string()

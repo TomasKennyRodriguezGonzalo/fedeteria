@@ -109,7 +109,7 @@
         .navbar {
             display: flex;
             align-items: center;
-            padding: 5px 10%;
+            padding: 5px 10px;
             justify-content: space-between;
             background-color: #114232;
             border-radius: 0 0 10px 10px;
@@ -136,7 +136,7 @@
         .navbar .search-bar .inputs{
             display: flex;
             align-items: center;
-            padding: 5px 10%;
+            padding: 5px 10px;
             justify-content: space-between;
             color: white;
             flex-direction: row;
@@ -239,7 +239,7 @@
         }
 
         .publication-thumbnail:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
             box-shadow: 1px 1px 10px;
         }
 
@@ -412,43 +412,6 @@
             padding: 0 5px 25px;
         }
 
-        .publication-box .image {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-content: center; 
-            align-items: center;
-            background-color: white;
-            margin: 10px 0px 0px 10px;
-            border-radius: 10px;
-        }
-        .publication-box .image img{
-            width: 400px;
-            height: 300px;
-            margin-left: 10px;
-            border-radius: 10px;
-            margin: 10px;
-        }
-
-        .publication-box .image .index-buttons * {
-            margin: 0px 2px;
-            background-color: gray;
-        }
-
-        .publication-box .image .index-buttons .selected-button {
-            transform: scale(1.15);
-            transition: 0.5s;
-        }
-
-        .publication-box .image .index-buttons {
-            background-color: lightgray;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-items: center;
-            padding: 5px 10px;
-        }
-
         /* --- Create Office --- */
         .create-office-box {
             background-color: #114232;
@@ -577,9 +540,8 @@
             color: white;
             justify-content: start;
             border-radius: 10px;
-            margin: 0.4%;
-            margin-bottom: 1%;
-            padding: 10px;
+            margin: 5px;
+            padding: 15px;
             align-content: center;
             flex-direction: column;
             flex-wrap: nowrap;
@@ -588,26 +550,53 @@
         .publication-box .image-list {
             display: flex;
             justify-content: center;
-            margin: 0.4%;
-            padding: 10px;
+            padding: 15px;
             align-content: center;
             flex-direction: column;
             flex-wrap: nowrap;
         }
 
-        .publication-box * {
-            margin-bottom: 5px;
+        .publication-box .image {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-content: center; 
+            align-items: center;
+            background-color: white;
+            border-radius: 10px;
         }
-
-        .publication-box img {
+        .publication-box .image img{
             width: 400px;
             height: 300px;
             margin-left: 10px;
-            border-radius: 20px;
+            border-radius: 10px;
+            margin: 10px;
         }
 
+        .publication-box .image .index-buttons * {
+            margin: 0px 2px;
+            background-color: gray;
+        }
+
+        .publication-box .image .index-buttons .selected-button {
+            transform: scale(1.15);
+            transition: 0.5s;
+        }
+
+        .publication-box .image .index-buttons {
+            background-color: lightgray;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-items: center;
+            padding: 5px 10px;
+        }
+
+        .publication-box * {
+            margin-bottom: 5px;
+        }
         
-        .publication-box .info {
+        .publication-box > .info {
             display: flex;
             align-content: center;
             flex-direction: row;
@@ -619,14 +608,14 @@
             width: 60%;
         }
 
-        .publication-box .text .name {
+        .publication-box .text .publication-name {
             font-size: 50px;
             background-color: burlywood;
             border-radius: 10px;
             padding: 0px 30px;
         }
 
-        .publication-box .text .price {
+        .publication-box .text .publication-price {
             font-size: 60px;
             background-color: dimgray;
             border-radius: 10px;
@@ -853,6 +842,35 @@
             all: initial;
             cursor: pointer;
         }
+
+        /* --- publication-selector --- */
+        .publication-selector-box {
+            background-color: #0a271d;
+            display: grid;
+            color : white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            padding : 10px; 
+        }
+
+        .publication-selector-box ul{
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .publication-selector-box ul li{
+            margin: 2px 10px 0px 0px;
+        }
+
+        .publication-selector-box ul li a{
+            all: initial;
+            cursor: pointer;
+        }
+
 
 
     </style>

@@ -12,6 +12,8 @@ use crate::router::Route;
 #[derive(Properties,PartialEq)]
 pub struct PublicationThumbnailProps {
     pub id: usize,
+    #[prop_or_default]
+    pub linkless : bool,
 }
 
 #[function_component(PublicationThumbnail)]
@@ -56,7 +58,30 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
     });
     
     html! {
-        <Link<Route> to={Route::Publication{id}}>
+        if !(props.linkless) {
+            <Link<Route> to={Route::Publication{id}}>
+                <div class="publication-thumbnail">
+                    if let Some(publicacion) = datos_publicacion.deref() {
+                        <img src={
+                            format!("/publication_images/{}", publicacion.imagenes[0])
+                        }/>
+                        <div class="info">
+                            <h4 class="name">{publicacion.titulo.clone()}</h4>
+                            <h2 class="price">{
+                                if let Some(precio) = publicacion.precio {
+                                    precio.to_string()
+                                }
+                                else {
+                                    "Sin Tasar".to_string()
+                                }
+                            }</h2>
+                        </div>
+                    } else {
+                        {"Cargando..."}
+                    }
+                </div>
+            </Link<Route>>
+        } else {
             <div class="publication-thumbnail">
                 if let Some(publicacion) = datos_publicacion.deref() {
                     <img src={
@@ -77,6 +102,6 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
                     {"Cargando..."}
                 }
             </div>
-        </Link<Route>>
+        }
     }
 }
