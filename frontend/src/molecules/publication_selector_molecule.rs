@@ -1,27 +1,21 @@
-use std::clone;
 use std::ops::Deref;
 
-use yew_router::hooks::use_location;
-use web_sys::window;
 use crate::components::generic_button::GenericButton;
 use crate::components::indexed_button::IndexedButton;
 use crate::components::publication_thumbnail::PublicationThumbnail;
-use crate::molecules::publication_grid_molecule::PublicationGridMolecule;
 use crate::request_post;
-use crate::{router::Route, store::UserStore};
-use yew_router::hooks::use_navigator;
+use crate::store::UserStore;
 use yewdux::use_store;
-use datos_comunes::{calcular_rango, Publicacion, QueryEliminarPublicacion, QueryPublicacionesFiltradas, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponsePublicacion, ResponsePublicacionesFiltradas, ResponseTogglePublicationPause};
-use reqwasm::http::Request;
-use wasm_bindgen_futures::spawn_local;
+use datos_comunes::{calcular_rango, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
-use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub price : u64,
+    pub confirmed : Callback<Vec<usize>>,
+    pub rejected : Callback<()>,
 }
 
 #[function_component(PublicationSelectorMolecule)]
@@ -34,6 +28,8 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
     let price_range = calcular_rango(cloned_price); 
 
     let selected_publications_list_state: UseStateHandle<Vec<usize>> = use_state(|| vec![]);
+
+    let confirmation_state = use_state(|| false);
     
     let filtered_publications = use_state(|| Vec::new());
     let filtered_publications_cloned = filtered_publications.clone();
@@ -80,12 +76,25 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
     });
     let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
     
+    let cloned_confirmation_state = confirmation_state.clone();
+    let activate_confirm_prompt = Callback::from ( move |()|{
+        cloned_confirmation_state.set(true)
+    });
+
+    let confirm_selection = Callback::from(move |_event| {
+
+    });
+
+    let reject_func = Callback::from(|_event| {
+
+    });
+
     html! {
         <div class="publication-selector-box">
             if !filtered_publications_cloned.is_empty() {
                 <ul> 
                     {
-                        filtered_publications_cloned.iter().enumerate().map(|(index, id)| {
+                        filtered_publications_cloned.iter().enumerate().map(|(_index, id)| {
                             html! {
                                 <li>
                                     <a class="link-duller">
@@ -101,6 +110,10 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                         }).collect::<Html>()
                     }
                 </ul>
+                <GenericButton text="Ofertar" onclick_event={activate_confirm_prompt}/>
+            }
+            if (&*confirmation_state).clone(){
+                <ConfirmPromptButtonMolecule text={format!("¿Confirma su selección de publicaciones para ofertar?")} confirm_func={confirm_selection} reject_func={reject_func} />
             }
         </div>
     }

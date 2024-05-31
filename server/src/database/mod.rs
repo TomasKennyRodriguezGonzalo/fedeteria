@@ -344,7 +344,6 @@ impl Database {
         }
     }
 
-
     pub fn enviar_notificacion(&mut self, query:QueryEnviarNotificacion, index:Option<usize>)-> bool{
         if index.is_none(){
             log::error!("index de usuario inexistente!");
@@ -359,6 +358,14 @@ impl Database {
         usuario.unwrap().notificaciones.push(nueva_notificacion);
         self.guardar();
         true
+    }
+
+    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool{
+        if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
+            // Logica de crear oferta
+            return true
+        }
+        return false
     }
 
 

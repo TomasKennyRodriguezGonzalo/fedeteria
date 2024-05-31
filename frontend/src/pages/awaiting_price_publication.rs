@@ -1,6 +1,5 @@
 use datos_comunes::{QueryPublicacionesSinTasar, ResponsePublicacionesSinTasar};
 use yew_hooks::use_effect_once;
-use yew_router::prelude::Link;
 use yew::prelude::*;
 use yewdux::use_store;
 use crate::components::publication_thumbnail::PublicationThumbnail;

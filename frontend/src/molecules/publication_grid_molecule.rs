@@ -1,6 +1,5 @@
 use crate::{components::publication_thumbnail::PublicationThumbnail, request_post};
-use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
-use web_sys::window;
+use datos_comunes::{QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 

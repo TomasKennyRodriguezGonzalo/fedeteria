@@ -1,5 +1,4 @@
 use datos_comunes::QueryPublicacionesFiltradas;
-use web_sys::console;
 use yew::prelude::*;
 use yew_router::hooks::use_location;
 

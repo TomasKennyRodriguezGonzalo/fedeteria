@@ -1,5 +1,5 @@
 use yewdux::use_store;
-use yew_router::{components::Link, hooks::use_navigator, navigator};
+use yew_router::{components::Link, hooks::use_navigator};
 use yew::prelude::*;
 use datos_comunes::{RolDeUsuario, QueryGetUserRole, ResponseGetUserRole};
 use crate::{router::Route, store::UserStore};

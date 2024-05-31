@@ -58,7 +58,7 @@ pub fn register_molecule()-> Html {
     let error_state = use_state(|| {"".to_string()});
     let cloned_error_state = error_state.clone();
     
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
     let information_dispatch = information_dispatch.clone();
     let loading_state_cloned = loading_state.clone();
     let onsubmit = Callback::from(move |event:SubmitEvent|{

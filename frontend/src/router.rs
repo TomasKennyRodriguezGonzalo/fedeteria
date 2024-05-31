@@ -4,10 +4,9 @@ use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
 use crate::request_post;
 use crate::store::UserStore;
-use datos_comunes::{QueryGetUserRole, QueryPublicacionesFiltradas, ResponseGetUserRole};
+use datos_comunes::{QueryGetUserRole, ResponseGetUserRole};
 use yew::prelude::*;
-use yew_hooks::use_effect_once;
-use yew_router::{navigator, prelude::*};
+use yew_router::prelude::*;
 use yewdux::use_store;
 use crate::pages::{create_office_page::CreateOfficePage,
     create_publication_page::CreatePublicationPage,
@@ -21,8 +20,6 @@ use crate::pages::{create_office_page::CreateOfficePage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
 };
-
-use crate::components::publication_thumbnail::PublicationThumbnail;
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
     #[at("/")]
@@ -123,7 +120,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyPendingTrades => [false, true, true, true],
         Route::MyCompletedTrades => [false, true, true, true],
         Route::EditPersonalInfo => [false, true, true, true],
-        Route::Publication { id } => [false, true, true, true],
+        Route::Publication { id : _ } => [false, true, true, true],
         Route::Register => [true, false, false, false],
         Route::PrivilegedActions => [false, false, true, true],
         Route::CreateOffice => [false, false, false, true],
@@ -144,7 +141,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
                     let rol = response.rol;
                     let num = match rol {
                         datos_comunes::RolDeUsuario::Normal => 1,
-                        datos_comunes::RolDeUsuario::Empleado { sucursal } => 2,
+                        datos_comunes::RolDeUsuario::Empleado { sucursal : _ } => 2,
                         datos_comunes::RolDeUsuario::Dueño => 3,
                     };
                     if !allowed_roles[num] {

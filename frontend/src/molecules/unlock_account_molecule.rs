@@ -1,6 +1,6 @@
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use datos_comunes::{self, DuringBlockError, QueryUnlockAccount, ResponseUnlockAccount};
+use datos_comunes::{self, QueryUnlockAccount, ResponseUnlockAccount};
 use reqwasm::http::Request;
 use yewdux::use_store;
 use crate::components::dni_input_field::DniInputField;
@@ -12,7 +12,7 @@ use datos_comunes::ResponseGetBlockedAccounts;
 #[function_component(UnlockAccountMolecule)]
 pub fn unlock_account_molecule () -> Html {
 
-    let (information_store, information_dispatch) = use_store::<InformationStore>();
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
 
     let dni_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_dni_state = dni_state.clone();
@@ -115,7 +115,7 @@ pub fn unlock_account_molecule () -> Html {
                                             information_dispatch.reduce_mut( |store | store.messages.push(format!("Se desbloqueó la cuenta del DNI {}", (&*cloned_dni_state).clone().unwrap())));
                                             log::info!("{:?}", respuesta.clone());
                                         }
-                                        Err(error)=>{
+                                        Err(_error)=>{
                                             cloned_user_not_found_state.set(true);
                                         }
                                     }

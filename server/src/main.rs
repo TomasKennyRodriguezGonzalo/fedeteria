@@ -97,6 +97,7 @@ async fn main() {
         .route("/api/tasar_publicacion", post(tasar_publicacion))
         .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
         .route("/api/enviar_notificacion", post(enviar_notificacion))
+        .route("/api/crear_oferta", post(crear_oferta))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -510,6 +511,14 @@ Json(query): Json<QueryEnviarNotificacion>
     let index = state.db.encontrar_dni(query.dni);
     let respuesta = state.db.enviar_notificacion(query,index);
     Json(ResponseEnviarNotificacion{enviada: respuesta})
+}
+
+async fn crear_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryCrearOferta>
+) -> Json<ResponseCrearOferta>{
+    let mut state = state.write().await;
+    let respuesta = state.db.crear_oferta(query);
+    Json(ResponseCrearOferta{estado: respuesta})
 }
 
 

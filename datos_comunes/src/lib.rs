@@ -300,3 +300,16 @@ pub struct ResponseObtenerPrecioMaxDeRango{
     pub precio_max:Option<u64>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCrearOferta{
+    pub dni_ofertante : u64,
+    pub publicaciones_ofertadas : Vec<usize>,
+    pub dni_receptor : u64,
+    pub publicacion_receptora : usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCrearOferta{
+    pub estado : bool,
+}
+

@@ -1,6 +1,5 @@
-use chrono::{Date, DateTime, Local, NaiveDate, TimeZone};
 use web_sys::window;
-use datos_comunes::{QueryGetUserRole, QueryTieneNotificacion, ResponseGetUserRole, ResponseTieneNotificacion, RolDeUsuario};
+use datos_comunes::{QueryGetUserRole, ResponseGetUserRole, RolDeUsuario};
 use wasm_bindgen_futures::spawn_local;
 use yew_hooks::use_effect_once;
 use yew_router::hooks::use_navigator;
@@ -8,14 +7,13 @@ use yewdux::use_store;
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use crate::components::dni_input_field::DniInputField;
-use crate::request_post;
 use crate::{components::generic_button::GenericButton, information_store::InformationStore};
 use crate::store::UserStore;
 use crate::router::Route;
 use crate::components::indexed_button::IndexedButton;
 use crate::components::checked_input_field::CheckedInputField;
 use reqwasm::http::Request;
-use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
+use datos_comunes::QueryPublicacionesFiltradas;
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html{
@@ -36,7 +34,7 @@ pub fn navbar() -> Html{
     });
     
     let dni = store.dni;
-    let username = store.nombre.clone();
+    let _username = store.nombre.clone();
     
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
@@ -185,7 +183,7 @@ pub fn navbar() -> Html{
             filtro_precio_min: cloned_min_price_state.clone(),
             filtro_pausadas : true,
         };
-        navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
+        let _ = navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 
         if let Some(window) = window() {
             window.location().reload().unwrap();

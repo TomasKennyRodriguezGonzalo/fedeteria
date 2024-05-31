@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario};
+use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -190,14 +190,17 @@ pub fn publication_molecule(props : &Props) -> Html {
     //estado que mantiene las props que se enviaran a la publication grid
     let props_state: UseStateHandle<Option<u64>> = use_state(|| None);
 
-    //estado boton de mostrar publcaciones
-    let button_show_publication = use_state(|| false);
-    let button_show_publication_cloned = button_show_publication.clone();
-
-    let change_to_selector = Callback::from(move |()| {
-        //se podria agregar los precios de los rangos
-        log::info!("Setteo en true");
-        button_show_publication_cloned.set(true);
+    //estado boton de mostrar selector
+    let show_selector_state = use_state(|| false);
+    let show_selector_state_cloned = show_selector_state.clone();
+    
+    let show_selector = Callback::from(move |()| {
+        show_selector_state_cloned.set(true);
+    });
+    
+    let show_selector_state_cloned = show_selector_state.clone();
+    let hide_selector = Callback::from(move |_input| {
+        show_selector_state_cloned.set(false);
     });
 
     let props = *props_state.clone();
@@ -256,6 +259,18 @@ pub fn publication_molecule(props : &Props) -> Html {
         publication_price_state.set((&*input_publication_price_state).clone());
     });
 
+    let cloned_id = id.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let create_offer = Callback::from( move |selected_publications| {
+        // Creo el trueque en estado OFERTA
+        let oferta = (dni.unwrap(), selected_publications);
+
+        let receptor_dni = (cloned_datos_publicacion.as_ref()).unwrap().dni_usuario;
+        let receptor = (receptor_dni, cloned_id);
+
+
+        
+    });
 
     html!{
         <div class="publication-box">
@@ -300,10 +315,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                     </div>
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
-                        //change to selector activa el button_show_publication el cual permite que se desplieguen todas mis publicaciones para seleccionarlas
-                        <GenericButton text="Agregar publicacion a oferta" onclick_event={change_to_selector}/>
-                        if *button_show_publication { 
-                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()}/>
+                        <GenericButton text="Agregar publicacion a oferta" onclick_event={show_selector}/>
+                        if *show_selector_state { 
+                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
                         }
                     }
                 </div>

@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_router::{hooks::use_navigator, navigator};
+use yew_router::hooks::use_navigator;
 use yewdux::prelude::*;
 extern crate chrono;
 use chrono::prelude::*;

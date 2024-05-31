@@ -1,28 +1,17 @@
-use reqwasm::http::Request;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::{components::publication_thumbnail::PublicationThumbnail, request_post};
-use datos_comunes::{Publicacion, QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
-use yew_router::prelude::*;
+use datos_comunes::{QueryPublicacionesFiltradas, ResponsePublicacionesFiltradas};
 use yewdux::prelude::*;
 use crate::store::UserStore;
-
-
-
 
 #[function_component(MyPublicationsPage)]
 pub fn my_publications_page() -> Html {
 
-
-    let (store, dispatch) = use_store::<UserStore>();
+    let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
     let publication_list_state: UseStateHandle<Vec<usize>> = use_state(|| Vec::new());
-
-    
-
 
     let cloned_dni = dni.clone();
     let cloned_publication_list_state = publication_list_state.clone();
@@ -55,7 +44,7 @@ pub fn my_publications_page() -> Html {
             if !(&*publication_list_state).is_empty() {
                 <ul>
                     {
-                        (&*publication_list_state).iter().enumerate().map(|(index, id)| {
+                        (&*publication_list_state).iter().enumerate().map(|(_index, id)| {
                             html! {
                                 <li><PublicationThumbnail id={id}/></li>
                             }
