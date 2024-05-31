@@ -17,7 +17,8 @@ pub struct Database {
 
     publicaciones_auto_incremental: usize,
     publicaciones: HashMap<usize, Publicacion>,
-    trueques: Vec<Trueque>,
+    trueques_auto_incremental: usize,
+    trueques: HashMap<usize, Trueque>,
 
 }
 
@@ -371,7 +372,7 @@ impl Database {
     pub fn obtener_trueques_por_estado (&self, query: QueryObtenerTruequesEstado) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
                         enumerate().
-                        filter(|(_, trueque)| trueque.estado == query.estado).
+                        filter(|(_, trueque)| trueque.1.estado == query.estado).
                         map(|(indice, _)| indice).
                         collect();
         log::info!("Indices de trueques filtrados: {:?}", obtenidos);
@@ -379,11 +380,12 @@ impl Database {
     }
 
     pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
-        self.trueques.get(id)
+        self.trueques.get(&id)
     }
 
     pub fn agregar_trueque(&mut self, trueque: Trueque) {
-        self.trueques.push(trueque);
+        self.trueques.insert(self.trueques_auto_incremental, trueque);
+        self.trueques_auto_incremental += 1;
         self.guardar();
     }
 }

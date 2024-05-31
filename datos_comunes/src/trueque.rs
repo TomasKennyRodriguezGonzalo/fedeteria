@@ -70,6 +70,4 @@ pub enum ErrorObtenerTrueque {
     TruequeInexistente,
 }
 
-
-
 pub type ResponseObtenerTrueque = Result<Trueque, ErrorObtenerTrueque>;
