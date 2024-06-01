@@ -85,7 +85,10 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
 
     });
 
-    let reject_func = Callback::from(|_event| {
+
+    let cloned_confirmation_state = confirmation_state.clone();
+    let reject_func = Callback::from(move |_event| {
+        cloned_confirmation_state.set(false);
 
     });
 
