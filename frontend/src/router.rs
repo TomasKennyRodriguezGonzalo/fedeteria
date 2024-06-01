@@ -1,4 +1,4 @@
-use crate::pages::notifications_page::NotificationsPage;
+use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequePage};
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
@@ -45,6 +45,8 @@ pub enum Route {
     EditPersonalInfo,
     #[at("/publicacion/:id")]
     Publication {id: usize},
+    #[at("/trueque/:id")]
+    Trueque {id: usize},
     #[at("/register")]
     Register,
     #[at("/acciones-privilegiadas")]
@@ -96,6 +98,7 @@ pub fn switch(routes: Route) -> Html {
                 Route::Notifications => html!(<NotificationsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
                 Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
+                Route::Trueque { id } => html! { <TruequePage id={id}/>},
             }}
     </>}
 }
@@ -136,6 +139,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::Notifications => [false, true, true, true],
         Route::AwaitingPricePublication => [false, false, true, true],
         Route::PublicationTradeOffers => [false, true, true, true],
+        Route::Trueque { id : _ } => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

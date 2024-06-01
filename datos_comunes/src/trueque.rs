@@ -58,3 +58,16 @@ pub enum EstadoTrueque {
     Definido,
     Finalizado,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+pub struct QueryObtenerTrueque {
+    pub id: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+pub enum ErrorObtenerTrueque {
+    ErrorIndeterminado,
+    TruequeInexistente,
+}
+
+pub type ResponseObtenerTrueque = Result<Trueque, ErrorObtenerTrueque>;

@@ -15,3 +15,4 @@ pub mod search_results_page;
 pub mod notifications_page;
 pub mod awaiting_price_publication;
 pub mod publication_trade_offers_page;
+pub mod trueque_page;

@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use serde::{Deserialize, Serialize};
 
-use crate::Trueque;
+//use crate::Trueque;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Publicacion {
@@ -13,7 +13,8 @@ pub struct Publicacion {
     pub imagenes: Vec<String>,
     pub precio: Option<u64>,
     pub pausada: bool,
-    pub ofertas: Vec<Trueque>,
+    //indice de las ofertas/trueques en el vec de la database
+    pub ofertas: Vec<usize>,
 }
 
 impl Publicacion {
