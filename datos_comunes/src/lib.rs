@@ -9,6 +9,16 @@ pub use notificacion::*;
 mod trueque;
 pub use trueque::*;
 
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryRegistrarUsuario {
+    pub nombre_y_apellido: String,
+    pub dni: u64,
+    pub email: String,
+    pub contraseña: String,
+    pub nacimiento: DateTime<Local>,
+}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {
     pub nombre_y_apellido: String,

@@ -81,8 +81,13 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
         cloned_confirmation_state.set(true)
     });
 
-    let confirm_selection = Callback::from(move |_event| {
 
+
+    //confirm selection envia para arriba el vec con los ids seleccionados
+    let confirmed = props.confirmed.clone();
+    let cloned_selected_publications_list_state = selected_publications_list_state.clone();
+    let confirm_selection = Callback::from(move |_event| {
+        confirmed.emit((*cloned_selected_publications_list_state).clone());    
     });
 
 
@@ -91,6 +96,8 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
         cloned_confirmation_state.set(false);
 
     });
+
+    let cloned_selected_publications_list_state = selected_publications_list_state.clone();
 
     html! {
         <div class="publication-selector-box">

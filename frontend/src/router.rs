@@ -19,6 +19,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     privileged_actions_page::PrivilegedActionsPage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
+    publication_trade_offers_page::PublicationTradeOffersPage,
 };
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
@@ -62,6 +63,8 @@ pub enum Route {
     SearchResults,
     #[at("/notificaciones")]
     Notifications,
+    #[at("/ofertas-recibidas")]
+    PublicationTradeOffers,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -92,6 +95,7 @@ pub fn switch(routes: Route) -> Html {
                 Route::SearchResults => html!(<SearchResultsPage/>),
                 Route::Notifications => html!(<NotificationsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
+                Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
             }}
     </>}
 }
@@ -131,6 +135,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],
         Route::AwaitingPricePublication => [false, false, true, true],
+        Route::PublicationTradeOffers => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

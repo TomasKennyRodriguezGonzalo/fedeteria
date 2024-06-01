@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -261,15 +261,40 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
+    let created_offer_state = use_state(|| false);
+    let cloned_created_offer_state = created_offer_state.clone();
     let create_offer = Callback::from( move |selected_publications| {
         // Creo el trueque en estado OFERTA
         let oferta = (dni.unwrap(), selected_publications);
-
         let receptor_dni = (cloned_datos_publicacion.as_ref()).unwrap().dni_usuario;
         let receptor = (receptor_dni, cloned_id);
-
+        let created_offer_state = cloned_created_offer_state.clone();
+        let query =  QueryCrearOferta {
+            dni_ofertante : oferta.0,
+            publicaciones_ofertadas : oferta.1,
+            dni_receptor : receptor.0,
+            publicacion_receptora : receptor.1,
+        };
+        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
+            let created_offer_state = created_offer_state.clone();
+            created_offer_state.set(respuesta.estado);
+        });
+        if let Some(window) = window() {
+            let dni_receptor = receptor.0;
+            send_notification("Nueva Oferta de Trueque!".to_string(), format!("Has recibido una oferta de trueque en tu {} cliquea aquí para verla!", ((&*cloned_datos_publicacion).clone().unwrap().titulo)), window.location().href().unwrap(), dni_receptor);
+        }
 
         
+    });
+
+    let cloned_id = id.clone();
+    let navigator = use_navigator().unwrap();
+    let goto_trade_offers = Callback::from(move |_| {
+        
+        let _ = navigator.push_with_query(&Route::PublicationTradeOffers, &cloned_id);
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
     });
 
     html!{
@@ -330,6 +355,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                         } else {
                             <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
                         }
+                        <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
                     }  
                 </div>
                 }

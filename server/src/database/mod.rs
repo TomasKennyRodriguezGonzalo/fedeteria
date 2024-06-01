@@ -362,7 +362,21 @@ impl Database {
     pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool{
         if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
             // Logica de crear oferta
-            return true
+            if let Some(publicacion) = self.publicaciones.get_mut(&query.publicacion_receptora){
+                let oferta = Trueque{
+                    oferta: (query.dni_ofertante, query.publicaciones_ofertadas),
+                    receptor: (query.dni_receptor, query.publicacion_receptora),
+                    sucursal: None,
+                    horario: None,
+                    estado: EstadoTrueque::Oferta,
+                    codigo_ofertante: None,
+                    codigo_receptor: None,
+                };
+                publicacion.ofertas.push(oferta);
+                self.guardar();
+                return true
+            }
+            
         }
         return false
     }
