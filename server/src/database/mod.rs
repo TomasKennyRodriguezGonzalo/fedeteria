@@ -17,9 +17,9 @@ pub struct Database {
 
     publicaciones_auto_incremental: usize,
     publicaciones: HashMap<usize, Publicacion>,
+
     trueques_auto_incremental: usize,
     trueques: HashMap<usize, Trueque>,
-
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -129,6 +129,14 @@ impl Database {
         self.publicaciones.insert(self.publicaciones_auto_incremental, publicacion);
         self.publicaciones_auto_incremental += 1;
         self.guardar();
+    }
+
+    pub fn agregar_trueque(&mut self, trueque: Trueque) -> usize {
+        self.trueques.insert(self.trueques_auto_incremental, trueque);
+        let auto_incremental_viejo = self.trueques_auto_incremental;
+        self.trueques_auto_incremental += 1;
+        self.guardar();
+        auto_incremental_viejo
     }
 
     pub fn get_publicacion(&self, id: usize) -> Option<&Publicacion> {
@@ -361,20 +369,23 @@ impl Database {
         true
     }
 
-    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool{
+    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool {
         if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
-            // Logica de crear oferta
+            // Crea el Trueque en estado de Oferta
+            let oferta = Trueque{
+                oferta: (query.dni_ofertante, query.publicaciones_ofertadas),
+                receptor: (query.dni_receptor, query.publicacion_receptora),
+                sucursal: None,
+                horario: None,
+                estado: EstadoTrueque::Oferta,
+                codigo_ofertante: None,
+                codigo_receptor: None,
+            };
+            let index = self.agregar_trueque(oferta);
+
+            // Si la publicación existe, que se asume que si, se agrega la referencia al trueque
             if let Some(publicacion) = self.publicaciones.get_mut(&query.publicacion_receptora){
-                let oferta = Trueque{
-                    oferta: (query.dni_ofertante, query.publicaciones_ofertadas),
-                    receptor: (query.dni_receptor, query.publicacion_receptora),
-                    sucursal: None,
-                    horario: None,
-                    estado: EstadoTrueque::Oferta,
-                    codigo_ofertante: None,
-                    codigo_receptor: None,
-                };
-                publicacion.ofertas.push(oferta);
+                publicacion.ofertas.push(index);
                 self.guardar();
                 return true
             }
@@ -397,9 +408,4 @@ impl Database {
         self.trueques.get(&id)
     }
 
-    pub fn agregar_trueque(&mut self, trueque: Trueque) {
-        self.trueques.insert(self.trueques_auto_incremental, trueque);
-        self.trueques_auto_incremental += 1;
-        self.guardar();
-    }
 }

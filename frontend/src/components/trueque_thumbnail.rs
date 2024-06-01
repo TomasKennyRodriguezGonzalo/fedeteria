@@ -7,7 +7,7 @@ use yew::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use reqwasm::http::Request;
 
-use crate::router::Route;
+use crate::{request_post, router::Route};
 
 #[derive(Properties,PartialEq)]
 pub struct TruequeThumbnailProps {
@@ -19,63 +19,67 @@ pub struct TruequeThumbnailProps {
 #[function_component(TruequeThumbnail)]
 pub fn trueque_thumbnail (props: &TruequeThumbnailProps) -> Html {
     let id = props.id_trueque.clone();
-    let state_trueque: UseStateHandle<Option<Trueque>> = use_state(|| None);
-    let state_trueque_setter = state_trueque.setter();
+    let trueque_state: UseStateHandle<Option<Trueque>> = use_state(|| None);
+    let cloned_trueque_state = trueque_state.clone();
 
     //use el llamado al back primitivo, porque creo que es un llamado distinto al simplificado
     let id_trueque_cloned = id.clone();
     use_effect_once(move || {
-        let id_trueque_cloned = id_trueque_cloned;
-        spawn_local(async move {
-            let respuesta = Request::get(&format!("/api/obtener_trueque?id={id_trueque_cloned}")).send().await;
-            match respuesta{
-                Ok(respuesta) => {
-                    let respuesta: Result<ResponseObtenerTrueque, reqwasm::Error> = respuesta.json().await;
-                    match respuesta{
-                        Ok(respuesta) => {
-                            match respuesta {
-                                Ok(trueque) => {
-                                    log::info!("Trueque: {:?}", trueque);
-                                    state_trueque_setter.set(Some(trueque));
-                                },
-                                Err(error) => {
-                                    log::error!("Error de trueque: {:?}", error);
-                                }
-                            }
-                        }
-                        Err(error)=>{
-                            log::error!("Error en deserializacion: {}", error);
-                        }
-                    }
+        let trueque_state = cloned_trueque_state.clone();
+        
+        let query = QueryObtenerTrueque{
+            id,  
+        };
+
+        request_post("/api/obtener_trueque", query, move |respuesta:ResponseObtenerTrueque|{
+            let trueque_state = trueque_state.clone();
+            match respuesta {
+                Ok(trueque) =>{
+                    trueque_state.set(Some(trueque));
                 }
-                Err(error)=>{
-                    log::error!("Error en llamada al backend: {}", error);
+                Err(error) =>{
+                    log::error!("Error al obtener el trueque {:?}", error);
                 }
             }
-
         });
+
         || {}
     });
+
+    
+
+    let trueque_thumbnail = html! {
+        <div class="trueque-thumbnail">
+            if let Some(trueque) = (&*trueque_state).clone() {
+                {
+                    match trueque.estado {
+                        EstadoTrueque::Oferta => { html! {
+                            <h1>{"OFERTA"}</h1>
+                        }},
+                        EstadoTrueque::Pendiente => { html! {
+                            <h1>{"PENDIENTE"}</h1>
+                        }},
+                        EstadoTrueque::Definido => { html! {
+                            <h1>{"DEFINIDO"}</h1>
+                        }},
+                        EstadoTrueque::Finalizado => { html! {
+                            <h1>{"FINALIZADO"}</h1>
+                        }}
+                    }
+                }
+            } else {
+                {"Cargando..."}
+            }
+        </div>
+    };
 
     html! {
         if !(props.linkless) {
             <Link<Route> to={Route::Trueque{id}}>
-                <div class="publication-thumbnail">
-                    if let Some(trueque) = state_trueque.deref() {
-                        <h1>{"Hay Trueque con ruta"}</h1>
-                    } else {
-                        {"Cargando..."}
-                    }
-                </div>
+                {trueque_thumbnail}
             </Link<Route>>
         } else {
-            <div class="publication-thumbnail">
-                if let Some(trueque) = state_trueque.deref() {
-                    <h1>{"Hay trueque sin ruta"}</h1>
-                } else {
-                    {"Cargando..."}
-                }
-            </div>
+            {trueque_thumbnail}
         }
     }
 }

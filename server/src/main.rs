@@ -99,7 +99,7 @@ async fn main() {
         .route("/api/enviar_notificacion", post(enviar_notificacion))
         .route("/api/crear_oferta", post(crear_oferta))
         .route("/api/obtener_trueques_por_estado", post(obtener_trueques_por_estado))
-        .route("/api/obtener_trueque", get(get_trueque))
+        .route("/api/obtener_trueque", post(obtener_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -531,9 +531,8 @@ Json(query): Json<QueryObtenerTruequesEstado>
     Json(ResponseObtenerTruequesEstado{trueques: respuesta})
 }
 
-async fn get_trueque (
-    State(state): State<SharedState>,
-    Query(query): Query<QueryObtenerTrueque>
+async fn obtener_trueque ( State(state): State<SharedState>,
+Json(query): Json<QueryObtenerTrueque>
 ) -> Json<ResponseObtenerTrueque> {
     let id = query.id;
     let state = state.read().await;

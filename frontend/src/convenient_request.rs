@@ -1,7 +1,10 @@
-use datos_comunes::{QueryEnviarNotificacion, ResponseEnviarNotificacion};
+use std::{borrow::Borrow, rc::Rc};
+
+use datos_comunes::{QueryEnviarNotificacion, ResponseEnviarNotificacion, QueryGetUserInfo, ResponseGetUserInfo};
 use reqwasm::http::Request;
 use serde::{de::DeserializeOwned, Serialize};
 use wasm_bindgen_futures::spawn_local;
+use std::borrow::BorrowMut;
 
 pub fn request_post<Q, R>(
     url: &'static str,
@@ -40,7 +43,7 @@ pub fn request_post<Q, R>(
 
 pub fn send_notification(titulo:String, detalle:String, url:String, dni:u64){
     
-    let query= QueryEnviarNotificacion {
+    let query = QueryEnviarNotificacion {
         dni,
         titulo,
         detalle,
@@ -48,7 +51,5 @@ pub fn send_notification(titulo:String, detalle:String, url:String, dni:u64){
     };
 
     request_post("/api/enviar_notificacion", query, |_respuesta:ResponseEnviarNotificacion|{});
-
-
 
 }
