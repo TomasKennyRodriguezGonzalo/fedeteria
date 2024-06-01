@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -291,7 +291,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let goto_trade_offers = Callback::from(move |_| {
         
-        let _ = navigator.push_with_query(&Route::PublicationTradeOffers, &cloned_id);
+        let _ = navigator.push_with_query(&Route::PublicationTradeOffers, &QueryOfertasDePublicacion{id : cloned_id});
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }

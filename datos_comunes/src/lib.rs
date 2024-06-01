@@ -12,13 +12,15 @@ pub use trueque::*;
 
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct QueryRegistrarUsuario {
-    pub nombre_y_apellido: String,
-    pub dni: u64,
-    pub email: String,
-    pub contraseña: String,
-    pub nacimiento: DateTime<Local>,
+pub struct QueryOfertasDePublicacion {
+    pub id : usize,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseOfertasDePublicacion {
+    pub ofertas : Vec<usize>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRegistrarUsuario {
     pub nombre_y_apellido: String,
