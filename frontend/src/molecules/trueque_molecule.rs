@@ -11,6 +11,7 @@ use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
+use crate::components::publication_thumbnail::PublicationThumbnail;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -52,6 +53,15 @@ pub fn trueque_molecule (props : &Props) -> Html {
     html! {
         <>
             if let Some(trueque) = (&*trueque_state){
+                <div>{"oferta de:"}</div>
+                //no voy a hacer un iter por 2 publicaciones
+                <li><PublicationThumbnail id={trueque.oferta.1.get(0).unwrap()}/></li>
+                if let Some(segunda_publicacion_oferta) = trueque.oferta.1.get(1){
+                    <li><PublicationThumbnail id={segunda_publicacion_oferta}/></li>
+                }
+
+                <div>{"a cambio de tu:"}</div>
+                <li><PublicationThumbnail id={trueque.receptor.1}/></li>
 
             }
 
