@@ -394,18 +394,68 @@ impl Database {
         return false
     }
 
+    /* .filter(|(_, publication)| {
+            query.filtro_nombre.as_ref()
+            .map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase()))
+            .unwrap_or(true) */
+
     pub fn obtener_trueques_por_estado (&self, query: QueryObtenerTruequesEstado) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
                         enumerate().
                         filter(|(_, trueque)| trueque.1.estado == query.estado).
-                        map(|(indice, _)| indice).
+                        filter(|(_,trueque)|{
+                            query.id_publicacion.as_ref()
+                            .map(|publicacion| trueque.1.receptor.1 == *publicacion)
+                            .unwrap_or(true)
+                        }) 
+                        .map(|(indice, _)| indice).
                         collect();
-        log::info!("Indices de trueques filtrados: {:?}", obtenidos);
+
         obtenidos
     }
 
     pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
         self.trueques.get(&id)
+    }
+
+    pub fn aceptar_oferta(&mut self, id:usize) -> bool {
+        let trueque = self.trueques.get_mut(&id);
+        if let Some(trueque) = trueque {
+            //aca se modificaria la variable de "en trueque"
+            let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
+            publicacion_receptora.unwrap().pausada = true; 
+            let publicacion_ofertante1 = self.publicaciones.get_mut(&trueque.oferta.1.get(0).unwrap());
+            publicacion_ofertante1.unwrap().pausada = true;
+            if let Some(publicacion_ofertante2) = self.publicaciones.get_mut(&trueque.oferta.1.get(1).unwrap()){
+                publicacion_ofertante2.pausada = true;
+            }
+            trueque.estado = EstadoTrueque::Pendiente;
+            self.guardar();
+            return true;
+        }
+        false
+    }
+
+    pub fn rechazar_oferta(&mut self, id:usize) -> bool {
+        let trueque = self.trueques.get_mut(&id);
+        if let Some(_) = trueque {
+            self.trueques.remove(&id);
+            self.guardar();
+            return true;
+        }
+        false
+    }
+
+    pub fn cambiar_trueque_a_definido(&mut self, query:QueryCambiarTruequeADefinido) -> bool {
+        let trueque = self.trueques.get_mut(&query.id);
+        if let Some(trueque) = trueque {
+            trueque.estado = EstadoTrueque::Definido;
+            trueque.horario = Some(query.f_y_hora);
+            trueque.sucursal = Some(query.sucursal);
+            self.guardar();
+            return true;
+        }
+        false
     }
 
 }
