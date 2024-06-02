@@ -373,11 +373,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                         </>
                                     }
                                 } else {
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
+                                    html! {}
                                 }
                             },
                             RolDeUsuario::Empleado{sucursal : _} => {
