@@ -342,7 +342,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     </div>
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Agregar publicacion a oferta" onclick_event={show_selector}/>
+                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
                         if *show_selector_state { 
                             <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
                         }
