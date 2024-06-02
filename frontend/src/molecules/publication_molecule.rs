@@ -283,8 +283,10 @@ pub fn publication_molecule(props : &Props) -> Html {
             let dni_receptor = receptor.0;
             send_notification("Nueva Oferta de Trueque!".to_string(), format!("Has recibido una oferta de trueque en tu {} cliquea aquí para verla!", ((&*cloned_datos_publicacion).clone().unwrap().titulo)), window.location().href().unwrap(), dni_receptor);
         }
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
 
-        
     });
 
     let cloned_id = id.clone();

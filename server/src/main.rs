@@ -100,6 +100,9 @@ async fn main() {
         .route("/api/crear_oferta", post(crear_oferta))
         .route("/api/obtener_trueques_por_estado", post(obtener_trueques_por_estado))
         .route("/api/obtener_trueque", post(obtener_trueque))
+        .route("/api/aceptar_oferta", post(aceptar_oferta))
+        .route("/api/rechazar_oferta", post(rechazar_oferta))
+        .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -542,3 +545,37 @@ Json(query): Json<QueryObtenerTrueque>
         Json(Err(ErrorObtenerTrueque::TruequeInexistente))
     }
 }
+
+
+
+async fn aceptar_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryAceptarOferta>
+) -> Json<ResponseAceptarOferta>{
+    let id = query.id;
+    let mut state = state.write().await;
+    let respuesta = state.db.aceptar_oferta(id);
+    Json(ResponseAceptarOferta{aceptada : respuesta})
+
+}
+
+
+async fn rechazar_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryRechazarOferta>
+) -> Json<ResponseRechazarOferta>{
+    let id = query.id;
+    let mut state = state.write().await;
+    let respuesta = state.db.rechazar_oferta(id);
+    Json(ResponseRechazarOferta{rechazada : respuesta})
+
+}
+
+async fn cambiar_trueque_a_definido( State(state): State<SharedState>,
+Json(query): Json<QueryCambiarTruequeADefinido>
+) -> Json<ResponseCambiarTruequeADefinido>{
+
+    let mut state = state.write().await;
+    let respuesta = state.db.cambiar_trueque_a_definido(query);
+    Json(ResponseCambiarTruequeADefinido{cambiado : respuesta})
+
+}
+

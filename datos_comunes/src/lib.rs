@@ -344,3 +344,37 @@ pub struct QueryObtenerTrueque {
     pub id: usize,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAceptarOferta {
+    pub id: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryRechazarOferta {
+    pub id: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAceptarOferta {
+    pub aceptada: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseRechazarOferta {
+    pub rechazada: bool,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCambiarTruequeADefinido {
+    pub id: usize,
+    pub sucursal : String,
+    pub f_y_hora : DateTime<Local>,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCambiarTruequeADefinido {
+    pub cambiado: bool
+}
+
