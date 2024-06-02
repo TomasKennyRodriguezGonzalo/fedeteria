@@ -252,7 +252,7 @@
         }
 
         .publication-thumbnail .info {
-            color: #D9D9D9;
+            color: white;
             padding: 10px 10px;
             width: 200px;
         }
@@ -915,7 +915,7 @@
             margin: 0.4%;
             margin-bottom: 1%;
             padding : 10px; 
-            justify-content: space-between;
+            justify-content: space-evenly;
         }
 
         .trueque-box .publications-container .publications ul{
@@ -955,9 +955,58 @@
             justify-content: center;
         }
 
-        .trueque-box .accept-offer{ 
+        .trueque-box .publications-container .trade-symbol *{ 
+            margin: 20px 0px;
+        }
+
+        .trueque-box .publications-container .trade-symbol .arrow-right {
+            display: inline-block;
+            width: 40px; /* Adjust the length of the tail here */
+            height: 10px; /* Adjust the thickness of the tail here */
+            background-color: white;
+            position: relative;
+        }
+        
+        .trueque-box .publications-container .trade-symbol .arrow-right::after {
+            content: '';
+            position: absolute;
+            top: -20px; /* Align the arrowhead vertically with the tail */
+            right: -20px; /* Adjust this value according to the size of the arrowhead */
+            width: 0;
+            height: 0;
+            border-top: 20px solid transparent; /* Adjust this value for a bigger arrowhead */
+            border-bottom: 20px solid transparent; /* Adjust this value for a bigger arrowhead */
+            border-left: 20px solid white; /* Adjust this value for a bigger arrowhead */
+        }
+
+        .trueque-box .publications-container .trade-symbol .arrow-left {
+            display: inline-block;
+            width: 40px; /* Adjust the length of the tail here */
+            height: 10px; /* Adjust the thickness of the tail here */
+            background-color: white;
+            position: relative;
+        }
+        
+        .trueque-box .publications-container .trade-symbol .arrow-left::before {
+            content: '';
+            position: absolute;
+            top: -20px; /* Align the arrowhead vertically with the tail */
+            left: -20px; /* Adjust this value according to the size of the arrowhead */
+            width: 0;
+            height: 0;
+            border-top: 20px solid transparent; /* Adjust this value for a bigger arrowhead */
+            border-bottom: 20px solid transparent; /* Adjust this value for a bigger arrowhead */
+            border-right: 20px solid white; /* Adjust this value for a bigger arrowhead */
+        }
+
+        .trueque-box .accept-offer { 
             display: flex;
             flex-direction: row;
+            justify-content: center;
+        }
+
+        .trueque-box .accept-offer * { 
+            margin: 0px 5px;
         }
 
         .trueque-box .accept-offer .accept{ 

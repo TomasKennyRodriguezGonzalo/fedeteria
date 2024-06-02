@@ -114,8 +114,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 </ul>
                             </div>
                             <div class="trade-symbol">
-                                <h1>{"◄"}</h1>
-                                <h1>{"►"}</h1>
+                                <div class="arrow-left"></div>
+                                <div class="arrow-right"></div>
                             </div>
                             <div class="publications">
                                 <h1>{format!("{}", (&*receptor_username))}</h1>
