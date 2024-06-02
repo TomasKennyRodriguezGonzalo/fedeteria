@@ -46,8 +46,6 @@ pub enum ErrorPublicacion {
     PublicacionInexistente,
 }
 
-
-
 pub type ResponsePublicacion = Result<Publicacion, ErrorPublicacion>;
 
 

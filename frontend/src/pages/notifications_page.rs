@@ -22,7 +22,7 @@ pub fn notifications_page() -> Html {
         // Traerme la lista de notificaciones del usuario
         let notification_list = cloned_notification_list.clone();
         let query = QueryGetNotificaciones {
-            dni : dni,
+            dni,
         };
         request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
             let notificaciones = respuesta;

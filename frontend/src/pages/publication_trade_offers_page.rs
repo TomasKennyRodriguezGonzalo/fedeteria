@@ -1,11 +1,9 @@
-use crate::{molecules::publication_molecule::PublicationMolecule, request_post};
+use crate::request_post;
 use datos_comunes::{EstadoTrueque, QueryObtenerTruequesEstado, QueryOfertasDePublicacion, ResponseObtenerTruequesEstado, ResponseOfertasDePublicacion, Trueque};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yew_router::hooks::use_location;
 use crate::components::trueque_thumbnail::TruequeThumbnail;
-use crate::components::indexed_button::IndexedButton;
-
 
 #[function_component(PublicationTradeOffersPage)]
 pub fn publication_trade_offers_page() -> Html {
@@ -26,8 +24,6 @@ pub fn publication_trade_offers_page() -> Html {
             log::info!("entre al use effect {:?}",offers);
             offers_list_state.set(offers);
         });
-
-
 
         || {}
     });
