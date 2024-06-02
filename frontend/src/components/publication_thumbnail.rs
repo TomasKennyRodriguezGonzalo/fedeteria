@@ -51,7 +51,6 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
                     log::error!("Error en llamada al backend: {}", error);
                 }
             }
-
         });
 
         || {}
