@@ -1,12 +1,32 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct QueryTruequesFiltrados {
+    //indice de una publicacion que compone al trueque
+    pub filtro_id_publicacion: Option<usize>,
+    //dni ofertante
+    //pub filtro_ofertante: Option<u64>,
+    //dni receptor
+    //pub filtro_receptor: Option<u64>,
+    //filtro por dni de ofertante o receptor
+    pub filtro_dni_integrantes: Option<u64>,
+    pub filtro_estado: Option<EstadoTrueque>,
+    pub filtro_codigo_ofertante: Option<u64>,
+    pub filtro_codigo_receptor: Option<u64>,
+    pub filtro_sucursal: Option<String>,
+    // FALTA HACER: filtro por fecha
+    pub filtro_fecha: Option<()>,
+}
+
+pub type ResponseTruequesFiltrados = Vec<usize>;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Trueque {
-    //oferta.0 --> indice del usuario en el vec de usuarios
+    //oferta.0 --> dni del usuario ofertante
     //oferta.1 --> coleccion de indices de publicaciones de oferta 
     pub oferta: (u64, Vec<usize>),
-    //receptor.0 --> indice del usuario en el vec de usuarios
+    //receptor.0 --> dni del usuario receptor
     //receptor.1 --> indice de publicacion de receptor 
     pub receptor: (u64, usize),
     pub sucursal: Option<String>,

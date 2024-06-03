@@ -107,7 +107,9 @@ pub fn profile_page() -> Html {
                     <li><Link<Route> to={Route::SavedPublications}>{"Articulos Guardados"}</Link<Route>></li>
                   //  <li><Link<Route> to={Route::RecentlySeenPublications}>{"Vistos Recientemente"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyPublications}>{"Tus Publicaciones"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyTradesOffers}>{"Ofertas de Trueque"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyPendingTrades}>{"Trueques Pendientes"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyDefinedTrades}>{"Trueques Definidos"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyCompletedTrades}>{"Trueques Concretados"}</Link<Route>></li>
                     <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
                 </ul>

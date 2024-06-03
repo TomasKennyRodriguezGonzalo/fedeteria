@@ -326,14 +326,14 @@ pub struct ResponseCrearOferta{
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct QueryObtenerTruequesEstado {
+pub struct QueryObtenerTrueques {
     pub estado: EstadoTrueque,
     pub id_publicacion : Option<usize>,
     pub dni : Option<u64>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ResponseObtenerTruequesEstado {
+pub struct ResponseObtenerTrueques {
     //indice de los trueques en el vec
     pub trueques: Vec<usize>
 }

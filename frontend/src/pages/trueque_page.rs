@@ -1,5 +1,5 @@
-use crate::molecules::trueque_molecule::TruequeMolecule;
 use yew::prelude::*;
+use crate::molecules::trueque_molecule::TruequeMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {

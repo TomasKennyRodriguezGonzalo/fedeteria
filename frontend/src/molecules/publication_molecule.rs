@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::{EstadoTrueque, Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, QueryTruequesFiltrados, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -293,7 +293,18 @@ pub fn publication_molecule(props : &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let goto_trade_offers = Callback::from(move |_| {
         
-        let _ = navigator.push_with_query(&Route::PublicationTradeOffers, &QueryOfertasDePublicacion{id : cloned_id});
+        let query = QueryTruequesFiltrados{
+            filtro_codigo_ofertante: None,
+            filtro_codigo_receptor: None,
+            //filtro_ofertante: None,
+            //filtro_receptor: None,
+            filtro_dni_integrantes: None,
+            filtro_estado: Some(EstadoTrueque::Oferta),
+            filtro_fecha: None,
+            filtro_id_publicacion: Some(cloned_id),
+            filtro_sucursal: None,
+        };
+        let _ = navigator.push_with_query(&Route::SearchTrueques, &query);
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }

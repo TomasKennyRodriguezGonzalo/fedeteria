@@ -1,8 +1,10 @@
-use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
+use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, HtmlInputElement};
+use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use crate::convenient_request::send_notification;
+use crate::information_store::InformationStore;
+use crate::{convenient_request::send_notification, router::Route};
 use crate::request_post;
 use crate::components::publication_thumbnail::PublicationThumbnail;
 use crate::store::UserStore;
@@ -137,7 +139,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
             }
         });
     });
-    
+
+    //traigo el navigator para volver para atras    
+    let navigator = use_navigator().unwrap();
+    let navigator_cloned = navigator.clone();
+
+    //traigo y clone el dispatch para el feedback
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+    let information_dispatch = information_dispatch.clone();
 
     let cloned_receptor_username = receptor_username.clone();
     let cloned_trueque_state = trueque_state.clone();
@@ -145,6 +154,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
         // Lógica de rechazar oferta
         let receptor_username = cloned_receptor_username.clone();
         let trueque_state = cloned_trueque_state.clone();
+        //hago otro clone para armar la query mas abajo
+        let cloned_trueque_state = cloned_trueque_state.clone();
         let query = QueryRechazarOferta{
             id : id_trueque,
         };
@@ -159,6 +170,27 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 window.location().reload().unwrap();
             }
         });
+
+        //obtengo DNI de receptor e ID de su publicacion, y armo la query
+        let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
+        let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
+        let query = QueryTruequesFiltrados {
+            filtro_codigo_ofertante: None,
+            filtro_codigo_receptor: Some(dni_receptor.clone()),
+            //filtro_ofertante: None,
+            //filtro_receptor: cloned_dni,
+            filtro_dni_integrantes: None,
+            filtro_estado: Some(EstadoTrueque::Oferta),
+            filtro_fecha: None,
+            filtro_id_publicacion: Some(id_publication.clone()),
+            filtro_sucursal: None,
+        };
+
+        //hago el mensaje
+        information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
+        //vuelvo para atras
+        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+
     });
 
     let select_value_state = use_state(|| -1);
@@ -265,6 +297,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                             <button class="accept" onclick={accept_offer}>{"Aceptar Oferta"}</button>
                                             <button class="decline" onclick={decline_offer}>{"Rechazar Oferta"}</button>
                                         </div>
+                                    }
+                                    else {
+                                        if dni == trueque.oferta.0 {
+                                            <button class="decline" onclick={decline_offer}>{"Cancelar Oferta"}</button>
+                                        }
                                     }
                                 },
                                 datos_comunes::EstadoTrueque::Pendiente => html! {

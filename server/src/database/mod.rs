@@ -399,7 +399,7 @@ impl Database {
             .map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase()))
             .unwrap_or(true) */
 
-    pub fn obtener_trueques_por_estado (&self, query: QueryObtenerTruequesEstado) -> Vec<usize> {
+    /*pub fn obtener_trueques (&self, query: QueryObtenerTrueques) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
                         enumerate().
                         filter(|(_, trueque)| trueque.1.estado == query.estado).
@@ -412,6 +412,43 @@ impl Database {
                         collect();
 
         obtenidos
+    }*/
+
+    pub fn obtener_trueques (&self, query: QueryTruequesFiltrados) -> Vec<usize> {
+        let obtenidos = self.trueques.iter().
+                    filter(|(_, trueque)| {
+                        query.filtro_estado.as_ref().map(|estado_trueque| estado_trueque == &trueque.estado)
+                        .unwrap_or(true)
+                    }).
+                    filter(|(_,trueque)|{
+                        query.filtro_id_publicacion.map(|publicacion| (trueque.receptor.1 == publicacion) || (trueque.oferta.1.contains(&publicacion)))
+                        .unwrap_or(true)
+                    }).
+                    /*filter(|(_, trueque)| {
+                        query.filtro_ofertante.map(|dni_ofertante| trueque.oferta.0 == dni_ofertante)
+                        .unwrap_or(true)
+                    }).
+                    filter(|(_, trueque)| {
+                        query.filtro_receptor.map(|dni_receptor| trueque.receptor.0 == dni_receptor)
+                        .unwrap_or(true)
+                    }).*/
+                    filter(|(_, trueque)| {
+                        query.filtro_dni_integrantes.map(|dni_a_buscar| (trueque.oferta.0 == dni_a_buscar) || (trueque.receptor.0 == dni_a_buscar))
+                        .unwrap_or(true)
+                    }).
+                    filter(|(_, trueque)| {
+                        query.filtro_sucursal.as_ref().map(|sucursal_filtro| {
+                            if let Some(sucursal) = &trueque.sucursal {
+                                sucursal_filtro == sucursal
+                            }
+                            else {
+                                false
+                            }
+                        })
+                        .unwrap_or(true)
+                    });
+        let respuesta = obtenidos.map(|(i, _)| *i).collect();
+        respuesta
     }
 
     pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {

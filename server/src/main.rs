@@ -98,7 +98,7 @@ async fn main() {
         .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
         .route("/api/enviar_notificacion", post(enviar_notificacion))
         .route("/api/crear_oferta", post(crear_oferta))
-        .route("/api/obtener_trueques_por_estado", post(obtener_trueques_por_estado))
+        .route("/api/obtener_trueques", post(obtener_trueques))
         .route("/api/obtener_trueque", post(obtener_trueque))
         .route("/api/aceptar_oferta", post(aceptar_oferta))
         .route("/api/rechazar_oferta", post(rechazar_oferta))
@@ -526,12 +526,12 @@ Json(query): Json<QueryCrearOferta>
     Json(ResponseCrearOferta{estado: respuesta})
 }
 
-async fn obtener_trueques_por_estado ( State(state): State<SharedState>,
-Json(query): Json<QueryObtenerTruequesEstado>
-) -> Json<ResponseObtenerTruequesEstado> {
+async fn obtener_trueques ( State(state): State<SharedState>,
+Json(query): Json<QueryTruequesFiltrados>
+) -> Json<ResponseTruequesFiltrados> {
     let state = state.read().await;
-    let respuesta = state.db.obtener_trueques_por_estado(query);
-    Json(ResponseObtenerTruequesEstado{trueques: respuesta})
+    let respuesta = state.db.obtener_trueques(query);
+    Json(respuesta)
 }
 
 async fn obtener_trueque ( State(state): State<SharedState>,

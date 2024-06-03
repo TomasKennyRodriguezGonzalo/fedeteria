@@ -10,17 +10,17 @@ use yew::prelude::*;
 use crate::{request_post, router::Route};
 
 #[derive(Properties,PartialEq)]
-pub struct TruequeThumbnailProps {
-    pub id_trueque: usize,
+pub struct TradeThumbnailProps {
+    pub id_trade: usize,
     #[prop_or_default]
     pub linkless : bool,
 }
 
-#[function_component(TruequeThumbnail)]
-pub fn trueque_thumbnail (props: &TruequeThumbnailProps) -> Html {
-    let id = props.id_trueque.clone();
-    let trueque_state: UseStateHandle<Option<Trueque>> = use_state(|| None);
-    let cloned_trueque_state = trueque_state.clone();
+#[function_component(TradeThumbnail)]
+pub fn trade_thumbnail (props: &TradeThumbnailProps) -> Html {
+    let id = props.id_trade.clone();
+    let trade_state: UseStateHandle<Option<Trueque>> = use_state(|| None);
+    let cloned_trade_state = trade_state.clone();
 
     let offered_publications_title_state: UseStateHandle<Vec<String>> = use_state(|| vec![]);
     let cloned_offered_publications_title_state: UseStateHandle<Vec<String>> = offered_publications_title_state.clone();
@@ -29,19 +29,19 @@ pub fn trueque_thumbnail (props: &TruequeThumbnailProps) -> Html {
     let cloned_receiver_publication_title_state: UseStateHandle<String> = receiver_publication_title_state.clone();
     
     use_effect_once(move || {
-        let trueque_state = cloned_trueque_state.clone();
+        let trade_state = cloned_trade_state.clone();
         
         let query = QueryObtenerTrueque{
             id,  
         };
         
         let cloned_offered_publications_title_state: UseStateHandle<Vec<String>> = cloned_offered_publications_title_state.clone();
-        let cloned_trueque_state = trueque_state.clone();
+        let cloned_trade_state = trade_state.clone();
         request_post("/api/obtener_trueque", query, move |respuesta:ResponseObtenerTrueque|{
-            let trueque_state = cloned_trueque_state.clone();
+            let trade_state = cloned_trade_state.clone();
             match respuesta {
                 Ok(trueque) =>{
-                    trueque_state.set(Some(trueque.clone()));
+                    trade_state.set(Some(trueque.clone()));
 
                     for i in (&trueque).oferta.1.clone() {
                         let offered_publications_title_state: UseStateHandle<Vec<String>> = cloned_offered_publications_title_state.clone();
@@ -137,7 +137,7 @@ pub fn trueque_thumbnail (props: &TruequeThumbnailProps) -> Html {
 
     html! {
         <div class="trueque-thumbnail">
-            if let Some(trueque) = (&*trueque_state).clone() {
+            if let Some(trueque) = (&*trade_state).clone() {
                 if !(props.linkless) {
                     {
                         match trueque.estado {
