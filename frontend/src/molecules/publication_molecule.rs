@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::*;
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -331,7 +331,21 @@ pub fn publication_molecule(props : &Props) -> Html {
                             if publicacion.pausada {
                                 "Publicación Pausada".to_string()
                             } else {
-                                precio.to_string()
+                                let mut incluir = false;
+                                if let Some(dni) = dni {
+                                    if publicacion.dni_usuario == dni {
+                                        incluir = true;
+                                    }
+                                    if let Some(role) = &*role_state {
+                                        match role { 
+                                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                incluir = true;
+                                            },
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                get_string_de_rango(precio, incluir)
                             }
                         } else {
                             "Sin Tasar".to_string()
@@ -364,7 +378,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 {
                     if let Some(role) = &*role_state{
                         match role { 
-                            RolDeUsuario::Dueño => {
+                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
                                 if publicacion.precio.is_none(){
                                     html! {
                                         <>  
@@ -374,22 +388,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                                     }
                                 } else {
                                     html! {}
-                                }
-                            },
-                            RolDeUsuario::Empleado{sucursal : _} => {
-                                if publicacion.precio.is_none(){
-                                    html! {
-                                        <>  
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                        </>
-                                    }
-                                } else{
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
                                 }
                             },
                             RolDeUsuario::Normal => {
