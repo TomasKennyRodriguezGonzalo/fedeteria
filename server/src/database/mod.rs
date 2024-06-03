@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs, path::Path};
 
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
@@ -43,7 +43,7 @@ impl Database {
 
     /// Crea una database nueva y la guarda
     fn init() -> Database {
-        let db: Database = Default::default();
+        let db: Database = get_database_por_defecto();
         let path = Path::new(DB_PATH);
         if path.exists() {
             log::warn!("Sobreescribiendo database anterior! =)");
@@ -495,4 +495,66 @@ impl Database {
         false
     }
 
+}
+
+fn get_database_por_defecto() -> Database {
+    use RolDeUsuario::*;
+    let mut db: Database = Default::default();
+    let sucursales = [
+        "La Plata 1 y 50",
+        "La Plata 3 y 33",
+    ];
+    // (nombre, dni, rol). la contraseña es igual al dni. el email se genera en base al nombre
+    let usuarios = [
+        ("Fede", 1, Dueño),
+        ("Lucas", 2, Empleado { sucursal: 0 }),
+        ("Matías", 3, Normal),
+    ];
+
+    // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
+    let publicaciones = [
+        (3, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
+        (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
+        (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
+        (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
+    ];
+    
+    for sucursal in sucursales {
+        db.agregar_sucursal(QueryAddOffice { office_to_add: sucursal.to_string() });
+    }
+
+    for (i, datos) in usuarios.into_iter().enumerate() {
+        let nombre_y_apellido = datos.0.to_string();
+        let dni = datos.1;
+        let email = nombre_y_apellido.clone() + "@gmail.com";
+        let contraseña = dni.to_string();
+        let nacimiento = Local.with_ymd_and_hms(2000, 1, 1, 1, 1, 1).unwrap();
+        db.agregar_usuario(QueryRegistrarUsuario { nombre_y_apellido, dni, email, contraseña, nacimiento }).unwrap();
+        let rol = datos.2;
+        db.cambiar_rol_usuario(QueryChangeUserRole { dni, new_role: rol });
+        assert_eq!(db.encontrar_dni(dni).unwrap(), i);
+    }
+
+    for (dni_usuario, titulo, descripcion, precio, fotos) in publicaciones {
+        let imagenes = fotos.iter().map(|nombre| {
+            let from = format!("fotos_database_default/{}", nombre);
+            // TODO: Que realmente se guarde en carpetas xd
+            let relativo = format!("{}", nombre);
+            let to = format!("db/imgs/{}", relativo);
+            println!("from {from} to {to}");
+            std::fs::copy(from, to).unwrap();
+            relativo
+        }).collect();
+        db.agregar_publicacion(Publicacion {
+            dni_usuario,
+            titulo: titulo.to_string(),
+            descripcion: descripcion.to_string(),
+            imagenes,
+            precio,
+            pausada: precio.is_none(),
+            ofertas: vec![],
+        });
+    }
+
+    db
 }

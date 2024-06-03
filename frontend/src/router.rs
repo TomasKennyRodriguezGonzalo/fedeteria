@@ -143,7 +143,10 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyDefinedTrades => [false, true, true, true],
         Route::MyCompletedTrades => [false, true, true, true],
         Route::EditPersonalInfo => [false, true, true, true],
-        Route::Publication { id : _ } => [false, true, true, true],
+        // No registrado "puede acceder" pero la propia página lo redirige a la página de login con un mensaje especial
+        // estaría bueno que todo se maneje acá de alguna manera, pero complicaría esta tabla
+        // o, de alguna manera obligar a cada página a que implemente sus propias reglas de permisos
+        Route::Publication { id : _ } => [true, true, true, true],
         Route::Register => [true, false, false, false],
         Route::PrivilegedActions => [false, false, true, true],
         Route::CreateOffice => [false, false, false, true],

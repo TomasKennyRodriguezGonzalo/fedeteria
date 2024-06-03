@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{EstadoTrueque, Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, QueryTruequesFiltrados, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::*;
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -33,10 +33,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
     use_effect_once(move || {
-        let cloned_role_state = cloned_role_state.clone();
-        let cloned_dni = cloned_dni.clone();
-        if cloned_dni.is_some() {
-            let query = QueryGetUserRole { dni : cloned_dni.unwrap() };
+        if let Some(dni) = cloned_dni {
+            let query = QueryGetUserRole { dni };
             request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
                 cloned_role_state.set(Some(respuesta.rol));
             });
@@ -342,7 +340,21 @@ pub fn publication_molecule(props : &Props) -> Html {
                             if publicacion.pausada {
                                 "Publicación Pausada".to_string()
                             } else {
-                                precio.to_string()
+                                let mut incluir = false;
+                                if let Some(dni) = dni {
+                                    if publicacion.dni_usuario == dni {
+                                        incluir = true;
+                                    }
+                                    if let Some(role) = &*role_state {
+                                        match role { 
+                                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                incluir = true;
+                                            },
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                get_string_de_rango(precio, incluir)
                             }
                         } else {
                             "Sin Tasar".to_string()
@@ -353,7 +365,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     </div>
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Agregar publicacion a oferta" onclick_event={show_selector}/>
+                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
                         if *show_selector_state { 
                             <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
                         }
@@ -375,7 +387,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 {
                     if let Some(role) = &*role_state{
                         match role { 
-                            RolDeUsuario::Dueño => {
+                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
                                 if publicacion.precio.is_none(){
                                     html! {
                                         <>  
@@ -384,27 +396,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                         </>
                                     }
                                 } else {
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
-                                }
-                            },
-                            RolDeUsuario::Empleado{sucursal : _} => {
-                                if publicacion.precio.is_none(){
-                                    html! {
-                                        <>  
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                        </>
-                                    }
-                                } else{
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
+                                    html! {}
                                 }
                             },
                             RolDeUsuario::Normal => {
