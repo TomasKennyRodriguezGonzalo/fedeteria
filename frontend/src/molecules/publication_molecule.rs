@@ -33,10 +33,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
     use_effect_once(move || {
-        let cloned_role_state = cloned_role_state.clone();
-        let cloned_dni = cloned_dni.clone();
-        if cloned_dni.is_some() {
-            let query = QueryGetUserRole { dni : cloned_dni.unwrap() };
+        if let Some(dni) = cloned_dni {
+            let query = QueryGetUserRole { dni };
             request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
                 cloned_role_state.set(Some(respuesta.rol));
             });

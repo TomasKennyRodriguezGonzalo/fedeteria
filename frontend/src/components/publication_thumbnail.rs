@@ -6,8 +6,9 @@ use yew_router::prelude::Link;
 use yew::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use reqwasm::http::Request;
+use yewdux::use_store;
 
-use crate::router::Route;
+use crate::{request_post, router::Route, store::UserStore};
 
 #[derive(Properties,PartialEq)]
 pub struct PublicationThumbnailProps {
@@ -21,6 +22,23 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
     let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
+
+    let (store, _dispatch) = use_store::<UserStore>();
+    let dni = store.dni;
+    let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
+    let cloned_role_state = role_state.clone();
+    let cloned_dni = dni.clone();
+    use_effect_once(move || {
+        if let Some(dni) = cloned_dni {
+            let query = QueryGetUserRole { dni };
+            request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
+                cloned_role_state.set(Some(respuesta.rol));
+            });
+        }
+
+        || {}
+    });
+    
 
     let idc = id.clone();
     use_effect_once(move || {
@@ -68,7 +86,21 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
                             <h4 class="name">{publicacion.titulo.clone()}</h4>
                             <h2 class="price">{
                                 if let Some(precio) = publicacion.precio {
-                                    precio.to_string()
+                                    let mut incluir = false;
+                                    if let Some(dni) = dni {
+                                        if publicacion.dni_usuario == dni {
+                                            incluir = true;
+                                        }
+                                        if let Some(role) = &*role_state {
+                                            match role { 
+                                                RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                    incluir = true;
+                                                },
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                    get_string_de_rango(precio, incluir)
                                 }
                                 else {
                                     "Sin Tasar".to_string()
