@@ -84,10 +84,17 @@ pub fn get_string_de_rango(precio: u64, incluir_precio: bool) -> String {
     if min == 0 {
         min = 1;
     }
+    let base = {
+        if max == u64::MAX {
+            format!("${}+", min)
+        } else {
+            format!("${}-${}", min, max)
+        }
+    };
     if incluir_precio {
-        format!("${}-${} (${})", min, max, precio)
+        format!("{base} (${precio})")
     } else {
-        format!("${}-${}", min, max)
+        base
     }
     // precio.to_string()
 }
