@@ -49,6 +49,8 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let current_image_state = use_state(|| 0);
 
+    let activate_assign_price_state = use_state(|| false);
+
     let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     use_effect_once(move || {
@@ -225,7 +227,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_publication_price_state = publication_price_state.clone();
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
-    let assign_price = Callback::from(move |()|{
+    let assign_price = Callback::from(move |event|{
         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
         let cloned_publication_price_state = cloned_publication_price_state.clone();
         let cloned_id = cloned_id.clone();
@@ -306,6 +308,16 @@ pub fn publication_molecule(props : &Props) -> Html {
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }
+    });
+
+    let cloned_activate_assign_price_state = activate_assign_price_state.clone();
+    let ask_assign_price_confirmation = Callback::from(move|_event| {
+        cloned_activate_assign_price_state.set(true);
+    });
+
+    let cloned_activate_assign_price_state = activate_assign_price_state.clone();
+    let reject_assign_price_confirmation = Callback::from(move|_event| {
+        cloned_activate_assign_price_state.set(false);
     });
 
     html!{
@@ -400,7 +412,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                             <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change={price_changed} />
                                             if let Some(input) = &*input_publication_price_state {
                                                 if input != &(0 as u64) {
-                                                    <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                                    <GenericButton text="Tasar Publicación" onclick_event={ask_assign_price_confirmation}/>
                                                 } else {
                                                     <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
                                                 }
@@ -420,7 +432,10 @@ pub fn publication_molecule(props : &Props) -> Html {
                     } else {html!{}}
                 }
                 if (&*activate_delete_publication_state).clone(){
-                    <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
+                }
+                if (&*activate_assign_price_state).clone(){
+                    <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }
             } else {
                 {"Cargando..."}
