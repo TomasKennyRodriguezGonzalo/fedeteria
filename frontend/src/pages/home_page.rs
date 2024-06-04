@@ -59,7 +59,7 @@ pub fn home_page() -> Html {
                 <TradeGridMolecule/>
             </div>
             <div class= "publication-list">
-                <h1 class="title">{"Publicaciones..."}</h1>
+                <h1 class="title">{"Publicaciones"}</h1>
                 if dni.is_some() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
                 }

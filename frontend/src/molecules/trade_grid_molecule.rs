@@ -52,16 +52,45 @@ pub fn trade_grid_molecule(props: &Props) -> Html {
 
     html!{
         <div class="trueque-grid">
-            if trade_list_state.is_some() {
-                <ul>
+            if let Some(trade_list) = &*trade_list_state {
+                if trade_list.is_empty() {
                     {
-                        (trade_list_state).as_ref().unwrap().iter().map(|id| {
-                            html! {
-                                <li><TradeThumbnail id_trade={id}/></li>
+                        if let Some(query) = props.query.clone() {
+                            if let Some(estado) = query.filtro_estado {
+                                match estado {
+                                    EstadoTrueque::Oferta => {
+                                        html! {
+                                            <h1>{"No se encontraron ofertas!"}</h1>
+                                        }
+                                    },
+                                    EstadoTrueque::Definido | EstadoTrueque::Pendiente | EstadoTrueque::Finalizado => {
+                                        html! {
+                                            <h1>{"No se encontraron trueques!"}</h1>
+                                        }
+                                    }
+                                }
+                            } else {
+                                html! {
+                                    <h1>{"No se encontraron resultados!"}</h1>
+                                }
                             }
-                        }).collect::<Html>()
+                        } else {
+                            html! {
+                                <h1>{"No existen trueques concretados aun!"}</h1>
+                            }
+                        }
                     }
-                </ul>
+                } else {
+                    <ul>
+                        {
+                            (trade_list_state).as_ref().unwrap().iter().map(|id| {
+                                html! {
+                                    <li><TradeThumbnail id_trade={id}/></li>
+                                }
+                            }).collect::<Html>()
+                        }
+                    </ul>
+                }
             }
             else {
                 <h2>{"No se han realizado trueques"}</h2>
