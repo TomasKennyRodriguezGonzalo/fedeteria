@@ -331,6 +331,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                             }).collect::<Html>()
                         }
                     </div> 
+                // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
                     <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
@@ -363,6 +364,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
+                // Seccion de propuesta de oferta
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
                         <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
@@ -372,6 +374,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     }
                 </div>
+                // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
                     <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
@@ -385,16 +388,26 @@ pub fn publication_molecule(props : &Props) -> Html {
                     }  
                 </div>
                 }
+                // Seccion de tasacion de publicacion
                 {
                     if let Some(role) = &*role_state{
                         match role { 
                             RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
                                 if publicacion.precio.is_none(){
                                     html! {
-                                        <>  
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                        </>
+                                        <div class="assign-price-box">  
+                                            <h1 class="title">{"Tasar"}</h1>
+                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change={price_changed} />
+                                            if let Some(input) = &*input_publication_price_state {
+                                                if input != &(0 as u64) {
+                                                    <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
+                                                } else {
+                                                    <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
+                                                }
+                                            } else {
+                                                <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
+                                            }
+                                        </div>
                                     }
                                 } else {
                                     html! {}
