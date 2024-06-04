@@ -227,7 +227,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_publication_price_state = publication_price_state.clone();
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
-    let assign_price = Callback::from(move |event|{
+    let assign_price = Callback::from(move |_event|{
         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
         let cloned_publication_price_state = cloned_publication_price_state.clone();
         let cloned_id = cloned_id.clone();
@@ -381,7 +381,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     if publicacion.dni_usuario != dni.clone().unwrap() {
                         <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
                         if *show_selector_state { 
-                            <GenericButton text="Cancelar Propuesta" onclick_event={hide_selector.clone()}/>
+                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
                             <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
                         }
                     }
