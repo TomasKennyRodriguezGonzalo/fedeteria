@@ -1,6 +1,6 @@
 use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{window, HtmlInputElement};
+use web_sys::{window, FormData, HtmlFormElement, HtmlInputElement};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use crate::information_store::InformationStore;
@@ -13,7 +13,7 @@ use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDate, TimeZone, Weekday};
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -193,58 +193,120 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
     });
 
-    let select_value_state = use_state(|| -1);
-    let select_value_state_cloned = select_value_state.clone();
-    let select_onchange = Callback::from(move|event: Event| {
-        let select_value_state_cloned = select_value_state_cloned.clone();
+    //select_sucursal
+    let select_sucursal_value_state = use_state(|| -1);
+    let select_sucursal_value_state_cloned = select_sucursal_value_state.clone();
+    let select_sucursal_onchange = Callback::from(move|event: Event| {
+        let select_sucursal_value_state_cloned = select_sucursal_value_state_cloned.clone();
         let target = event.target().unwrap();
         let input:HtmlInputElement = target.unchecked_into();
         let value: i32 = input.value().parse().unwrap();
-        select_value_state_cloned.set(value);
-        log::info!("Select changed to {}", value)
+        select_sucursal_value_state_cloned.set(value);
+        log::info!("Select sucursal changed to {}", value)
+    });
+    let cloned_select_sucursal_value_state = select_sucursal_value_state.clone();
+
+    //select horas
+    let select_hora_value_state = use_state(|| -1);
+    let select_hora_value_state_cloned = select_hora_value_state.clone();
+    let select_hora_onchange = Callback::from(move|event: Event| {
+        let select_hora_value_state_cloned = select_hora_value_state_cloned.clone();
+        let target = event.target().unwrap();
+        let input:HtmlInputElement = target.unchecked_into();
+        let value: i32 = input.value().parse().unwrap();
+        select_hora_value_state_cloned.set(value);
+        log::info!("Select hora changed to {}", value)
+    });
+    let cloned_select_hora_value_state = select_hora_value_state.clone();
+
+    //select minutos
+    let select_minutos_value_state = use_state(|| -1);
+    let select_minutos_value_state_cloned = select_minutos_value_state.clone();
+    let select_minutos_onchange = Callback::from(move|event: Event| {
+        let select_minutos_value_state_cloned = select_minutos_value_state_cloned.clone();
+        let target = event.target().unwrap();
+        let input:HtmlInputElement = target.unchecked_into();
+        let value: i32 = input.value().parse().unwrap();
+        select_minutos_value_state_cloned.set(value);
+        log::info!("Select minutos changed to {}", value)
+    });
+    let cloned_select_minutes_value_state = select_minutos_value_state.clone();
+
+    //cambio de fecha
+    let fecha_state = use_state(|| "".to_string());
+    let fecha_state_cloned = fecha_state.clone();
+    let date_changed = Callback::from(move |event : Event| {
+        let target = event.target().unwrap();
+        let input:HtmlInputElement = target.unchecked_into();
+        let input_value = input.value();
+        fecha_state_cloned.set(input_value);
     });
 
-
-    let horario_state:UseStateHandle<Option<DateTime<Local>>> = use_state(|| None);
-    let cloned_horario_state = horario_state.clone();
-    //agregar logica de change horario state
-
-
-    let sucursal_state:UseStateHandle<Option<String>> = use_state(|| None);
-    let cloned_sucursal_state = sucursal_state.clone();
-    //agregar logica de change sucursal state
- 
-    let show_no_time_error_state = use_state(|| false);
-    let cloned_show_no_time_error_state = show_no_time_error_state.clone();
-    let show_no_sucursal_error_state = use_state(|| false);
-    let cloned_show_no_sucursal_error_state = show_no_sucursal_error_state.clone();
-    let cloned_horario_state = horario_state.clone();
-    let cloned_sucursal_state = cloned_sucursal_state.clone();
-    let change_trade_to_defined = Callback::from(move |_|{
-        let cloned_show_no_sucursal_error_state = cloned_show_no_sucursal_error_state.clone();
-        let cloned_show_no_time_error_state = cloned_show_no_time_error_state.clone();
+    //clono estados para botones
+    let show_another_trade_error_state = use_state(|| false);
+    let cloned_show_another_trade_error_state = show_another_trade_error_state.clone();
+    let show_time_error_state = use_state(|| false);
+    let cloned_show_time_error_state = show_time_error_state.clone();
+    //clono lo referido a sucursales y fecha de trueque
+    let cloned_sucursal_state = cloned_select_sucursal_value_state.clone();
+    let cloned_state_office_list = state_office_list.clone();
+    let cloned_fecha_state = fecha_state.clone();
+    //cambiar trueque a definido
+    let change_trade_to_defined = Callback::from(move |()| {
+        let cloned_show_time_error_state = cloned_show_time_error_state.clone();
+        let cloned_show_another_trade_error_state = cloned_show_another_trade_error_state.clone();
+        let cloned_minutos_state = cloned_select_minutes_value_state.clone();
         let cloned_sucursal_state = cloned_sucursal_state.clone();
-        let cloned_horario_state = cloned_horario_state.clone();
-        if let Some(sucursal) = (&*cloned_sucursal_state).clone(){
-            if let Some(f_y_hora) = (&*cloned_horario_state){
-                let query = QueryCambiarTruequeADefinido{
-                    id : id_trueque,
-                    sucursal : sucursal,
-                    f_y_hora : *f_y_hora,
-                };
-                request_post("/api/cambiar_trueque_a_definido", query, move |_:ResponseCambiarTruequeADefinido|{
+        //inicializo una hora. minutos y sucursal
+        let mut hora_trueque = "".to_string();
+        let mut minutos_trueque = "".to_string();
+        let mut sucursal_trueque = "".to_string();
+        //obtengo la fecha en String y la lista de sucursales
+        let fecha_trueque = (&*cloned_fecha_state).clone();
+        let office_list = &*cloned_state_office_list.clone();
+        //obtengo la hora
+        if let Some(hora) = obtener_horas_sucursal().get((&*cloned_select_hora_value_state).clone() as usize) {
+            hora_trueque = hora.clone();
+        }
+        //obtengo los minutos
+        if let Some(minutos) = obtener_minutos_posibles().get((&*cloned_minutos_state).clone() as usize) {
+            minutos_trueque = minutos.clone();
+        }
+        //obtengo la sucursal
+        if let Some(sucursal) = office_list.get((&*cloned_sucursal_state).clone() as usize) {
+            sucursal_trueque = sucursal.clone().nombre;
+        }
+        //obtengo la fecha en DateTime
+        let fecha = NaiveDate::parse_from_str(&fecha_trueque, "%Y-%m-%d").unwrap();
+        let fecha_trueque = Local.from_local_datetime(&fecha.into()).unwrap();
+
+        //verifico que la fecha sea posterior a la actual y no sea un domingo
+        let fecha_actual: DateTime<Local> = Local::now();
+        if (fecha_trueque > fecha_actual) && (fecha_trueque.weekday() != Weekday::Sun) {
+            let query = QueryCambiarTruequeADefinido{
+                id : id_trueque,
+                sucursal : sucursal_trueque,
+                fecha : fecha_trueque.clone(),
+                hora: hora_trueque,
+                minutos: minutos_trueque,
+            };
+            log::info!("Llamo al back con esto: {:?}", query);
+            request_post("/api/cambiar_trueque_a_definido", query, move |respuesta:ResponseCambiarTruequeADefinido|{
+                if respuesta.cambiado {
                     if let Some(window) = window() {
                         window.location().reload().unwrap();
                     }
-                });
-            } else {
-                cloned_show_no_time_error_state.set(true);
-            }
-        } else {
-            cloned_show_no_sucursal_error_state.set(true);
+                }
+                else {
+                    cloned_show_another_trade_error_state.set(true);
+                }
+            });
         }
-    });
-
+        else {
+            cloned_show_time_error_state.set(true);
+        }
+    }
+    );
 
     html! {
         <div class="trueque-box">
@@ -306,30 +368,58 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                                 datos_comunes::EstadoTrueque::Pendiente => html! {
                                     <>
-                                        if *show_no_sucursal_error_state{
-                                            <h2 class="error-text">{"Debes seleccionar una sucursal"}</h2>
-                                        }
-                                        if *show_no_time_error_state{
-                                            <h2 class="error-text">{"Debes seleccionar una fecha y horario válidos"}</h2>
-                                        }
-                                        <h1 class="title">{"Trueque Pendiente"}</h1>
-                                        <li>
-                                        <div class="trueque-pendiente">
-                                            <label for="select-sucursal">{"Seleccione una sucursal para concretar el trueque"}</label>
-                                            <br/>
-                                            <select value="select-sucursal" id="sucursales" onchange={select_onchange}>
-                                                <option value="-1">{"---"}</option>
-                                                {
-                                                    (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
-                                                        <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
-                                                    }).collect::<Html>()
-                                                }
-                                            </select>
-                                            if (&*select_value_state).clone() != -1 { 
-                                                <GenericButton text="Rellenar Datos de Trueque" onclick_event={change_trade_to_defined}/>
+                                        if dni == trueque.receptor.0 {
+                                            if *show_time_error_state{
+                                                <h2 class="error-text">{"Debes seleccionar una fecha y horario válidos"}</h2>
                                             }
-                                        </div>
-                                    </li>
+                                            if *show_another_trade_error_state{
+                                                <h2 class="error-text">{"Selecciona otra fecha y/o horario, la seleccionada esta ocupada"}</h2>
+                                            }
+                                            <h1 class="title">{"Trueque Pendiente"}</h1>
+                                            <li>
+                                            <div class="trueque-pendiente">
+                                                <h2>{"Seleccione una sucursal para concretar el trueque"}</h2>
+                                                <br/>
+                                                <select value="select-sucursal" id="sucursales" onchange={select_sucursal_onchange.clone()}>
+                                                    <option value="-1">{"---"}</option>
+                                                    {
+                                                        (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
+                                                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
+                                                        }).collect::<Html>()
+                                                    }
+                                                </select>
+                                                <br/>
+                                                <h2>{"Ingrese una fecha"}</h2>
+                                                <input type="date" name="fecha-trueque" onchange={date_changed}/>
+                                                <br/>
+                                                <h2>{"Seleccione hora"}</h2>
+                                                <select value="select-hora" id="horas" onchange={select_hora_onchange.clone()}>
+                                                    <option value="-1">{"---"}</option>
+                                                    {
+                                                        obtener_horas_sucursal().iter().enumerate().map(|(index, hora)| html!{
+                                                            <option value={index.to_string()}>{hora}</option>
+                                                        }).collect::<Html>()
+                                                    }
+                                                </select>
+                                                <br/>
+                                                <h2>{"Seleccione minutos"}</h2>
+                                                <select value="select-minutos" id="minutos" onchange={select_minutos_onchange.clone()}>
+                                                    <option value="-1">{"---"}</option>
+                                                    {
+                                                        obtener_minutos_posibles().iter().enumerate().map(|(index, minutos)| html!{
+                                                            <option value={index.to_string()}>{minutos}</option>
+                                                        }).collect::<Html>()
+                                                    }
+                                                </select>
+                                                if ((&*select_sucursal_value_state).clone() != -1) && ((&*select_hora_value_state).clone() != -1) && ((&*select_minutos_value_state).clone() != -1) && (!(&*fecha_state).clone().is_empty()) { 
+                                                    <GenericButton text="Rellenar Datos de Trueque" onclick_event={change_trade_to_defined}/>
+                                                }
+                                            </div>
+                                            </li>
+                                        }
+                                        else {
+                                            <h2>{format!("Contactate con el usuario {} para acordar una sucursal y un horario", &*receptor_username)}</h2>
+                                        }
                                     </>
                                 },
                                 datos_comunes::EstadoTrueque::Definido => html! {
@@ -350,4 +440,26 @@ pub fn trueque_molecule (props : &Props) -> Html {
         } 
         </div>
     }
+}
+
+fn obtener_horas_sucursal() -> Vec<String> {
+    let mut vec_horas = Vec::new();
+    vec_horas.push("9".to_string());
+    vec_horas.push("10".to_string());
+    vec_horas.push("11".to_string());
+    vec_horas.push("12".to_string());
+    vec_horas.push("13".to_string());
+    vec_horas.push("14".to_string());
+    vec_horas.push("15".to_string());
+    vec_horas.push("16".to_string());
+    vec_horas
+}
+
+fn obtener_minutos_posibles() -> Vec<String> {
+    let mut vec_minutos = Vec::new();
+    vec_minutos.push("00".to_string());
+    vec_minutos.push("15".to_string());
+    vec_minutos.push("30".to_string());
+    vec_minutos.push("45".to_string());
+    vec_minutos
 }

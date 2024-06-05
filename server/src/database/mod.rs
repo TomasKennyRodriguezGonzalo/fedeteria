@@ -5,6 +5,7 @@ use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
 use tokio::runtime::TryCurrentError;
+use tower_http::follow_redirect::policy::PolicyExt;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -377,7 +378,9 @@ impl Database {
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas),
                 receptor: (query.dni_receptor, query.publicacion_receptora),
                 sucursal: None,
-                horario: None,
+                fecha: None,
+                hora: None,
+                minutos: None,
                 estado: EstadoTrueque::Oferta,
                 codigo_ofertante: None,
                 codigo_receptor: None,
@@ -492,13 +495,37 @@ impl Database {
     }
 
     pub fn cambiar_trueque_a_definido(&mut self, query:QueryCambiarTruequeADefinido) -> bool {
+        let trueques_copia = self.trueques.clone();
         let trueque = self.trueques.get_mut(&query.id);
-        if let Some(trueque) = trueque {
-            trueque.estado = EstadoTrueque::Definido;
-            trueque.horario = Some(query.f_y_hora);
-            trueque.sucursal = Some(query.sucursal);
-            self.guardar();
-            return true;
+        if let Some(trueque_actual) = trueque {
+            let hay_otros_trueques = trueques_copia.iter().
+                filter(|(_, trueque)| {
+                    trueque.sucursal.as_ref().map(|sucursal| sucursal == &query.sucursal)
+                    .unwrap_or(false)
+                }).
+                filter(|(_, trueque)| {
+                    trueque.fecha.map(|fecha| fecha == query.fecha)
+                    .unwrap_or(false)
+                }).
+                filter(|(_, trueque)| {
+                    trueque.hora.as_ref().map(|hora| hora == &query.hora)
+                    .unwrap_or(false)
+                }).
+                filter(|(_, trueque)| {
+                    trueque.minutos.as_ref().map(|minutos| minutos == &query.minutos)
+                    .unwrap_or(false)
+                });
+            let hay_iguales: Vec<usize> = hay_otros_trueques.map(|(i, _)| *i).collect();
+            log::info!("Trueques en misma hora y fecha: {}", hay_iguales.len());
+            if hay_iguales.is_empty() {
+                trueque_actual.estado = EstadoTrueque::Definido;
+                trueque_actual.fecha = Some(query.fecha);
+                trueque_actual.hora = Some(query.hora);
+                trueque_actual.minutos = Some(query.minutos);
+                trueque_actual.sucursal = Some(query.sucursal);
+                self.guardar();
+                return true;
+            }
         }
         false
     }

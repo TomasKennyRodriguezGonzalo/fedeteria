@@ -369,7 +369,9 @@ pub struct ResponseRechazarOferta {
 pub struct QueryCambiarTruequeADefinido {
     pub id: usize,
     pub sucursal : String,
-    pub f_y_hora : DateTime<Local>,
+    pub fecha: DateTime<Local>,
+    pub hora: String,
+    pub minutos: String,
 }
 
 
