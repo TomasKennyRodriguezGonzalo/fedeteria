@@ -4,6 +4,7 @@ use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::TryCurrentError;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -461,10 +462,17 @@ impl Database {
             //aca se modificaria la variable de "en trueque"
             let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
             publicacion_receptora.unwrap().pausada = true; 
-            let publicacion_ofertante1 = self.publicaciones.get_mut(&trueque.oferta.1.get(0).unwrap());
-            publicacion_ofertante1.unwrap().pausada = true;
-            if let Some(publicacion_ofertante2) = self.publicaciones.get_mut(&trueque.oferta.1.get(1).unwrap()){
-                publicacion_ofertante2.pausada = true;
+            if let Some(publi1) = trueque.oferta.1.get(0) {
+                self.publicaciones.get_mut(publi1).unwrap().alternar_pausa();
+            }
+            else {
+                log::info!("No hay publicacion 1");
+            }
+            if let Some(publi2) = trueque.oferta.1.get(1) {
+                self.publicaciones.get_mut(publi2).unwrap().alternar_pausa();
+            }
+            else {
+                log::info!("No hay publicacion 2");
             }
             trueque.estado = EstadoTrueque::Pendiente;
             self.guardar();
