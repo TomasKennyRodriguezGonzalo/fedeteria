@@ -106,11 +106,16 @@ pub fn publication_molecule(props : &Props) -> Html {
         request_post("/api/eliminar_publicacion", query, move |respuesta: ResponseEliminarPublicacion| {
             //si se elimino bien ok sera true
             let cloned_navigator = cloned_navigator.clone();
-            let ok = respuesta.ok;
-            let information_dispatch = information_dispatch.clone();
-            information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
-            log::info!("resultado de eliminar publicacion : {ok}");
-            cloned_navigator.push(&Route::Home);
+            if respuesta.ok {
+                let information_dispatch = information_dispatch.clone();
+                information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
+                cloned_navigator.push(&Route::Home);
+            }
+            else {
+                let information_dispatch = information_dispatch.clone();
+                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas".to_string()));
+            }
+            log::info!("resultado de eliminar publicacion : {}", respuesta.ok);
         });
     });
 

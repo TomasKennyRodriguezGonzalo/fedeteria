@@ -4,8 +4,10 @@ use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
 use serde::{Deserialize, Serialize};
-use tokio::runtime::TryCurrentError;
-use tower_http::follow_redirect::policy::PolicyExt;
+use rand::prelude::*;
+use tracing_subscriber::fmt::format;
+
+use crate::mail::send_email;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -297,9 +299,12 @@ impl Database {
     }
 
     pub fn eliminar_publicacion (&mut self, id : usize)->bool{
-        self.publicaciones.remove(&id);
-        self.guardar();
-        true
+        if self.publicaciones.get(&id).unwrap().ofertas.is_empty(){
+            self.publicaciones.remove(&id);
+            self.guardar();
+            return true;
+        }
+        false
     }
 
     pub fn obtener_notificaciones(&mut self, query:&QueryGetNotificaciones)->Vec<usize>{
@@ -375,7 +380,7 @@ impl Database {
         if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
             // Crea el Trueque en estado de Oferta
             let oferta = Trueque{
-                oferta: (query.dni_ofertante, query.publicaciones_ofertadas),
+                oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
                 receptor: (query.dni_receptor, query.publicacion_receptora),
                 sucursal: None,
                 fecha: None,
@@ -388,8 +393,22 @@ impl Database {
             let index = self.agregar_trueque(oferta);
 
             // Si la publicación existe, que se asume que si, se agrega la referencia al trueque
-            if let Some(publicacion) = self.publicaciones.get_mut(&query.publicacion_receptora){
-                publicacion.ofertas.push(index);
+            //publicacion receptora
+            if let Some(publicacion_receptor) = self.publicaciones.get_mut(&query.publicacion_receptora){
+                publicacion_receptor.ofertas.push(index);
+
+                //publicaciones ofertantes
+                //publicacion 1, no verifico que exista ya que se asume que si exisitrá al menos una publicacion
+                if let Some(publicacion_ofertante_1) = self.publicaciones.get_mut(&query.publicaciones_ofertadas.clone().get(0).unwrap()){
+                    publicacion_ofertante_1.ofertas.push(index);
+                }
+
+                //publicacion 2, aqui verifico ya que puede no existir
+                if let Some(indice_publi_2) = query.publicaciones_ofertadas.clone().get(1) {
+                    if let Some(publicacion_ofertante_2) = self.publicaciones.get_mut(indice_publi_2){
+                        publicacion_ofertante_2.ofertas.push(index);
+                    }
+                }
                 self.guardar();
                 return true
             }
@@ -466,13 +485,13 @@ impl Database {
             let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
             publicacion_receptora.unwrap().pausada = true; 
             if let Some(publi1) = trueque.oferta.1.get(0) {
-                self.publicaciones.get_mut(publi1).unwrap().alternar_pausa();
+                self.publicaciones.get_mut(publi1).unwrap().pausada = true;
             }
             else {
                 log::info!("No hay publicacion 1");
             }
             if let Some(publi2) = trueque.oferta.1.get(1) {
-                self.publicaciones.get_mut(publi2).unwrap().alternar_pausa();
+                self.publicaciones.get_mut(publi2).unwrap().pausada = true;
             }
             else {
                 log::info!("No hay publicacion 2");
@@ -486,7 +505,40 @@ impl Database {
 
     pub fn rechazar_oferta(&mut self, id:usize) -> bool {
         let trueque = self.trueques.get_mut(&id);
-        if let Some(_) = trueque {
+        if let Some(trueque_encontrado) = trueque {
+            //si el ofertante tiene 2 publicaciones, entra por aca, sino por el else
+            //hay un error que no logro descifrar, el bloque del if funciona con 2 publicaciones, pero no con 1
+            if trueque_encontrado.oferta.1.len() > 1 {
+                //elimino del vec de ofertas de las publicaciones involucradas, el trueque actual
+                //elimino la oferta de la primer publicacion del ofertante
+                if let Some (ubicacion_trueque_en_publi_1_ofertante) = self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                    self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_1_ofertante);
+                }
+                //elimino la oferta de la segunda publicacion del ofertante
+                if !trueque_encontrado.oferta.1.is_empty() {
+                    if let Some (ubicacion_trueque_en_publi_2_ofertante) = self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                        self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_2_ofertante);
+                    }
+                }
+                //elimino la oferta de la publicacion del receptor
+                if let Some (ubicacion_trueque_en_publi_receptor) = self.publicaciones.get_mut(&trueque_encontrado.receptor.1).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                    self.publicaciones.get_mut(&trueque_encontrado.receptor.1).unwrap().ofertas.remove(ubicacion_trueque_en_publi_receptor);
+                }
+            }
+            //bloque para rechazar cuando el ofertante tiene una sola publicacion
+            else {
+                //elimino el trueque del ofertante
+                if let Some (publicacion_ofertante) = self.publicaciones.get_mut(&trueque_encontrado.oferta.1.pop().unwrap()) {
+                    let trueque_a_borrar = publicacion_ofertante.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
+                    publicacion_ofertante.ofertas.remove(trueque_a_borrar);
+                }
+                //elimino el trueque del receptor
+                if let Some (publicacion_receptor) = self.publicaciones.get_mut(&trueque_encontrado.receptor.1) {
+                    let trueque_a_borrar = publicacion_receptor.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
+                    publicacion_receptor.ofertas.remove(trueque_a_borrar);
+                }
+            }
+            //elimino el trueque de la DB
             self.trueques.remove(&id);
             self.guardar();
             return true;
@@ -494,11 +546,18 @@ impl Database {
         false
     }
 
-    pub fn cambiar_trueque_a_definido(&mut self, query:QueryCambiarTruequeADefinido) -> bool {
-        let trueques_copia = self.trueques.clone();
+    //Lo comentado en esta funcion con respectoa  codigo, es para la verificacion de que no exista un trueque en la misma sucursal, fecha
+    //y hora. No es necesario, pero lo dejo ya que esta hecho
+    pub fn cambiar_trueque_a_definido(&mut self, query:QueryCambiarTruequeADefinido) -> (bool, Option<Vec<String>>) {
+        //let trueques_copia = self.trueques.clone();
+        
+        //los hago antes a los codigos porque tira error de borrowing
+        //codigos.0 ----> codigo_receptor
+        //codigos.1 ----> codigo_ofertante
+        let codigos = self.generar_codigos_de_trueque();
         let trueque = self.trueques.get_mut(&query.id);
         if let Some(trueque_actual) = trueque {
-            let hay_otros_trueques = trueques_copia.iter().
+            /*let hay_otros_trueques = trueques_copia.iter().
                 filter(|(_, trueque)| {
                     trueque.sucursal.as_ref().map(|sucursal| sucursal == &query.sucursal)
                     .unwrap_or(false)
@@ -516,18 +575,78 @@ impl Database {
                     .unwrap_or(false)
                 });
             let hay_iguales: Vec<usize> = hay_otros_trueques.map(|(i, _)| *i).collect();
-            log::info!("Trueques en misma hora y fecha: {}", hay_iguales.len());
-            if hay_iguales.is_empty() {
+            log::info!("Trueques en misma hora y fecha: {}", hay_iguales.len());*/
+           // if hay_iguales.is_empty() {
+                //los hago antes a los codigos porque tira error de borrowing
+                //codigos.0 ----> codigo_receptor
+                //codigos.1 ----> codigo_ofertante
                 trueque_actual.estado = EstadoTrueque::Definido;
                 trueque_actual.fecha = Some(query.fecha);
                 trueque_actual.hora = Some(query.hora);
                 trueque_actual.minutos = Some(query.minutos);
                 trueque_actual.sucursal = Some(query.sucursal);
+                trueque_actual.codigo_receptor = Some(codigos.0);
+                trueque_actual.codigo_ofertante = Some(codigos.1);
+                //obtengo receptor
+                let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.receptor.0).unwrap();
+                //obtengo ofertante
+                let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.oferta.0).unwrap();
+                //creo mail receptor
+                let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
+                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
+                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                                trueque_actual.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque_actual.codigo_receptor.unwrap());
+                
+                //creo mail ofertante
+                let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
+                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
+                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                                trueque_actual.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque_actual.codigo_ofertante.unwrap());
+                
+                //Creo un vec para pasarlo al main y enviarlo
+                /* Contenido del Vec:
+                0 --> Nombre Receptor
+                1 --> Mail Receptor
+                2 --> Mensaje Receptor
+                3 --> Nombre Ofertante
+                4 --> Mail Ofertante
+                5 --> Mensaje Ofertante
+                 */
+                let mut contenidos_mensajes = Vec::new();
+                contenidos_mensajes.push(receptor.nombre_y_apellido.clone());
+                contenidos_mensajes.push(receptor.email.clone());
+                contenidos_mensajes.push(mail_receptor.clone());
+                contenidos_mensajes.push(ofertante.nombre_y_apellido.clone());
+                contenidos_mensajes.push(ofertante.email.clone());
+                contenidos_mensajes.push(mail_ofertante.clone());
+                let mensajes = Some(contenidos_mensajes);
                 self.guardar();
-                return true;
+                return (true, mensajes);
             }
+        //}
+        (false, None)
+    }
+
+    fn generar_codigos_de_trueque(&self) -> (u64, u64) {
+        let mut receptor: u64 = 0;
+        let mut ofertante: u64 = 0;
+
+        let mut existe_combinacion = true;
+        while existe_combinacion {
+            //genero los codigos
+            let mut rng = rand::thread_rng();
+            receptor = rng.gen_range(1..1001);
+            ofertante = rng.gen_range(1..1001);
+    
+            //verifico que no exista la combinacion
+            existe_combinacion = self.trueques.iter().filter(|(_, trueque)| trueque.estado == EstadoTrueque::Definido).any(|(_, trueque)| {
+                trueque.codigo_receptor.unwrap() == receptor && trueque.codigo_ofertante.unwrap() == ofertante
+            });
         }
-        false
+    
+        (receptor, ofertante)
     }
 
 }

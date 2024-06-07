@@ -575,7 +575,32 @@ Json(query): Json<QueryCambiarTruequeADefinido>
 
     let mut state = state.write().await;
     let respuesta = state.db.cambiar_trueque_a_definido(query);
-    Json(ResponseCambiarTruequeADefinido{cambiado : respuesta})
+    /* Contenido del Vec:
+    0 --> Nombre Receptor
+    1 --> Mail Receptor
+    2 --> Mensaje Receptor
+    3 --> Nombre Ofertante
+    4 --> Mail Ofertante
+    5 --> Mensaje Ofertante
+    */
+    if let Some(vec_string) = respuesta.1 {
+        //envio mail a receptor
+        match send_email(vec_string.get(0).unwrap().clone(), vec_string.get(1).unwrap().clone(),
+                "Registro en Fedeteria".to_string(),
+                vec_string.get(2).unwrap().clone()).await {
+                Ok(_) => log::info!("Mail enviado al receptor."),
+                Err(_) => log::error!("Error al enviar mail al receptor."),
+            }
+        
+        //envio mail al ofertante
+        match send_email(vec_string.get(3).unwrap().clone(), vec_string.get(4).unwrap().clone(),
+                "Registro en Fedeteria".to_string(),
+                vec_string.get(5).unwrap().clone()).await {
+                Ok(_) => log::info!("Mail enviado al receptor."),
+                Err(_) => log::error!("Error al enviar mail al receptor."),
+            }
+    }
+    Json(ResponseCambiarTruequeADefinido{cambiado : respuesta.0})
 
 }
 

@@ -378,7 +378,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                             <h1 class="title">{"Trueque Pendiente"}</h1>
                                             <li>
                                             <div class="trueque-pendiente">
-                                                <h2>{"Seleccione una sucursal para concretar el trueque"}</h2>
+                                                <h2>{"Seleccione una sucursal para concretar el trueque (los domingos ninguna sucursal se encontrará abierta)"}</h2>
                                                 <br/>
                                                 <select value="select-sucursal" id="sucursales" onchange={select_sucursal_onchange.clone()}>
                                                     <option value="-1">{"---"}</option>
@@ -458,8 +458,16 @@ fn obtener_horas_sucursal() -> Vec<String> {
 fn obtener_minutos_posibles() -> Vec<String> {
     let mut vec_minutos = Vec::new();
     vec_minutos.push("00".to_string());
+    vec_minutos.push("05".to_string());
+    vec_minutos.push("10".to_string());
     vec_minutos.push("15".to_string());
+    vec_minutos.push("20".to_string());
+    vec_minutos.push("25".to_string());
     vec_minutos.push("30".to_string());
+    vec_minutos.push("35".to_string());
+    vec_minutos.push("40".to_string());
     vec_minutos.push("45".to_string());
+    vec_minutos.push("50".to_string());
+    vec_minutos.push("55".to_string());
     vec_minutos
 }
