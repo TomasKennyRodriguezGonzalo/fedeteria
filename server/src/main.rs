@@ -103,6 +103,9 @@ async fn main() {
         .route("/api/rechazar_oferta", post(rechazar_oferta))
         .route("/api/cancelar_oferta", post(cancelar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
+        .route("/api/obtener_sucursal_por_dni", post(obtener_sucursal))
+        .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
+        .route("/api/finalizar_trueque", post(finalizar_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -653,4 +656,42 @@ Json(query): Json<QueryCambiarTruequeADefinido>
     }
     Json(ResponseCambiarTruequeADefinido{cambiado : respuesta.0})
 
+}
+
+//devuelve solo el indice de uno, el deseado, obtenerlo en el front
+async fn obtener_trueque_por_codigos ( State(state): State<SharedState>,
+Json(query): Json<QueryTruequesFiltrados>
+) -> Json<ResponseTruequePorCodigos> {
+    let state = state.read().await;
+    let respuesta = state.db.obtener_trueque_por_codigos(query);
+    log::info!("VECTOR DE ID DE TRUEQUE: {:?}", respuesta);
+    if respuesta.len() == 1 {
+        return Json(ResponseTruequePorCodigos {trueque_encontrado: Some(respuesta)})
+    }
+    Json(ResponseTruequePorCodigos {trueque_encontrado: None})
+}
+
+//forma rara de obtener sucursal, mala mia (Franco), implemente mal el trueque, guardo en el trueque el string de sucursal
+//en lugar del id, para la tercera demo si hago tiempo reacondiciono el tema ese
+async fn obtener_sucursal (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryGetOffice>
+) -> Json<ResponseGetOffice> {
+    let state = state.read().await;
+    let indice_usuario = state.db.encontrar_dni(query.dni).unwrap();
+    let rol = state.db.obtener_rol_usuario(indice_usuario);
+    if let RolDeUsuario::Empleado { sucursal } = rol {
+        let sucursal_empleado = state.db.obtener_sucursal(sucursal);
+        return Json(ResponseGetOffice {sucursal: Some(sucursal_empleado)});
+    }
+    Json(ResponseGetOffice {sucursal: None})  
+}
+
+async fn finalizar_trueque (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryFinishTrade>
+) -> Json<ResponseFinishTrade> {
+    let mut state = state.write().await;
+    state.db.finalizar_trueque(query);
+    Json(ResponseFinishTrade {respuesta: true})
 }
