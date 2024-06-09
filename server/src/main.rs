@@ -101,6 +101,7 @@ async fn main() {
         .route("/api/obtener_trueque", post(obtener_trueque))
         .route("/api/aceptar_oferta", post(aceptar_oferta))
         .route("/api/rechazar_oferta", post(rechazar_oferta))
+        .route("/api/cancelar_oferta", post(cancelar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -594,6 +595,7 @@ Json(query): Json<QueryRechazarOferta>
 ) -> Json<ResponseRechazarOferta>{
     let id = query.id;
     let mut state = state.write().await;
+    let respuesta = state.db.rechazar_oferta(id);
     let oferta = state.db.get_trueque(id).unwrap();
     let dni_receptor = oferta.receptor.0;
     let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
@@ -605,6 +607,14 @@ Json(query): Json<QueryRechazarOferta>
     let url = format!("/trueque/{id}");
 
     state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    Json(ResponseRechazarOferta{rechazada : respuesta})
+}
+
+async fn cancelar_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryRechazarOferta>
+) -> Json<ResponseRechazarOferta>{
+    let id = query.id;
+    let mut state = state.write().await;
     let respuesta = state.db.rechazar_oferta(id);
     Json(ResponseRechazarOferta{rechazada : respuesta})
 }

@@ -6,7 +6,6 @@ use datos_comunes::*;
 use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
-
 use crate::mail::send_email;
 
 use self::usuario::{EstadoCuenta, Usuario};
@@ -371,7 +370,7 @@ impl Database {
     }
 
     pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> Option<usize> {
-        if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
+        if let Some(_) = self.encontrar_dni(query.dni_receptor) {
             // Crea el Trueque en estado de Oferta
             let oferta = Trueque{
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
@@ -411,25 +410,6 @@ impl Database {
         return None
     }
 
-    /* .filter(|(_, publication)| {
-            query.filtro_nombre.as_ref()
-            .map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase()))
-            .unwrap_or(true) */
-
-    /*pub fn obtener_trueques (&self, query: QueryObtenerTrueques) -> Vec<usize> {
-        let obtenidos = self.trueques.iter().
-                        enumerate().
-                        filter(|(_, trueque)| trueque.1.estado == query.estado).
-                        filter(|(_,trueque)|{
-                            query.id_publicacion.as_ref()
-                            .map(|publicacion| trueque.1.receptor.1 == *publicacion)
-                            .unwrap_or(true)
-                        }) 
-                        .map(|(indice, _)| indice).
-                        collect();
-
-        obtenidos
-    }*/
 
     pub fn obtener_trueques (&self, query: QueryTruequesFiltrados) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
@@ -441,14 +421,6 @@ impl Database {
                         query.filtro_id_publicacion.map(|publicacion| (trueque.receptor.1 == publicacion) || (trueque.oferta.1.contains(&publicacion)))
                         .unwrap_or(true)
                     }).
-                    /*filter(|(_, trueque)| {
-                        query.filtro_ofertante.map(|dni_ofertante| trueque.oferta.0 == dni_ofertante)
-                        .unwrap_or(true)
-                    }).
-                    filter(|(_, trueque)| {
-                        query.filtro_receptor.map(|dni_receptor| trueque.receptor.0 == dni_receptor)
-                        .unwrap_or(true)
-                    }).*/
                     filter(|(_, trueque)| {
                         query.filtro_dni_integrantes.map(|dni_a_buscar| (trueque.oferta.0 == dni_a_buscar) || (trueque.receptor.0 == dni_a_buscar))
                         .unwrap_or(true)
