@@ -533,12 +533,12 @@ Json(query): Json<QueryCrearOferta>
         let publicacion_receptora = state.db.get_publicacion(publicacion_receptora).unwrap();
         let dni_receptor = oferta.receptor.0;
         let dni_ofertante = oferta.oferta.0;
-        let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+        let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
         let titulo = "Nueva Oferta de Trueque!".to_string();
         let detalle = format!("Has recibido una oferta de trueque en tu {} presiona aquí para verla!", publicacion_receptora.titulo);
         let url = format!("/trueque/{id}");
 
-        state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+        state.db.enviar_notificacion(indice_receptor, titulo, detalle, url);
     }
     Json(ResponseCrearOferta{estado: respuesta.is_some()})
 }
