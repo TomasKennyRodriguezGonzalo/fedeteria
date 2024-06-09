@@ -5,7 +5,7 @@ use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
-use datos_comunes::{Publicacion, QueryCrearOferta, QueryEliminarPublicacion, QueryGetUserRole, QueryOfertasDePublicacion, QueryTasarPublicacion, QueryTogglePublicationPause, ResponseCrearOferta, ResponseEliminarPublicacion, ResponseGetUserRole, ResponsePublicacion, ResponseTasarPublicacion, ResponseTogglePublicationPause, RolDeUsuario, Trueque};
+use datos_comunes::*;
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -33,10 +33,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
     use_effect_once(move || {
-        let cloned_role_state = cloned_role_state.clone();
-        let cloned_dni = cloned_dni.clone();
-        if cloned_dni.is_some() {
-            let query = QueryGetUserRole { dni : cloned_dni.unwrap() };
+        if let Some(dni) = cloned_dni {
+            let query = QueryGetUserRole { dni };
             request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
                 cloned_role_state.set(Some(respuesta.rol));
             });
@@ -50,6 +48,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let datos_publicacion_setter = datos_publicacion.setter();
 
     let current_image_state = use_state(|| 0);
+
+    let activate_assign_price_state = use_state(|| false);
 
     let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
@@ -106,11 +106,16 @@ pub fn publication_molecule(props : &Props) -> Html {
         request_post("/api/eliminar_publicacion", query, move |respuesta: ResponseEliminarPublicacion| {
             //si se elimino bien ok sera true
             let cloned_navigator = cloned_navigator.clone();
-            let ok = respuesta.ok;
-            let information_dispatch = information_dispatch.clone();
-            information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
-            log::info!("resultado de eliminar publicacion : {ok}");
-            cloned_navigator.push(&Route::Home);
+            if respuesta.ok {
+                let information_dispatch = information_dispatch.clone();
+                information_dispatch.reduce_mut(|store| store.messages.push("La publicacion ha sido eliminada correctamente".to_string()));
+                cloned_navigator.push(&Route::Home);
+            }
+            else {
+                let information_dispatch = information_dispatch.clone();
+                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas".to_string()));
+            }
+            log::info!("resultado de eliminar publicacion : {}", respuesta.ok);
         });
     });
 
@@ -227,7 +232,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     let cloned_publication_price_state = publication_price_state.clone();
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
-    let assign_price = Callback::from(move |()|{
+    let assign_price = Callback::from(move |_event|{
         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
         let cloned_publication_price_state = cloned_publication_price_state.clone();
         let cloned_id = cloned_id.clone();
@@ -293,10 +298,31 @@ pub fn publication_molecule(props : &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let goto_trade_offers = Callback::from(move |_| {
         
-        let _ = navigator.push_with_query(&Route::PublicationTradeOffers, &QueryOfertasDePublicacion{id : cloned_id});
+        let query = QueryTruequesFiltrados{
+            filtro_codigo_ofertante: None,
+            filtro_codigo_receptor: None,
+            //filtro_ofertante: None,
+            //filtro_receptor: None,
+            filtro_dni_integrantes: None,
+            filtro_estado: Some(EstadoTrueque::Oferta),
+            filtro_fecha: None,
+            filtro_id_publicacion: Some(cloned_id),
+            filtro_sucursal: None,
+        };
+        let _ = navigator.push_with_query(&Route::SearchTrueques, &query);
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }
+    });
+
+    let cloned_activate_assign_price_state = activate_assign_price_state.clone();
+    let ask_assign_price_confirmation = Callback::from(move|_event| {
+        cloned_activate_assign_price_state.set(true);
+    });
+
+    let cloned_activate_assign_price_state = activate_assign_price_state.clone();
+    let reject_assign_price_confirmation = Callback::from(move|_event| {
+        cloned_activate_assign_price_state.set(false);
     });
 
     html!{
@@ -322,6 +348,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                             }).collect::<Html>()
                         }
                     </div> 
+                // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
                     <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
@@ -331,7 +358,21 @@ pub fn publication_molecule(props : &Props) -> Html {
                             if publicacion.pausada {
                                 "Publicación Pausada".to_string()
                             } else {
-                                precio.to_string()
+                                let mut incluir = false;
+                                if let Some(dni) = dni {
+                                    if publicacion.dni_usuario == dni {
+                                        incluir = true;
+                                    }
+                                    if let Some(role) = &*role_state {
+                                        match role { 
+                                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                incluir = true;
+                                            },
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                get_string_de_rango(precio, incluir)
                             }
                         } else {
                             "Sin Tasar".to_string()
@@ -340,14 +381,17 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
+                // Seccion de propuesta de oferta
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Agregar publicacion a oferta" onclick_event={show_selector}/>
+                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
                         if *show_selector_state { 
+                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
                             <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
                         }
                     }
                 </div>
+                // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
                     <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
@@ -361,39 +405,29 @@ pub fn publication_molecule(props : &Props) -> Html {
                     }  
                 </div>
                 }
+                // Seccion de tasacion de publicacion
                 {
                     if let Some(role) = &*role_state{
                         match role { 
-                            RolDeUsuario::Dueño => {
+                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
                                 if publicacion.precio.is_none(){
                                     html! {
-                                        <>  
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                        </>
+                                        <div class="assign-price-box">  
+                                            <h1 class="title">{"Tasar"}</h1>
+                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change={price_changed} />
+                                            if let Some(input) = &*input_publication_price_state {
+                                                if input != &(0 as u64) {
+                                                    <GenericButton text="Tasar Publicación" onclick_event={ask_assign_price_confirmation}/>
+                                                } else {
+                                                    <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
+                                                }
+                                            } else {
+                                                <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
+                                            }
+                                        </div>
                                     }
                                 } else {
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
-                                }
-                            },
-                            RolDeUsuario::Empleado{sucursal : _} => {
-                                if publicacion.precio.is_none(){
-                                    html! {
-                                        <>  
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change = {price_changed} />
-                                            <GenericButton text="Tasar Publicación" onclick_event={assign_price}/>
-                                        </>
-                                    }
-                                } else{
-                                    html! {
-                                        <>  
-                                            <div>{"Publicacion ya tasada"}</div>  
-                                        </>
-                                    }
+                                    html! {}
                                 }
                             },
                             RolDeUsuario::Normal => {
@@ -403,7 +437,10 @@ pub fn publication_molecule(props : &Props) -> Html {
                     } else {html!{}}
                 }
                 if (&*activate_delete_publication_state).clone(){
-                    <ConfirmPromptButtonMolecule text="Seguro que quiere eliminar su publicacion?" confirm_func={delete_publication} reject_func={reject_func} />
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
+                }
+                if (&*activate_assign_price_state).clone(){
+                    <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }
             } else {
                 {"Cargando..."}

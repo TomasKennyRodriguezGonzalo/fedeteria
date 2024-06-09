@@ -16,3 +16,8 @@ pub mod notifications_page;
 pub mod awaiting_price_publication;
 pub mod publication_trade_offers_page;
 pub mod trueque_page;
+pub mod search_trueques_page;
+pub mod my_pending_trades_page;
+pub mod my_defined_trades_page;
+pub mod my_completed_trades_page;
+pub mod my_trades_offers_page;

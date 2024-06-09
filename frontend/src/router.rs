@@ -1,3 +1,8 @@
+use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
+use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
+use crate::pages::my_pending_trades_page::MyPendingTradesPage;
+use crate::pages::my_trades_offers_page::MyTradesOffersPage;
+use crate::pages::search_trueques_page::SearchTruequesPage;
 use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequePage};
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
@@ -19,7 +24,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     privileged_actions_page::PrivilegedActionsPage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
-    publication_trade_offers_page::PublicationTradeOffersPage,
+    //publication_trade_offers_page::PublicationTradeOffersPage,
 };
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
@@ -37,8 +42,12 @@ pub enum Route {
     SavedPublications,
     #[at("/perfil/visto-recientemente")]
     RecentlySeenPublications,
+    #[at("/perfil/ofertas-de-trueques")]
+    MyTradesOffers,
     #[at("/perfil/trueques-pendientes")]
     MyPendingTrades,
+    #[at("/perfil/trueques-definidos")]
+    MyDefinedTrades,
     #[at("/perfil/trueques-concretados")]
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
@@ -63,10 +72,12 @@ pub enum Route {
     AwaitingPricePublication,
     #[at("/resultados-busqueda")]
     SearchResults,
+    #[at("/resultados-trueque")]
+    SearchTrueques,
     #[at("/notificaciones")]
     Notifications,
-    #[at("/ofertas-recibidas")]
-    PublicationTradeOffers,
+    //#[at("/ofertas-recibidas")]
+    //PublicationTradeOffers,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -89,16 +100,19 @@ pub fn switch(routes: Route) -> Html {
                 Route::NotFound => html! { <h1>{"Error 404 página no existente!"}</h1>},
                 Route::SavedPublications => html! {"Publicaciones guardadas"},
                 Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
-                Route::MyPendingTrades => html! {"Trueques Pendientes"},
-                Route::MyCompletedTrades => html! {"Trueques concretados"},
+                Route::MyTradesOffers => html! {<MyTradesOffersPage/>},
+                Route::MyPendingTrades => html! {<MyPendingTradesPage/>},
+                Route::MyDefinedTrades => html! {<MyDefinedTradesPage/>},
+                Route::MyCompletedTrades => html! {<MyCompletedTradesPage/>},
                 Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
                 Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
                 Route::UnlockAccount => html!(<UnlockAccountPage/>), 
                 Route::SearchResults => html!(<SearchResultsPage/>),
                 Route::Notifications => html!(<NotificationsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
-                Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
+                //Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
+                Route::SearchTrueques => html!(<SearchTruequesPage/>),
             }}
     </>}
 }
@@ -124,10 +138,15 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::Profile => [false, true, true, true],
         Route::SavedPublications => [false, true, true, true],
         Route::RecentlySeenPublications => [false, true, true, true],
+        Route::MyTradesOffers => [false, true, true, true],
         Route::MyPendingTrades => [false, true, true, true],
+        Route::MyDefinedTrades => [false, true, true, true],
         Route::MyCompletedTrades => [false, true, true, true],
         Route::EditPersonalInfo => [false, true, true, true],
-        Route::Publication { id : _ } => [false, true, true, true],
+        // No registrado "puede acceder" pero la propia página lo redirige a la página de login con un mensaje especial
+        // estaría bueno que todo se maneje acá de alguna manera, pero complicaría esta tabla
+        // o, de alguna manera obligar a cada página a que implemente sus propias reglas de permisos
+        Route::Publication { id : _ } => [true, true, true, true],
         Route::Register => [true, false, false, false],
         Route::PrivilegedActions => [false, false, true, true],
         Route::CreateOffice => [false, false, false, true],
@@ -135,10 +154,11 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::UnlockAccount => [false, false, false, true],
         Route::ChangeUserRole => [false, false, false, true],
         Route::SearchResults => [true, true, true, true],
+        Route::SearchTrueques => [false, true, true, true],
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],
         Route::AwaitingPricePublication => [false, false, true, true],
-        Route::PublicationTradeOffers => [false, true, true, true],
+        //Route::PublicationTradeOffers => [false, true, true, true],
         Route::Trueque { id : _ } => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();

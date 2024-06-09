@@ -66,15 +66,36 @@ pub type ResponsePublicacionesFiltradas = Vec<usize>;
 
 pub fn calcular_rango(precio : u64) -> RangeInclusive<u64> {
     match precio{
-        0..=1000 =>  {0..=1000},
+        1..=1000 =>  {1..=1000},
         1001..=2500 =>  {1001..=2500},
         2501..=5000 =>  {2501..=5000},
         5001..=7500 =>  {5001..=7500},
         7501..=10000 =>  {7501..=10000},
         10001..=20000 =>  {10001..=20000},
         20001..=40000 =>  {20001..=40000},
-        40001..=70000 =>  {40001..=7000},
+        40001..=70000 =>  {40001..=70000},
         70001..=100000 =>  {70001..=100000},
         100001..=u64::MAX =>  {100001..=u64::MAX},
+        0 => {0..=0}
     }
+}
+pub fn get_string_de_rango(precio: u64, incluir_precio: bool) -> String {
+    let rango = calcular_rango(precio);
+    let (mut min, max) = (*rango.start(), *rango.end());
+    if min == 0 {
+        min = 1;
+    }
+    let base = {
+        if max == u64::MAX {
+            format!("${}+", min)
+        } else {
+            format!("${}-${}", min, max)
+        }
+    };
+    if incluir_precio {
+        format!("{base} (${precio})")
+    } else {
+        base
+    }
+    // precio.to_string()
 }

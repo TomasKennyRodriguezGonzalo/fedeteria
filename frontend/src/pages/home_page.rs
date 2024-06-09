@@ -1,5 +1,5 @@
 use yewdux::use_store;
-use crate::store::UserStore;
+use crate::{molecules::trade_grid_molecule::TradeGridMolecule, store::UserStore};
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use crate::router::Route::{self};
@@ -55,10 +55,11 @@ pub fn home_page() -> Html {
     html!{
         <div class="home-page">
             <div class= "completed-trades">
-                <h2 class="title">{"Próximamente..."}</h2>
+                <h2 class="title">{"Ultimos Trueques Concretados"}</h2>
+                <TradeGridMolecule/>
             </div>
             <div class= "publication-list">
-                <h1 class="title">{"Publicaciones..."}</h1>
+                <h1 class="title">{"Publicaciones"}</h1>
                 if dni.is_some() {
                     <Link<Route> to={Route::CreatePublication}>{"Publicar"}</Link<Route>>
                 }

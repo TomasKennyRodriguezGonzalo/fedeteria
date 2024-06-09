@@ -6,6 +6,8 @@ pub struct Props{
     pub text : String,
     pub index : usize,
     pub onclick_event : Callback<usize>,
+    #[prop_or_default]
+    pub disabled : bool,
 }
 
 
@@ -21,9 +23,15 @@ pub fn indexed_button(props: &Props)-> Html{
     });
 
     html! {
-        <button onclick = {on_click} >
-            {props.text.clone()}
-        </button>
+        if props.disabled {
+            <button onclick = {on_click} class="disabled-dyn-element">
+                {props.text.clone()}
+            </button>
+        } else {
+            <button onclick = {on_click} >
+                {props.text.clone()}
+            </button>
+        }
     }
 
 }
