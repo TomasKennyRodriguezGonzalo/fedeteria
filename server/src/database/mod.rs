@@ -347,7 +347,7 @@ impl Database {
     }
 
 
-    pub fn tasar_publicacion(&mut self, query:QueryTasarPublicacion)-> bool{
+    pub fn tasar_publicacion(&mut self, query: &QueryTasarPublicacion)-> bool{
         let publicacion = self.publicaciones
         .get_mut(&query.id);
 
@@ -360,23 +360,17 @@ impl Database {
         }
     }
 
-    pub fn enviar_notificacion(&mut self, query:QueryEnviarNotificacion, index:Option<usize>)-> bool{
-        if index.is_none(){
-            log::error!("index de usuario inexistente!");
-            return false
-        }
-        let usuario = self.usuarios.get_mut(index.unwrap());
-        let nueva_notificacion = Notificacion{
-            titulo : query.titulo,
-            detalle : query.detalle,
-            url : query.url,
+    pub fn enviar_notificacion(&mut self, indice_usuario_receptor: usize, titulo: String, detalle: String, url: String) {
+        let nueva_notificacion = Notificacion {
+            titulo,
+            detalle,
+            url,
         };
-        usuario.unwrap().notificaciones.push(nueva_notificacion);
+        self.usuarios[indice_usuario_receptor].notificaciones.push(nueva_notificacion);
         self.guardar();
-        true
     }
 
-    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool {
+    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> Option<usize> {
         if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
             // Crea el Trueque en estado de Oferta
             let oferta = Trueque{
@@ -410,11 +404,11 @@ impl Database {
                     }
                 }
                 self.guardar();
-                return true
+                return Some(index);
             }
             
         }
-        return false
+        return None
     }
 
     /* .filter(|(_, publication)| {

@@ -96,7 +96,6 @@ async fn main() {
         .route("/api/eliminar_notificacion", post(eliminar_notificacion))
         .route("/api/tasar_publicacion", post(tasar_publicacion))
         .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
-        .route("/api/enviar_notificacion", post(enviar_notificacion))
         .route("/api/crear_oferta", post(crear_oferta))
         .route("/api/obtener_trueques", post(obtener_trueques))
         .route("/api/obtener_trueque", post(obtener_trueque))
@@ -505,25 +504,43 @@ async fn tasar_publicacion( State(state): State<SharedState>,
 Json(query): Json<QueryTasarPublicacion>
 ) -> Json<ResponseTasarPublicacion>{
     let mut state = state.write().await;
-    let respuesta = state.db.tasar_publicacion(query);
+    let respuesta = state.db.tasar_publicacion(&query);
+    if (respuesta) {
+        let titulo = "Publicación tasada!".to_string();
+        let publicacion = state.db.get_publicacion(query.id).unwrap();
+        let dni_usuario_receptor = publicacion.dni_usuario;
+        let indice_usuario_receptor = state.db.encontrar_dni(dni_usuario_receptor).unwrap();
+        let detalle = format!(
+            "Tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!",
+            query.precio.unwrap()
+        );
+        let url = format!("/publicacion/{}", query.id);
+        state.db.enviar_notificacion(indice_usuario_receptor, titulo, detalle, url);
+    }
     Json(ResponseTasarPublicacion{tasado: respuesta})
 }
 
-async fn enviar_notificacion( State(state): State<SharedState>,
-Json(query): Json<QueryEnviarNotificacion>
-) -> Json<ResponseEnviarNotificacion>{
-    let mut state = state.write().await;
-    let index = state.db.encontrar_dni(query.dni);
-    let respuesta = state.db.enviar_notificacion(query,index);
-    Json(ResponseEnviarNotificacion{enviada: respuesta})
-}
 
 async fn crear_oferta( State(state): State<SharedState>,
 Json(query): Json<QueryCrearOferta>
 ) -> Json<ResponseCrearOferta>{
     let mut state = state.write().await;
     let respuesta = state.db.crear_oferta(query);
-    Json(ResponseCrearOferta{estado: respuesta})
+
+    if let Some(id) = respuesta {
+        let oferta = state.db.get_trueque(id).unwrap();
+        let publicacion_receptora = oferta.receptor.1;
+        let publicacion_receptora = state.db.get_publicacion(publicacion_receptora).unwrap();
+        let dni_receptor = oferta.receptor.0;
+        let dni_ofertante = oferta.oferta.0;
+        let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+        let titulo = "Nueva Oferta de Trueque!".to_string();
+        let detalle = format!("Has recibido una oferta de trueque en tu {} presiona aquí para verla!", publicacion_receptora.titulo);
+        let url = format!("/trueque/{id}");
+
+        state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    }
+    Json(ResponseCrearOferta{estado: respuesta.is_some()})
 }
 
 async fn obtener_trueques ( State(state): State<SharedState>,
@@ -554,6 +571,19 @@ Json(query): Json<QueryAceptarOferta>
     let id = query.id;
     let mut state = state.write().await;
     let respuesta = state.db.aceptar_oferta(id);
+
+    let oferta = state.db.get_trueque(id).unwrap();
+    let dni_receptor = oferta.receptor.0;
+    let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
+    let dni_ofertante = oferta.oferta.0;
+    let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+    let receptor = state.db.obtener_datos_usuario(indice_receptor);
+    let titulo = "Oferta Aceptada".to_string();
+    let detalle = format!("{} ha aceptado tu oferta! presiona aquí para ver los detalles!", receptor.nombre_y_apellido);
+    let url = format!("/trueque/{id}");
+
+    state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    
     Json(ResponseAceptarOferta{aceptada : respuesta})
 
 }
@@ -565,8 +595,18 @@ Json(query): Json<QueryRechazarOferta>
     let id = query.id;
     let mut state = state.write().await;
     let respuesta = state.db.rechazar_oferta(id);
-    Json(ResponseRechazarOferta{rechazada : respuesta})
+    let oferta = state.db.get_trueque(id).unwrap();
+    let dni_receptor = oferta.receptor.0;
+    let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
+    let dni_ofertante = oferta.oferta.0;
+    let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+    let receptor = state.db.obtener_datos_usuario(indice_receptor);
+    let titulo = "Oferta Rechazada".to_string();
+    let detalle = format!("{} ha rechazado tu oferta :(",receptor.nombre_y_apellido);
+    let url = format!("/trueque/{id}");
 
+    state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    Json(ResponseRechazarOferta{rechazada : respuesta})
 }
 
 async fn cambiar_trueque_a_definido( State(state): State<SharedState>,

@@ -1,6 +1,5 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
-use crate::convenient_request::send_notification;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
@@ -249,14 +248,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                 let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                 let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
                 if let Some(window) = window() {
-                match window.location().href() {
-                    Ok(href) => {
-                        log::info!("la href es {}",href);
-                        send_notification("Publicación tasada!".to_string(), format!("tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!", (&*input_publication_price_state).clone().unwrap()), href, dni_usuario);
-                    },
-                    Err(err) => log::error!("Failed to get href: {:?}", err),
-                };
-
                    window.location().reload().unwrap();
                 }
             });
@@ -284,10 +275,6 @@ pub fn publication_molecule(props : &Props) -> Html {
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
         });
-        if let Some(window) = window() {
-            let dni_receptor = receptor.0;
-            send_notification("Nueva Oferta de Trueque!".to_string(), format!("Has recibido una oferta de trueque en tu {} cliquea aquí para verla!", ((&*cloned_datos_publicacion).clone().unwrap().titulo)), window.location().href().unwrap(), dni_receptor);
-        }
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }

@@ -1,4 +1,3 @@
-use datos_comunes::{QueryEnviarNotificacion, ResponseEnviarNotificacion};
 use reqwasm::http::Request;
 use serde::{de::DeserializeOwned, Serialize};
 use wasm_bindgen_futures::spawn_local;
@@ -35,18 +34,4 @@ pub fn request_post<Q, R>(
             }
         }
     });
-}
-
-
-pub fn send_notification(titulo:String, detalle:String, url:String, dni:u64){
-    
-    let query = QueryEnviarNotificacion {
-        dni,
-        titulo,
-        detalle,
-        url,
-    };
-
-    request_post("/api/enviar_notificacion", query, |_respuesta:ResponseEnviarNotificacion|{});
-
 }
