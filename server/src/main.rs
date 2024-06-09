@@ -101,6 +101,7 @@ async fn main() {
         .route("/api/obtener_trueque", post(obtener_trueque))
         .route("/api/aceptar_oferta", post(aceptar_oferta))
         .route("/api/rechazar_oferta", post(rechazar_oferta))
+        .route("/api/cancelar_oferta", post(cancelar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
         .route("/api/obtener_sucursal_por_dni", post(obtener_sucursal))
         .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
@@ -555,8 +556,8 @@ Json(query): Json<QueryAceptarOferta>
 ) -> Json<ResponseAceptarOferta>{
     let id = query.id;
     let mut state = state.write().await;
+    
     let respuesta = state.db.aceptar_oferta(id);
-
     let oferta = state.db.get_trueque(id).unwrap();
     let dni_receptor = oferta.receptor.0;
     let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
@@ -588,8 +589,18 @@ Json(query): Json<QueryRechazarOferta>
     let titulo = "Oferta Rechazada".to_string();
     let detalle = format!("{} ha rechazado tu oferta :(",receptor.nombre_y_apellido);
     let url = format!("/trueque/{id}");
+    let respuesta = state.db.rechazar_oferta(id);
 
     state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    log::info!("oferta rechazada notifiacion enviada a {}",dni_ofertante);
+    Json(ResponseRechazarOferta{rechazada : respuesta})
+}
+
+async fn cancelar_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryRechazarOferta>
+) -> Json<ResponseRechazarOferta>{
+    let id = query.id;
+    let mut state = state.write().await;
     let respuesta = state.db.rechazar_oferta(id);
     Json(ResponseRechazarOferta{rechazada : respuesta})
 }

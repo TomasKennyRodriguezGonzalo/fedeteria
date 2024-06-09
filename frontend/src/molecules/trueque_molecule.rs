@@ -14,6 +14,7 @@ use yew_hooks::use_effect_once;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use chrono::{DateTime, Datelike, Local, NaiveDate, TimeZone, Weekday};
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -25,6 +26,13 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
     let (user_store, user_dispatch) = use_store::<UserStore>();
     let dni = user_store.dni.unwrap();
+
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
+    let show_accept_offer_state = use_state(|| false);
+    let show_decline_offer_state = use_state(|| false);
+    let show_call_off_offer_state = use_state(|| false);
+
 
     let loaded: UseStateHandle<bool> = use_state(|| false);
     let cloned_loaded = loaded.clone();
@@ -118,9 +126,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
         ||{}
     });
 
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_receptor_username = receptor_username.clone();
     let cloned_trueque_state = trueque_state.clone();
     let accept_offer = Callback::from(move |_event: MouseEvent| {
+        let cloned_information_dispatch = cloned_information_dispatch.clone();
         // Lógica de aceptar oferta
         let trueque_state = cloned_trueque_state.clone();
         let receptor_username = cloned_receptor_username.clone();
@@ -132,8 +142,9 @@ pub fn trueque_molecule (props : &Props) -> Html {
             let trueque_state = trueque_state.clone();
             if let Some(window) = window() {
                 window.location().reload().unwrap();
-            }
-        });
+                }
+            });
+            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
     });
 
     //traigo el navigator para volver para atras    
@@ -141,7 +152,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let navigator_cloned = navigator.clone();
 
     //traigo y clone el dispatch para el feedback
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
     let information_dispatch = information_dispatch.clone();
 
     let cloned_receptor_username = receptor_username.clone();
@@ -300,6 +311,90 @@ pub fn trueque_molecule (props : &Props) -> Html {
     }
     );
 
+    let cloned_show_accept_offer = show_accept_offer_state.clone();
+    let show_accept_offer = Callback::from(move |_| {
+        cloned_show_accept_offer.set(true);
+    });
+
+    let cloned_show_accept_offer = show_accept_offer_state.clone();
+    let hide_accept_offer = Callback::from(move |_| {
+        cloned_show_accept_offer.set(false);
+    });
+    
+    let cloned_show_decline_offer_state = show_decline_offer_state.clone();
+    let show_decline_offer = Callback::from(move |_|{
+        let cloned_show_decline_offer_state = cloned_show_decline_offer_state.clone();
+        cloned_show_decline_offer_state.set(true);
+    });
+
+    let cloned_show_decline_offer_state = show_decline_offer_state.clone();
+    let hide_decline_offer = Callback::from(move |_|{
+        let cloned_show_decline_offer_state = cloned_show_decline_offer_state.clone();
+        cloned_show_decline_offer_state.set(false);
+    });
+
+    let cloned_show_call_off_offer_state = show_call_off_offer_state.clone();
+    let show_call_off_offer = Callback::from(move |_|{
+        let cloned_show_call_off_offer_state = cloned_show_call_off_offer_state.clone();
+        cloned_show_call_off_offer_state.set(true);
+    });
+
+    let cloned_show_call_off_offer_state = show_call_off_offer_state.clone();
+    let hide_call_off_offer = Callback::from(move |_|{
+        let cloned_show_call_off_offer_state = cloned_show_call_off_offer_state.clone();
+        cloned_show_call_off_offer_state.set(false);
+    });
+
+
+    
+    // Llamado cuando el ofertante cancela la oferta, se utiliza la misma lógica que el rechazar oferta salvo en el frontend
+    //traigo el navigator para volver para atras    
+    let navigator = use_navigator().unwrap();
+    let navigator_cloned = navigator.clone();
+    //traigo y clone el dispatch para el feedback
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+    let information_dispatch = information_dispatch.clone();
+    let cloned_receptor_username = receptor_username.clone();
+    let cloned_trueque_state = trueque_state.clone();
+    let call_off_offer = Callback::from(move |_event: MouseEvent| {
+        // Lógica de cancelar oferta
+        let receptor_username = cloned_receptor_username.clone();
+        let trueque_state = cloned_trueque_state.clone();
+        //hago otro clone para armar la query mas abajo
+        let cloned_trueque_state = cloned_trueque_state.clone();
+        let query = QueryRechazarOferta{
+            id : id_trueque,
+        };
+        request_post("/api/cancelar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
+            let trueque_state = trueque_state.clone();
+            let receptor_username = receptor_username.clone();
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
+        });
+
+        //obtengo DNI de receptor e ID de su publicacion, y armo la query
+        let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
+        let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
+        let query = QueryTruequesFiltrados {
+            filtro_codigo_ofertante: None,
+            filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
+            //filtro_ofertante: None,
+            //filtro_receptor: cloned_dni,
+            filtro_dni_integrantes: Some(dni_receptor.clone()),
+            filtro_estado: Some(EstadoTrueque::Oferta),
+            filtro_fecha: None,
+            filtro_id_publicacion: Some(id_publication.clone()),
+            filtro_sucursal: None,
+        };
+
+        //hago el mensaje
+        information_dispatch.reduce_mut(|store| store.messages.push(format!("Cancelaste la oferta con exito")));
+        //vuelvo para atras
+        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+
+    });
+    
     html! {
         <div class="trueque-box">
             if *loaded {
@@ -351,13 +446,13 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Oferta => html!{
                                     if dni == trueque.receptor.0 {
                                         <div class="accept-offer">
-                                            <button class="accept" onclick={accept_offer}>{"Aceptar Oferta"}</button>
-                                            <button class="decline" onclick={decline_offer}>{"Rechazar Oferta"}</button>
+                                            <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
+                                            <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
                                         </div>
                                     }
                                     else {
                                         if dni == trueque.oferta.0 {
-                                            <button class="decline" onclick={decline_offer}>{"Cancelar Oferta"}</button>
+                                            <button class="decline" onclick={show_call_off_offer}>{"Cancelar Oferta"}</button>
                                         }
                                     }
                                 },
@@ -432,6 +527,15 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                             }
                         }
+                }
+                if *show_decline_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere rechazar la oferta?" confirm_func={(decline_offer).clone()} reject_func={hide_decline_offer} />
+                }
+                if *show_accept_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere aceptar la oferta?" confirm_func={accept_offer} reject_func={hide_accept_offer} />
+                }
+                if *show_call_off_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere cancelar la oferta?" confirm_func={call_off_offer} reject_func={hide_call_off_offer} />
                 }
         } else {
             <div class="loading"></div>
