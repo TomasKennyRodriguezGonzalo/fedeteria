@@ -426,8 +426,8 @@ Json(query): Json<QueryTogglePublicationPause>
 ) -> Json<ResponseTogglePublicationPause>{
     let mut state = state.write().await;
     let id = query.id;
-    state.db.alternar_pausa_publicacion(&id);
-    Json(ResponseTogglePublicationPause{changed : true})
+    let pauso = state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : pauso})
 }
 
 

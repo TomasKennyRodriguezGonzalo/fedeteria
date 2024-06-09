@@ -298,9 +298,31 @@ impl Database {
         true
     }
 
-    pub fn alternar_pausa_publicacion (&mut self, id : &usize) {
-        self.publicaciones.get_mut(id).unwrap().alternar_pausa();
-        self.guardar();
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize) -> bool{
+        let trueques = &self.trueques;
+        let publicacion = self.publicaciones.get_mut(id).unwrap();
+        if publicacion.pausada {
+            if !Database::hay_trueques_definidos(publicacion.ofertas.clone(), trueques) {
+                publicacion.alternar_pausa();
+                self.guardar();
+                return true;
+            }
+        }
+        else {
+            publicacion.alternar_pausa();
+            self.guardar();
+            return true;
+        }
+        false
+    }
+        
+    fn hay_trueques_definidos (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
+        for id_trueque in trueques_a_verificar {
+            if trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn eliminar_publicacion (&mut self, id : usize)->bool{
