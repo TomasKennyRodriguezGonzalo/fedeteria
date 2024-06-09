@@ -15,6 +15,7 @@ pub struct Usuario {
     pub rol: RolDeUsuario,
     pub estado: EstadoCuenta,
     pub notificaciones: Vec<Notificacion>,
+    pub puntos: i64,
 }
 
 
@@ -72,6 +73,7 @@ impl Usuario {
             rol: RolDeUsuario::Normal,
             estado: EstadoCuenta::Activa { intentos: 3 },
             notificaciones : Vec::new(),
+            puntos : 0,
         }
     }
 }

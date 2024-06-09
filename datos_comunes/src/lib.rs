@@ -112,14 +112,15 @@ pub struct ResponseAddOffice {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryGetUserInfo {
-    pub dni:u64,
+    pub dni: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseGetUserInfo {
-    pub nombre_y_ap:String,
-    pub email:String,
+    pub nombre_y_ap: String,
+    pub email: String,
     pub nacimiento: DateTime<Local>,
+    pub puntos: i64,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]

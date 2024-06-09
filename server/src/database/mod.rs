@@ -514,7 +514,7 @@ impl Database {
         //los hago antes a los codigos porque tira error de borrowing
         //codigos.0 ----> codigo_receptor
         //codigos.1 ----> codigo_ofertante
-        let codigos = self.generar_codigos_de_trueque();
+        let codigos = self.generar_codigos_de_trueque() ;
         let trueque = self.trueques.get_mut(&query.id);
         if let Some(trueque_actual) = trueque {
             /*let hay_otros_trueques = trueques_copia.iter().
