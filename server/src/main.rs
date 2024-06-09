@@ -377,14 +377,19 @@ async fn get_datos_publicacion (
 
 async fn get_user_info( State(state): State<SharedState>,
 Json(query): Json<QueryGetUserInfo>
-) -> Json<Option<ResponseGetUserInfo>>{
+) -> Json<Option<ResponseGetUserInfo>> {
     let state = state.read().await;
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
         let usuario = state.db.obtener_datos_usuario(res);
-        let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
+        let response = ResponseGetUserInfo {
+            nombre_y_ap: usuario.nombre_y_apellido.clone(),
+            email: usuario.email.clone(),
+            nacimiento: usuario.nacimiento.clone(),
+            puntos: usuario.puntos
+        };
         Json(Some(response))
-    } else{
+    } else {
         Json(None)
     }
 }

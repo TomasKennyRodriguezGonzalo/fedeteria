@@ -25,9 +25,8 @@ pub fn notifications_page() -> Html {
             dni,
         };
         request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
-            let mut notificaciones = respuesta.notificaciones;
-            notificaciones.reverse();
-            notification_list.set(notificaciones);
+            let notificaciones = respuesta;
+            notification_list.set(notificaciones.notificaciones);
         });
         
         || {}
@@ -36,7 +35,7 @@ pub fn notifications_page() -> Html {
 let cloned_dni = dni.clone();
 let cloned_notification_list = notification_list.clone();
 let delete_notification = Callback::from(move |index| {
-    log::info!("el index a borrar es {}", index);
+    log::info!("el index a borrar es {}",index);
     // Elimino la notificación con el indice recibido de IndexedButton y el dni del usuario del UserStore
     let notification_list = cloned_notification_list.clone();
     let query = QueryEliminarNotificacion
@@ -53,9 +52,12 @@ let delete_notification = Callback::from(move |index| {
     html! {
         <div class="notifications-box">
             <h1 class="title">{"Notificaciones"}</h1>
+            if (&*notification_list).clone().is_empty(){
+                <h1>{"Aún no tienes notificaciones"}</h1>
+            }                
             <ul>
                 {
-                    (&*notification_list).iter().map(|index| {
+                    (&*notification_list).iter().enumerate().map(|(index, _notification)| {
                         html! {
                             <li>
                                 <NotificationThumbnail id={index} dni={dni.clone()}/>
