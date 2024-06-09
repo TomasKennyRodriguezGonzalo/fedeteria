@@ -382,41 +382,39 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                             <li>
                                             <div class="trueque-pendiente">
                                                 <h2>{"Seleccione una sucursal para concretar el trueque (los domingos ninguna sucursal se encontrará abierta)"}</h2>
-                                                <br/>
-                                                <select value="select-sucursal" id="sucursales" onchange={select_sucursal_onchange.clone()}>
-                                                    <option value="-1">{"---"}</option>
-                                                    {
-                                                        (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
-                                                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
-                                                        }).collect::<Html>()
+                                                <div class="input">
+                                                    <select value="select-sucursal" id="sucursales" onchange={select_sucursal_onchange.clone()}>
+                                                        <option value="-1">{"---"}</option>
+                                                        {
+                                                            (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
+                                                                <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
+                                                            }).collect::<Html>()
+                                                        }
+                                                    </select>
+                                                    <h2>{"Ingrese una fecha"}</h2>
+                                                    <input type="date" name="fecha-trueque" onchange={date_changed}/>
+                                                    <h2>{"Horario: "}</h2>
+                                                    <select value="select-hora" id="horas" onchange={select_hora_onchange.clone()}>
+                                                        <option value="-1">{"---"}</option>
+                                                        {
+                                                            obtener_horas_sucursal().iter().enumerate().map(|(index, hora)| html!{
+                                                                <option value={index.to_string()}>{hora}</option>
+                                                            }).collect::<Html>()
+                                                        }
+                                                    </select>
+                                                    <h2>{":"}</h2>
+                                                    <select value="select-minutos" id="minutos" onchange={select_minutos_onchange.clone()}>
+                                                        <option value="-1">{"---"}</option>
+                                                        {
+                                                            obtener_minutos_posibles().iter().enumerate().map(|(index, minutos)| html!{
+                                                                <option value={index.to_string()}>{minutos}</option>
+                                                            }).collect::<Html>()
+                                                        }
+                                                    </select>
+                                                    if ((&*select_sucursal_value_state).clone() != -1) && ((&*select_hora_value_state).clone() != -1) && ((&*select_minutos_value_state).clone() != -1) && (!(&*fecha_state).clone().is_empty()) { 
+                                                        <GenericButton text="Rellenar Datos de Trueque" onclick_event={change_trade_to_defined}/>
                                                     }
-                                                </select>
-                                                <br/>
-                                                <h2>{"Ingrese una fecha"}</h2>
-                                                <input type="date" name="fecha-trueque" onchange={date_changed}/>
-                                                <br/>
-                                                <h2>{"Seleccione hora"}</h2>
-                                                <select value="select-hora" id="horas" onchange={select_hora_onchange.clone()}>
-                                                    <option value="-1">{"---"}</option>
-                                                    {
-                                                        obtener_horas_sucursal().iter().enumerate().map(|(index, hora)| html!{
-                                                            <option value={index.to_string()}>{hora}</option>
-                                                        }).collect::<Html>()
-                                                    }
-                                                </select>
-                                                <br/>
-                                                <h2>{"Seleccione minutos"}</h2>
-                                                <select value="select-minutos" id="minutos" onchange={select_minutos_onchange.clone()}>
-                                                    <option value="-1">{"---"}</option>
-                                                    {
-                                                        obtener_minutos_posibles().iter().enumerate().map(|(index, minutos)| html!{
-                                                            <option value={index.to_string()}>{minutos}</option>
-                                                        }).collect::<Html>()
-                                                    }
-                                                </select>
-                                                if ((&*select_sucursal_value_state).clone() != -1) && ((&*select_hora_value_state).clone() != -1) && ((&*select_minutos_value_state).clone() != -1) && (!(&*fecha_state).clone().is_empty()) { 
-                                                    <GenericButton text="Rellenar Datos de Trueque" onclick_event={change_trade_to_defined}/>
-                                                }
+                                                </div>
                                             </div>
                                             </li>
                                         }
