@@ -654,9 +654,9 @@ fn get_database_por_defecto() -> Database {
     ];
     // (nombre, dni, rol). la contraseña es igual al dni. el email se genera en base al nombre
     let usuarios = [
-        ("Fede", 1, Dueño),
-        ("Lucas", 2, Empleado { sucursal: 0 }),
-        ("Matías", 3, Normal),
+        ("Alan", 1, Dueño),
+        ("Bauti", 2, Empleado { sucursal: 0 }),
+        ("Carlos", 3, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
@@ -665,6 +665,7 @@ fn get_database_por_defecto() -> Database {
         (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
         (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
         (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
+        (2, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
     ];
     
     for sucursal in sucursales {
