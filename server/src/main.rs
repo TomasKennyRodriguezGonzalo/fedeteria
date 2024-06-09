@@ -571,8 +571,8 @@ Json(query): Json<QueryAceptarOferta>
 ) -> Json<ResponseAceptarOferta>{
     let id = query.id;
     let mut state = state.write().await;
+    
     let respuesta = state.db.aceptar_oferta(id);
-
     let oferta = state.db.get_trueque(id).unwrap();
     let dni_receptor = oferta.receptor.0;
     let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
@@ -595,7 +595,6 @@ Json(query): Json<QueryRechazarOferta>
 ) -> Json<ResponseRechazarOferta>{
     let id = query.id;
     let mut state = state.write().await;
-    let respuesta = state.db.rechazar_oferta(id);
     let oferta = state.db.get_trueque(id).unwrap();
     let dni_receptor = oferta.receptor.0;
     let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
@@ -605,6 +604,7 @@ Json(query): Json<QueryRechazarOferta>
     let titulo = "Oferta Rechazada".to_string();
     let detalle = format!("{} ha rechazado tu oferta :(",receptor.nombre_y_apellido);
     let url = format!("/trueque/{id}");
+    let respuesta = state.db.rechazar_oferta(id);
 
     state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
     log::info!("oferta rechazada notifiacion enviada a {}",dni_ofertante);

@@ -89,14 +89,14 @@ pub fn publication_molecule(props : &Props) -> Html {
         || {}
     });
 
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
-    let information_dispatch = information_dispatch.clone();
+
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     let navigator = use_navigator().unwrap();
     let cloned_navigator = navigator.clone();
     let delete_publication = Callback::from(move |_e:MouseEvent|{
         let cloned_navigator = cloned_navigator.clone();
-        let information_dispatch = information_dispatch.clone();
+        let information_dispatch = cloned_information_dispatch.clone();
         let cloned_id = cloned_id.clone();
         let query = QueryEliminarPublicacion
         {
@@ -118,15 +118,14 @@ pub fn publication_molecule(props : &Props) -> Html {
         });
     });
 
-    let cloned_datos_publicacion = datos_publicacion.clone();
     
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
-    let information_dispatch = information_dispatch.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     let toggle_publication_pause = Callback::from(move |()| {
         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
         let id = cloned_id.clone();
-        let information_dispatch = information_dispatch.clone();
+        let information_dispatch = cloned_information_dispatch.clone();
         spawn_local(async move{
             let cloned_datos_publicacion = cloned_datos_publicacion.clone();
             let information_dispatch = information_dispatch.clone();
@@ -228,6 +227,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     });
 
     //este es el estado de la publicacion en si, el que cambia cuando se aprieta el boton "tasar publicacion"
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_input_publication_price_state = input_publication_price_state.clone();
     let publication_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_publication_price_state = publication_price_state.clone();
@@ -249,11 +249,14 @@ pub fn publication_molecule(props : &Props) -> Html {
                 let input_publication_price_state = input_publication_price_state.clone();
                 let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                 let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
+
+                
                 if let Some(window) = window() {
                    window.location().reload().unwrap();
                 }
             });
         }
+        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Publicación tasada en ${}.", (input_publication_price_state.clone()).unwrap())));
         publication_price_state.set((&*input_publication_price_state).clone());
     });
 
@@ -276,10 +279,10 @@ pub fn publication_molecule(props : &Props) -> Html {
         request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
-            }
         });
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
 
     });
 
