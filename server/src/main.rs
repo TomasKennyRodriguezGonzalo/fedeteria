@@ -607,6 +607,7 @@ Json(query): Json<QueryRechazarOferta>
     let url = format!("/trueque/{id}");
 
     state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    log::info!("oferta rechazada notifiacion enviada a {}",dni_ofertante);
     Json(ResponseRechazarOferta{rechazada : respuesta})
 }
 
