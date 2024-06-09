@@ -669,9 +669,57 @@ impl Database {
         respuesta
     }
     //puede concretarse o rechazarse
-    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) {
-        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado;
+    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
+        //cambio el estado del trueque, guardo, y lo obtengo
+        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
         self.guardar();
+        let trueque = self.trueques.get(&query.id_trueque).unwrap();
+
+        //obtengo receptor
+        let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque.receptor.0).unwrap();
+        //obtengo ofertante
+        let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
+        //creo mail receptor
+        let mail_receptor; 
+        let mail_ofertante;
+        if query.estado == EstadoTrueque::Finalizado {
+            mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. 
+                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            
+            //creo mail ofertante
+            mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. 
+                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+        }
+        else {
+            mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. 
+                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            
+            //creo mail ofertante
+            mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. 
+                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+        }
+        
+        //Creo un vec para pasarlo al main y enviarlo
+        /* Contenido del Vec:
+        0 --> Nombre Receptor
+        1 --> Mail Receptor
+        2 --> Mensaje Receptor
+        3 --> Nombre Ofertante
+        4 --> Mail Ofertante
+        5 --> Mensaje Ofertante
+            */
+        let mut contenidos_mensajes = Vec::new();
+        contenidos_mensajes.push(receptor.nombre_y_apellido.clone());
+        contenidos_mensajes.push(receptor.email.clone());
+        contenidos_mensajes.push(mail_receptor.clone());
+        contenidos_mensajes.push(ofertante.nombre_y_apellido.clone());
+        contenidos_mensajes.push(ofertante.email.clone());
+        contenidos_mensajes.push(mail_ofertante.clone());
+        contenidos_mensajes
     }
 }
 

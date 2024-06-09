@@ -1,4 +1,4 @@
-use datos_comunes::{EstadoTrueque, QueryFinishTrade, QueryGetOffice, QueryTruequesFiltrados, ResponseFinishTrade, ResponseGetOffice, ResponseTruequePorCodigos};
+use datos_comunes::{EstadoTrueque, QueryFinishTrade, QueryGetOffice, QueryObtenerTrueque, QueryTruequesFiltrados, ResponseFinishTrade, ResponseGetOffice, ResponseObtenerTrueque, ResponseTruequePorCodigos};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
@@ -45,13 +45,13 @@ pub fn finish_trade_molecule () -> Html {
     let show_trade_search_state = use_state(|| false);
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     //obtengo el trueque (si hay coincidencia)
-    let trade_state = use_state(|| None);
-    let cloned_trade_state = trade_state.clone();
+    let trade_index_state = use_state(|| None);
+    let cloned_trade_index_state = trade_index_state.clone();
     let search_trade = Callback::from(move |()| {
 
         let cloned_offer_code_state = cloned_offer_code_state.clone();
         let cloned_receptor_code_state = cloned_receptor_code_state.clone();
-        let cloned_trade_state = cloned_trade_state.clone();
+        let cloned_trade_index_state = cloned_trade_index_state.clone();
         cloned_show_trade_search_state.set(true);
 
         let query;
@@ -85,20 +85,20 @@ pub fn finish_trade_molecule () -> Html {
         request_post("/api/obtener_trueque_por_codigos", query, move |respuesta: ResponseTruequePorCodigos| {
             log::info!("Trueque encontrado: {:?}", respuesta.trueque_encontrado);
             if let Some (mut trueque) = respuesta.trueque_encontrado {
-                cloned_trade_state.set(Some(trueque.remove(0)));
+                cloned_trade_index_state.set(Some(trueque.remove(0)));
             }
             else {
-                cloned_trade_state.set(None);
+                cloned_trade_index_state.set(None);
             }
         });
         || {};
     });
 
     //concreto el trueque (hay que ver como agregar la logica de las compras)
-    let cloned_trade_state = trade_state.clone();
+    let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let finish_trade = Callback::from(move |()| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_state).unwrap().clone()};
+        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
         || {};
@@ -106,10 +106,10 @@ pub fn finish_trade_molecule () -> Html {
     });
 
     //rechazo el trueque
-    let cloned_trade_state = trade_state.clone();
+    let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let abort_trade = Callback::from(move |()| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_state).unwrap().clone()};
+        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
         || {};
@@ -122,7 +122,7 @@ pub fn finish_trade_molecule () -> Html {
         cloned_show_trade_search_state.set(false);
     });
 
-    let cloned_trade_state = trade_state.clone();
+    let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
 
     html! {
@@ -140,7 +140,7 @@ pub fn finish_trade_molecule () -> Html {
             </div>
             <div class="show-trade">
                 if *cloned_show_trade_search_state {
-                    if let Some(id) = &*cloned_trade_state {
+                    if let Some(id) = &*cloned_trade_index_state {
                         <TruequeMolecule id={id.clone()}/>
                             <li><GenericButton text = "Confirmar Trueque" onclick_event = {finish_trade}/></li>
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {abort_trade}/></li>
