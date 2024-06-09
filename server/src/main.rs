@@ -572,7 +572,6 @@ Json(query): Json<QueryRechazarOferta>
 async fn cambiar_trueque_a_definido( State(state): State<SharedState>,
 Json(query): Json<QueryCambiarTruequeADefinido>
 ) -> Json<ResponseCambiarTruequeADefinido>{
-
     let mut state = state.write().await;
     let respuesta = state.db.cambiar_trueque_a_definido(query);
     Json(ResponseCambiarTruequeADefinido{cambiado : respuesta})
