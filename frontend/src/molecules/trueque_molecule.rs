@@ -4,7 +4,7 @@ use web_sys::{window, FormData, HtmlFormElement, HtmlInputElement};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use crate::information_store::InformationStore;
-use crate::{convenient_request::send_notification, router::Route};
+use crate::router::Route;
 use crate::request_post;
 use crate::components::publication_thumbnail::PublicationThumbnail;
 use crate::store::UserStore;
@@ -131,10 +131,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
             let receptor_username = receptor_username.clone();
             let trueque_state = trueque_state.clone();
             if let Some(window) = window() {
-                //enviar notificacion al ofertante
-                send_notification("Oferta Aceptada".to_string(), format!("{} ha aceptado tu oferta! cliquea aquí para ver los detalles!",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
-            }
-            if let Some(window) = window() {
                 window.location().reload().unwrap();
             }
         });
@@ -162,10 +158,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
         request_post("/api/rechazar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
             let trueque_state = trueque_state.clone();
             let receptor_username = receptor_username.clone();
-            if let Some(window) = window() {
-                //enviar notificacion al ofertante
-                send_notification("Oferta Rechazada".to_string(), format!("{} ha rechazado tu oferta :(",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
-            }
             if let Some(window) = window() {
                 window.location().reload().unwrap();
             }

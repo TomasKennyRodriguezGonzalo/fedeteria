@@ -23,11 +23,11 @@ pub type ResponseTruequesFiltrados = Vec<usize>;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Trueque {
-    //oferta.0 --> dni del usuario ofertante
-    //oferta.1 --> coleccion de indices de publicaciones de oferta 
+    /// oferta.0 --> dni del usuario ofertante.
+    /// oferta.1 --> coleccion de indices de publicaciones de oferta. 
     pub oferta: (u64, Vec<usize>),
-    //receptor.0 --> dni del usuario receptor
-    //receptor.1 --> indice de publicacion de receptor 
+    /// receptor.0 --> dni del usuario receptor.
+    /// receptor.1 --> indice de publicacion de receptor.
     pub receptor: (u64, usize),
     pub sucursal: Option<String>,
     pub fecha: Option<DateTime<Local>>,

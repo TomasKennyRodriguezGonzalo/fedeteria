@@ -289,20 +289,6 @@ pub struct ResponseTasarPublicacion{
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct QueryEnviarNotificacion{
-    pub dni:u64,
-    pub titulo:String,
-    pub detalle:String,
-    pub url:String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResponseEnviarNotificacion{
-    //podria no tener respuesta, charlar
-    pub enviada:bool
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct QueryObtenerPrecioMaxDeRango{
     pub rango:Option<u8>,
 }

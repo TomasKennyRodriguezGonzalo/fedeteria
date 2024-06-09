@@ -1,6 +1,5 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
-use crate::convenient_request::send_notification;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
@@ -251,14 +250,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                 let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                 let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
                 if let Some(window) = window() {
-                match window.location().href() {
-                    Ok(href) => {
-                        log::info!("la href es {}",href);
-                        send_notification("Publicación tasada!".to_string(), format!("tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!", (&*input_publication_price_state).clone().unwrap()), href, dni_usuario);
-                    },
-                    Err(err) => log::error!("Failed to get href: {:?}", err),
-                };
-
                    window.location().reload().unwrap();
                 }
             });
@@ -286,10 +277,6 @@ pub fn publication_molecule(props : &Props) -> Html {
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
         });
-        if let Some(window) = window() {
-            let dni_receptor = receptor.0;
-            send_notification("Nueva Oferta de Trueque!".to_string(), format!("Has recibido una oferta de trueque en tu {} cliquea aquí para verla!", ((&*cloned_datos_publicacion).clone().unwrap().titulo)), window.location().href().unwrap(), dni_receptor);
-        }
         if let Some(window) = window() {
             window.location().reload().unwrap();
         }
@@ -396,7 +383,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
-                    <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
                     if publicacion.precio.is_some() {
                         if publicacion.pausada {
                             <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
@@ -438,9 +425,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
-                if (&*activate_delete_publication_state).clone(){
-                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
-                }
+                // if (&*activate_delete_publication_state).clone(){
+                //     <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
+                // }
                 if (&*activate_assign_price_state).clone(){
                     <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }
