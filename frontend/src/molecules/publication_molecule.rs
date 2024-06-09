@@ -274,10 +274,10 @@ pub fn publication_molecule(props : &Props) -> Html {
         request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         });
-        if let Some(window) = window() {
-            window.location().reload().unwrap();
-        }
 
     });
 
