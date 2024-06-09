@@ -13,3 +13,4 @@ pub mod publication_molecule;
 pub mod publication_selector_molecule;
 pub mod trueque_molecule;
 pub mod trade_grid_molecule;
+pub mod finish_trade_molecule;

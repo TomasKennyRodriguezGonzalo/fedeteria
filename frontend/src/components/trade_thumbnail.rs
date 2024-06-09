@@ -153,6 +153,9 @@ pub fn trade_thumbnail (props: &TradeThumbnailProps) -> Html {
                             EstadoTrueque::Finalizado => { html! {
                                 <h1 class="subtitle">{"FINALIZADO"}</h1>
                             }}
+                            EstadoTrueque::Rechazado => { html! {
+                                <h1 class="subtitle">{"RECHAZADO"}</h1>
+                            }}
                         }
                     }
                     <Link<Route> to={Route::Trueque{id}}>
