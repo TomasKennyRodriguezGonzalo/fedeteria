@@ -258,7 +258,7 @@ async fn registrar_usuario(
             "Registro en Fedeteria".to_string(),
             format!("Hola {}!\nUsted ha creado una cuenta en la página https://fedeteria.com, con el DNI {}.\n
 Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, usuario.dni)
-        ).await {
+        ) {
             Ok(_) => log::info!("Mail enviado al usuario."),
             Err(_) => log::error!("Error al enviar mail."),
         }
@@ -637,7 +637,7 @@ Json(query): Json<QueryCambiarTruequeADefinido>
         //envio mail a receptor
         match send_email(vec_string.get(0).unwrap().clone(), vec_string.get(1).unwrap().clone(),
                 "Registro en Fedeteria".to_string(),
-                vec_string.get(2).unwrap().clone()).await {
+                vec_string.get(2).unwrap().clone()) {
                 Ok(_) => log::info!("Mail enviado al receptor."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
             }
@@ -645,8 +645,8 @@ Json(query): Json<QueryCambiarTruequeADefinido>
         //envio mail al ofertante
         match send_email(vec_string.get(3).unwrap().clone(), vec_string.get(4).unwrap().clone(),
                 "Registro en Fedeteria".to_string(),
-                vec_string.get(5).unwrap().clone()).await {
-                Ok(_) => log::info!("Mail enviado al receptor."),
+                vec_string.get(5).unwrap().clone()) {
+                Ok(_) => log::info!("Mail enviado al ofertante."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
             }
     }
