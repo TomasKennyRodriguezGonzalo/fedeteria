@@ -78,11 +78,13 @@ pub fn privileged_actions_page() -> Html {
                                 // <li><Link<Route> to={Route::DeleteOffice}>{"Eliminar Sucursal"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::UnlockAccount}>{"Desbloquear Cuenta"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::AwaitingPricePublication}>{"Ver Publicaciones Esperando Tasación"}</Link<Route>></li>
+                                <li><Link<Route> to={Route::FinishTrade}>{"Concretar Trueque"}</Link<Route>></li>
                             </ul>
                         }},
                         RolDeUsuario::Empleado { sucursal : _ } => {html! {
                             <ul class="option-list">
                                 <li><Link<Route> to={Route::AwaitingPricePublication}>{"Ver Publicaciones Esperando Tasación"}</Link<Route>></li>
+                                <li><Link<Route> to={Route::FinishTrade}>{"Concretar Trueque"}</Link<Route>></li>
                             </ul>
                         }},
                     }            

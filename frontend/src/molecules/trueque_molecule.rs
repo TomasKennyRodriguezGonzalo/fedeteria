@@ -176,10 +176,10 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
         let query = QueryTruequesFiltrados {
             filtro_codigo_ofertante: None,
-            filtro_codigo_receptor: Some(dni_receptor.clone()),
+            filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
             //filtro_ofertante: None,
             //filtro_receptor: cloned_dni,
-            filtro_dni_integrantes: None,
+            filtro_dni_integrantes: Some(dni_receptor.clone()),
             filtro_estado: Some(EstadoTrueque::Oferta),
             filtro_fecha: None,
             filtro_id_publicacion: Some(id_publication.clone()),
@@ -326,6 +326,9 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Finalizado => html! {  
                                         <h1 class="title">{"Trueque Finalizado"}</h1>
                                 },
+                                datos_comunes::EstadoTrueque::Rechazado => html! {  
+                                    <h1 class="title">{"Trueque Rechazado"}</h1>
+                            },
                             }
                         }
                         <div class="publications-container">
@@ -430,6 +433,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Finalizado => html! {
                                     <>
                                         <h1 class="title">{"Trueque Finalizado"}</h1>
+                                    </>
+                                },
+                                datos_comunes::EstadoTrueque::Rechazado => html! {
+                                    <>
+                                        <h1 class="title">{"Trueque Rechazado"}</h1>
                                     </>
                                 },
                             }

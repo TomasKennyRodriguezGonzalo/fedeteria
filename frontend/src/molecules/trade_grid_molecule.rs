@@ -63,7 +63,7 @@ pub fn trade_grid_molecule(props: &Props) -> Html {
                                             <h1>{"No se encontraron ofertas!"}</h1>
                                         }
                                     },
-                                    EstadoTrueque::Definido | EstadoTrueque::Pendiente | EstadoTrueque::Finalizado => {
+                                    EstadoTrueque::Definido | EstadoTrueque::Pendiente | EstadoTrueque::Finalizado | EstadoTrueque::Rechazado => {
                                         html! {
                                             <h1>{"No se encontraron trueques!"}</h1>
                                         }

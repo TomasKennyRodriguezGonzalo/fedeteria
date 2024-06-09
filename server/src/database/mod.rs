@@ -151,6 +151,11 @@ impl Database {
         self.sucursales.clone()
     }
 
+    pub fn obtener_sucursal (&self, id: usize) -> String {
+        let sucursal = self.sucursales.get(id).unwrap().clone();
+        sucursal.nombre
+    }
+
     pub fn agregar_sucursal (&mut self, nueva: QueryAddOffice) -> bool {
         if self.sucursales.iter().map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
             self.sucursales.push(Sucursal { nombre: nueva.office_to_add });
@@ -474,6 +479,36 @@ impl Database {
         respuesta
     }
 
+    pub fn obtener_trueque_por_codigos (&self, query: QueryTruequesFiltrados) -> Vec<usize>  {
+        let codigo_receptor = query.filtro_codigo_receptor.unwrap();
+        let codigo_ofertante = query.filtro_codigo_ofertante.unwrap();
+        log::info!("CODIGOS RECIBIDOS: RECEPTOR: {:?}, OFERTANTE: {:?}", codigo_receptor, codigo_ofertante);
+        let obtenidos = self.trueques.iter()
+                    .filter(|(_, trueque)| trueque.estado == EstadoTrueque::Definido)
+                    .filter(|(_, trueque)| {
+                        trueque.codigo_ofertante.map(|ofertante| ofertante == codigo_ofertante)
+                        .unwrap_or(true)
+                    })
+                    .filter(|(_, trueque)| {
+                        trueque.codigo_receptor.map(|receptor| receptor == codigo_receptor)
+                        .unwrap_or(true)
+                    })
+                    .filter(|(_, trueque)| {
+                        query.filtro_sucursal.as_ref().map(|sucursal_filtro| {
+                            if let Some(sucursal) = &trueque.sucursal {
+                                sucursal_filtro == sucursal
+                            }
+                            else {
+                                true
+                            }
+                        })
+                        .unwrap_or(true)
+                    });
+        let respuesta = obtenidos.map(|(i, _)| *i).collect();
+        log::info!("RESPUESTA: {:?}", respuesta);
+        respuesta
+    }
+
     pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
         self.trueques.get(&id)
     }
@@ -649,6 +684,11 @@ impl Database {
         (receptor, ofertante)
     }
 
+    //puede concretarse o rechazarse
+    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) {
+        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado;
+        self.guardar();
+    }
 }
 
 fn get_database_por_defecto() -> Database {
