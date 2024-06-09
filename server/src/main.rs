@@ -79,7 +79,6 @@ async fn main() {
         .route("/api/agregar_sucursal", post(agregar_sucursal))
         .route("/api/eliminar_sucursal", post(eliminar_sucursal))
         .route("/api/obtener_sucursales", get(obtener_sucursales))
-        .route("/api/obtener_sucursal_por_dni", post(obtener_sucursal))
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
         .route("/api/get_user_info", post(get_user_info))
@@ -104,8 +103,6 @@ async fn main() {
         .route("/api/aceptar_oferta", post(aceptar_oferta))
         .route("/api/rechazar_oferta", post(rechazar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
-        .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
-        .route("/api/finalizar_trueque", post(finalizar_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -426,8 +423,8 @@ Json(query): Json<QueryTogglePublicationPause>
 ) -> Json<ResponseTogglePublicationPause>{
     let mut state = state.write().await;
     let id = query.id;
-    let pauso = state.db.alternar_pausa_publicacion(&id);
-    Json(ResponseTogglePublicationPause{changed : pauso})
+    state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : true})
 }
 
 
@@ -537,19 +534,6 @@ Json(query): Json<QueryTruequesFiltrados>
     Json(respuesta)
 }
 
-//devuelve solo el indice de uno, el deseado, obtenerlo en el front
-async fn obtener_trueque_por_codigos ( State(state): State<SharedState>,
-Json(query): Json<QueryTruequesFiltrados>
-) -> Json<ResponseTruequePorCodigos> {
-    let state = state.read().await;
-    let respuesta = state.db.obtener_trueque_por_codigos(query);
-    log::info!("VECTOR DE ID DE TRUEQUE: {:?}", respuesta);
-    if respuesta.len() == 1 {
-        return Json(ResponseTruequePorCodigos {trueque_encontrado: Some(respuesta)})
-    }
-    Json(ResponseTruequePorCodigos {trueque_encontrado: None})
-}
-
 async fn obtener_trueque ( State(state): State<SharedState>,
 Json(query): Json<QueryObtenerTrueque>
 ) -> Json<ResponseObtenerTrueque> {
@@ -582,11 +566,13 @@ Json(query): Json<QueryRechazarOferta>
     let mut state = state.write().await;
     let respuesta = state.db.rechazar_oferta(id);
     Json(ResponseRechazarOferta{rechazada : respuesta})
+
 }
 
 async fn cambiar_trueque_a_definido( State(state): State<SharedState>,
 Json(query): Json<QueryCambiarTruequeADefinido>
 ) -> Json<ResponseCambiarTruequeADefinido>{
+
     let mut state = state.write().await;
     let respuesta = state.db.cambiar_trueque_a_definido(query);
     /* Contenido del Vec:
@@ -615,29 +601,5 @@ Json(query): Json<QueryCambiarTruequeADefinido>
             }
     }
     Json(ResponseCambiarTruequeADefinido{cambiado : respuesta.0})
-}
 
-//forma rara de obtener sucursal, mala mia (Franco), implemente mal el trueque, guardo en el trueque el string de sucursal
-//en lugar del id, para la tercera demo si hago tiempo reacondiciono el tema ese
-async fn obtener_sucursal (
-    State(state): State<SharedState>,
-    Json(query): Json<QueryGetOffice>
-) -> Json<ResponseGetOffice> {
-    let state = state.read().await;
-    let indice_usuario = state.db.encontrar_dni(query.dni).unwrap();
-    let rol = state.db.obtener_rol_usuario(indice_usuario);
-    if let RolDeUsuario::Empleado { sucursal } = rol {
-        let sucursal_empleado = state.db.obtener_sucursal(sucursal);
-        return Json(ResponseGetOffice {sucursal: Some(sucursal_empleado)});
-    }
-    Json(ResponseGetOffice {sucursal: None})  
-}
-
-async fn finalizar_trueque (
-    State(state): State<SharedState>,
-    Json(query): Json<QueryFinishTrade>
-) -> Json<ResponseFinishTrade> {
-    let mut state = state.write().await;
-    state.db.finalizar_trueque(query);
-    Json(ResponseFinishTrade {respuesta: true})
 }
