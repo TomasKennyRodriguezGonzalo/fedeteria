@@ -643,4 +643,3 @@ Json(query): Json<QueryCambiarTruequeADefinido>
     Json(ResponseCambiarTruequeADefinido{cambiado : respuesta.0})
 
 }
-

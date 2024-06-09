@@ -366,3 +366,30 @@ pub struct ResponseCambiarTruequeADefinido {
     pub cambiado: bool
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryGetOffice {
+    //dni del empleado o dueño
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseGetOffice{
+    //si hay una sucursal, es empleado, sino, dueño
+    pub sucursal: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTruequePorCodigos{
+    pub trueque_encontrado: Option<Vec<usize>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseFinishTrade {
+    pub respuesta: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryFinishTrade{
+    pub id_trueque: usize,
+    pub estado: EstadoTrueque,
+}

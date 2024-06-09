@@ -141,8 +141,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                     Ok(response) => {
                         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                         let information_dispatch = information_dispatch.clone();
+                        let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
                         if response.changed {
-                            let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
+                            //let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
                             let publicacion_pausada = (&*cloned_datos_publicacion).clone().unwrap().pausada.clone();
                             let information_dispatch = information_dispatch.clone();
                             if (publicacion_pausada).clone() {
@@ -155,6 +156,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                 window.location().reload().unwrap();
                             }
                         } else {
+                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido pasuada debido a que tienes trueques definidos",nombre.clone())));
                             log::info!("No se cambió la publicación.")
                         }
                     }

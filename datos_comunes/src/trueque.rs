@@ -85,6 +85,7 @@ pub enum EstadoTrueque {
     Pendiente,
     Definido,
     Finalizado,
+    Rechazado
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
