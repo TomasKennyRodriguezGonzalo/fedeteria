@@ -381,7 +381,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
-                    <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
                     if publicacion.precio.is_some() {
                         if publicacion.pausada {
                             <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
@@ -423,9 +423,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
-                if (&*activate_delete_publication_state).clone(){
-                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
-                }
+                // if (&*activate_delete_publication_state).clone(){
+                //     <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
+                // }
                 if (&*activate_assign_price_state).clone(){
                     <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }
