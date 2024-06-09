@@ -214,16 +214,11 @@ async fn obtener_rol(
     State(state): State<SharedState>,
     Json(query): Json<QueryGetUserRole>
 ) -> Json<Option<ResponseGetUserRole>> {
-    log::info!("Entré a obtener rol!");
     let state = state.read().await;
-    log::info!("El dni recibido es: {}", query.dni);
     let indice = state.db.encontrar_dni(query.dni);
-    log::info!("El indice es: {:?}", indice);
     if indice.is_some() {
         let rol_obtenido = state.db.obtener_rol_usuario(indice.unwrap());
-        log::info!("El rol es: {:?}", rol_obtenido.clone());
         let respuesta = ResponseGetUserRole{rol:rol_obtenido.clone()};
-        log::info!("La respuesta es: {:?}", respuesta.clone());
         return Json(Some(respuesta));
     }
     Json(None)
@@ -234,15 +229,12 @@ async fn retornar_usuario(
     Json(query): Json<QueryObtenerUsuario>
 ) -> Json<Option<ResponseObtenerUsuario>> {
     let state = state.write().await;
-    log::info!("we are checking with {} dni ",query.dni.clone()); 
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
        let usuario = state.db.obtener_datos_usuario(res);
        let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
-       log::info!("username found "); 
        Json(Some(response))
     } else{
-        log::info!("username not found "); 
         Json(None)
     }
 }
@@ -266,9 +258,7 @@ Si cree que esto es un error, por favor contacte a un administrador.", usuario.n
         }
     }
     
-    let res = Json(res);
-    log::info!("{res:?}");
-    res
+    Json(res)
 }
 
 async fn agregar_sucursal (State(state): State<SharedState>,
@@ -308,11 +298,8 @@ async fn obtener_sucursales (
 
 async fn crear_publicacion (
     State(state): State<SharedState>,
-    // req: Request,
     mut multipart: Multipart,
 ) -> Result<String, ()> {
-    // log::info!("La request es: {req:?}");
-    log::info!("Recibido mensaje de crear publicacion!");
     let titulo = multipart.next_field().await.unwrap().unwrap();
     assert_eq!(titulo.name().unwrap(), "Titulo");
     let titulo = titulo.text().await.unwrap();
@@ -329,13 +316,11 @@ async fn crear_publicacion (
     let dni_str = dni.text().await.unwrap();
     let dni: u64 = dni_str.parse().unwrap();
 
-    log::info!("Dni: {dni}, titulo: {titulo}, descripcion: {descripcion}");
     let mut imagenes = vec![];
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
         } else {
-            log::info!("Recibido field de otro tipo, nombre: {:?}", field.name());
             continue;
         };
         log::info!("Recibido archivo: {file_name}");
@@ -397,10 +382,8 @@ Json(query): Json<QueryGetUserInfo>
     if let Some(res) = res {
         let usuario = state.db.obtener_datos_usuario(res);
         let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
-        log::info!("username found "); 
         Json(Some(response))
     } else{
-        log::info!("username not found "); 
         Json(None)
     }
 }
@@ -415,7 +398,6 @@ Json(query): Json<QueryCambiarDatosUsuario>
             index, query.full_name.clone(), query.email.clone(), query.born_date.clone()); 
         Json(response)
     } else {
-        log::error!("Usuario no encontrado!");
         Json(Err(ErrorCambiarDatosUsuario::ErrorIndeterminado))
     }
 }
@@ -653,7 +635,6 @@ Json(query): Json<QueryTruequesFiltrados>
 ) -> Json<ResponseTruequePorCodigos> {
     let state = state.read().await;
     let respuesta = state.db.obtener_trueque_por_codigos(query);
-    log::info!("VECTOR DE ID DE TRUEQUE: {:?}", respuesta);
     if respuesta.len() == 1 {
         return Json(ResponseTruequePorCodigos {trueque_encontrado: Some(respuesta)})
     }
