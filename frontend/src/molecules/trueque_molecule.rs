@@ -33,6 +33,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let trueque_state: UseStateHandle<Option<Trueque>> = use_state(||None);
     let cloned_trueque_state = trueque_state.clone();
 
+
     let receptor_username: UseStateHandle<String> = use_state(|| "".to_string());
     let cloned_receptor_username = receptor_username.clone();
     
@@ -40,10 +41,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let cloned_ofertante_username = ofertante_username.clone();
     let state_office_list:UseStateHandle<Vec<Sucursal>> = use_state(|| Vec::new());
     let cloned_state_office_list = state_office_list.clone();
+    //hago un estado para la fecha para la verificacion de cancelacion antes de 1 dia del trueque
+    let trade_date_state = use_state(|| None);
+    let cloned_trade_date_state = trade_date_state.clone();
 
     use_effect_once(move ||{
         let cloned_state_office_list = cloned_state_office_list.clone();
         let trueque_state = cloned_trueque_state.clone();
+        let cloned_trade_date_state = cloned_trade_date_state.clone();
         let query = QueryObtenerTrueque{
             id : id_trueque,  
         };
@@ -51,12 +56,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
         request_post("/api/obtener_trueque", query, move |respuesta:ResponseObtenerTrueque|{
             let cloned_state_office_list = cloned_state_office_list.clone();
             let cloned_trueque_state = trueque_state.clone();
+            let cloned_trade_date_state = cloned_trade_date_state.clone();
             match respuesta {
                 Ok(trueque) =>{
                     cloned_trueque_state.set(Some(trueque.clone()));
 
                     let ofertante_username = cloned_ofertante_username.clone();
                     let receptor_username = cloned_receptor_username.clone();
+                    cloned_trade_date_state.set(trueque.fecha);
 
                     if trueque.estado == EstadoTrueque::Pendiente{
                         spawn_local(async move {
@@ -87,7 +94,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
                             }
                         });  
                     }
-
                     let query = QueryGetUserInfo{
                         dni: trueque.oferta.0 
                     };
@@ -117,6 +123,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
         ||{}
     });
+
+    let cloned_trade_date_state = trade_date_state.clone();
 
     let cloned_receptor_username = receptor_username.clone();
     let cloned_trueque_state = trueque_state.clone();
@@ -159,37 +167,51 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let query = QueryRechazarOferta{
             id : id_trueque,
         };
-        request_post("/api/rechazar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
-            let trueque_state = trueque_state.clone();
-            let receptor_username = receptor_username.clone();
-            if let Some(window) = window() {
-                //enviar notificacion al ofertante
-                send_notification("Oferta Rechazada".to_string(), format!("{} ha rechazado tu oferta :(",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
-            }
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
-            }
-        });
 
-        //obtengo DNI de receptor e ID de su publicacion, y armo la query
-        let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
-        let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
-        let query = QueryTruequesFiltrados {
-            filtro_codigo_ofertante: None,
-            filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
-            //filtro_ofertante: None,
-            //filtro_receptor: cloned_dni,
-            filtro_dni_integrantes: Some(dni_receptor.clone()),
-            filtro_estado: Some(EstadoTrueque::Oferta),
-            filtro_fecha: None,
-            filtro_id_publicacion: Some(id_publication.clone()),
-            filtro_sucursal: None,
-        };
+        //hardcodeo una diferencia, para cancelar en el caso de que sea una oferta
+        let mut diferencia_dias = 2;
 
-        //hago el mensaje
-        information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
-        //vuelvo para atras
-        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+        //si hay una fecha, quiere decir que se definio el trueque, entonces, obtengo la diferencia verdadera
+        if let Some (fecha_trueque) = &*cloned_trade_date_state {
+            let fecha_actual = Local::now();
+            diferencia_dias = fecha_trueque.signed_duration_since(fecha_actual).num_days();
+            log::info!("CALCULE LA DIFERENCIA DE DIAS, ES: {:?}", diferencia_dias);
+        }
+        
+        //si la diferencia de dias, es mayor a 1, rechazo el trueque, (u oferta, dependiendo del estado)
+        if diferencia_dias >= 1 {
+            request_post("/api/rechazar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
+                let trueque_state = trueque_state.clone();
+                let receptor_username = receptor_username.clone();
+                if let Some(window) = window() {
+                    //enviar notificacion al ofertante
+                    send_notification("Oferta Rechazada".to_string(), format!("{} ha rechazado tu oferta :(",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
+                }
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
+                }
+            });
+    
+            //obtengo DNI de receptor e ID de su publicacion, y armo la query
+            let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
+            let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
+            let query = QueryTruequesFiltrados {
+                filtro_codigo_ofertante: None,
+                filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
+                //filtro_ofertante: None,
+                //filtro_receptor: cloned_dni,
+                filtro_dni_integrantes: Some(dni_receptor.clone()),
+                filtro_estado: Some(EstadoTrueque::Oferta),
+                filtro_fecha: None,
+                filtro_id_publicacion: Some(id_publication.clone()),
+                filtro_sucursal: None,
+            };
+    
+            //hago el mensaje
+            information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
+            //vuelvo para atras
+            let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query); 
+        }
 
     });
 
@@ -428,6 +450,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
                                         <h1 class="title">{"Trueque Definido"}</h1>
+                                        <button class="decline" onclick={decline_offer}>{"Cancelar Trueque"}</button>
                                     </>
                                 },
                                 datos_comunes::EstadoTrueque::Finalizado => html! {

@@ -106,6 +106,7 @@ async fn main() {
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
         .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
         .route("/api/finalizar_trueque", post(finalizar_trueque))
+        .route("/api/rechazar_trueque", post(finalizar_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -639,6 +640,28 @@ async fn finalizar_trueque (
     Json(query): Json<QueryFinishTrade>
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
-    state.db.finalizar_trueque(query);
+    let mensajes = state.db.finalizar_trueque(query);
+    /* Contenido del Vec:
+    0 --> Nombre Receptor
+    1 --> Mail Receptor
+    2 --> Mensaje Receptor
+    3 --> Nombre Ofertante
+    4 --> Mail Ofertante
+    5 --> Mensaje Ofertante
+    */
+    match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+            "Registro en Fedeteria".to_string(),
+            mensajes.get(2).unwrap().clone()).await {
+            Ok(_) => log::info!("Mail enviado al receptor."),
+            Err(_) => log::error!("Error al enviar mail al receptor."),
+        }
+
+    //envio mail al ofertante
+    match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+            "Registro en Fedeteria".to_string(),
+            mensajes.get(5).unwrap().clone()).await {
+            Ok(_) => log::info!("Mail enviado al receptor."),
+            Err(_) => log::error!("Error al enviar mail al receptor."),
+        }
     Json(ResponseFinishTrade {respuesta: true})
 }
