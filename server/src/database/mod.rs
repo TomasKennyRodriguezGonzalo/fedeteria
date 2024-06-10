@@ -617,7 +617,7 @@ impl Database {
         let trueques = &self.trueques;
         let publicacion = self.publicaciones.get_mut(id).unwrap();
         if publicacion.pausada {
-            if !Database::hay_trueques_definidos(publicacion.ofertas.clone(), trueques) {
+            if !Database::hay_trueques_pendientes_o_definidos(publicacion.ofertas.clone(), trueques) {
                 publicacion.alternar_pausa();
                 self.guardar();
                 return true;
@@ -631,9 +631,9 @@ impl Database {
         false
     }
         
-    fn hay_trueques_definidos (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
+    fn hay_trueques_pendientes_o_definidos (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
         for id_trueque in trueques_a_verificar {
-            if trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido {
+            if (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Pendiente) {
                 return true;
             }
         }
@@ -672,13 +672,15 @@ impl Database {
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
         //cambio el estado del trueque, guardo, y lo obtengo
         self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
-        self.guardar();
+        
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
-
-        //obtengo receptor
-        let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque.receptor.0).unwrap();
-        //obtengo ofertante
-        let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
+        let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
+        let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
+        self.usuarios[ofertante].puntos += 1;
+        self.usuarios[receptor].puntos += 1;
+        self.guardar();
+        let ofertante = &self.usuarios[ofertante];
+        let receptor = &self.usuarios[receptor];
         //creo mail receptor
         let mail_receptor; 
         let mail_ofertante;
@@ -703,6 +705,9 @@ impl Database {
                     ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
         }
         
+
+
+
         //Creo un vec para pasarlo al main y enviarlo
         /* Contenido del Vec:
         0 --> Nombre Receptor

@@ -142,7 +142,7 @@ pub fn finish_trade_molecule () -> Html {
                 if *cloned_show_trade_search_state {
                     if let Some(id) = &*cloned_trade_index_state {
                         <TruequeMolecule id={id.clone()}/>
-                            <li><GenericButton text = "Confirmar Trueque" onclick_event = {finish_trade}/></li>
+                            <li><GenericButton text = "Concretar Trueque" onclick_event = {finish_trade}/></li>
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {abort_trade}/></li>
                             <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation.clone()}/></li>
                     }

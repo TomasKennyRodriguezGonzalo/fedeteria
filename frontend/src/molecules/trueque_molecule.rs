@@ -484,7 +484,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                     <>
                                         if dni == trueque.receptor.0 {
                                             if *show_time_error_state{
-                                                <h2 class="error-text">{"Debes seleccionar una fecha y horario válidos"}</h2>
+                                                <h2 class="error-text">{"Debes seleccionar una fecha valida"}</h2>
                                             }
                                             if *show_another_trade_error_state{
                                                 <h2 class="error-text">{"Selecciona otra fecha y/o horario, la seleccionada esta ocupada"}</h2>
