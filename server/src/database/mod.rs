@@ -435,7 +435,10 @@ impl Database {
         respuesta
     }
 
-    pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
+    pub fn validar_trueque(&mut self, id: usize) {
+        self.resolver_estado_trueque(&id);
+    }
+    pub fn get_trueque(&self, id: usize) -> Option<&Trueque> {
         self.trueques.get(&id)
     }
 
@@ -573,7 +576,7 @@ impl Database {
         //codigos.1 ----> codigo_ofertante
         let codigos = self.generar_codigos_de_trueque() ;
         let trueque = self.trueques.get_mut(&query.id);
-        if let Some(trueque_actual) = trueque {
+        if let Some(trueque) = trueque {
             /*let hay_otros_trueques = trueques_copia.iter().
                 filter(|(_, trueque)| {
                     trueque.sucursal.as_ref().map(|sucursal| sucursal == &query.sucursal)
@@ -597,26 +600,26 @@ impl Database {
                 //los hago antes a los codigos porque tira error de borrowing
                 //codigos.0 ----> codigo_receptor
                 //codigos.1 ----> codigo_ofertante
-                trueque_actual.estado = EstadoTrueque::Definido;
-                trueque_actual.fecha = Some(query.fecha);
-                trueque_actual.hora = Some(query.hora);
-                trueque_actual.minutos = Some(query.minutos);
-                trueque_actual.sucursal = Some(query.sucursal);
-                trueque_actual.codigo_receptor = Some(codigos.0);
-                trueque_actual.codigo_ofertante = Some(codigos.1);
+                trueque.estado = EstadoTrueque::Definido;
+                trueque.fecha = Some(query.fecha);
+                trueque.hora = Some(query.hora);
+                trueque.minutos = Some(query.minutos);
+                trueque.sucursal = Some(query.sucursal);
+                trueque.codigo_receptor = Some(codigos.0);
+                trueque.codigo_ofertante = Some(codigos.1);
                 //obtengo receptor
-                let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.receptor.0).unwrap();
+                let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque.receptor.0).unwrap();
                 //obtengo ofertante
-                let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.oferta.0).unwrap();
+                let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
                 //creo mail receptor
                 let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
-                                trueque_actual.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque_actual.codigo_receptor.unwrap());
+                                receptor.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                trueque.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
                 let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
-                                trueque_actual.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque_actual.codigo_ofertante.unwrap());
+                                ofertante.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                trueque.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
                 /* Contenido del Vec:
@@ -635,6 +638,10 @@ impl Database {
                 contenidos_mensajes.push(ofertante.email.clone());
                 contenidos_mensajes.push(mail_ofertante.clone());
                 let mensajes = Some(contenidos_mensajes);
+
+                for publicacion in trueque.get_publicaciones() {
+                    self.resolver_estado_trueques_de_publicacion(&publicacion);
+                }
                 self.guardar();
                 return (true, mensajes);
             }
@@ -724,9 +731,13 @@ impl Database {
     //puede concretarse o rechazarse
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
         //cambio el estado del trueque, guardo, y lo obtengo
-        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
-        
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        if trueque.estado != EstadoTrueque::Definido {
+            return vec![];
+        }
+        trueque.estado = query.estado.clone();
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
+        
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
         self.usuarios[ofertante].puntos += 1;

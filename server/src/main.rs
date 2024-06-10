@@ -16,6 +16,7 @@ use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
+use tokio::task::spawn_local;
 use std::hash::{Hash, Hasher, DefaultHasher};
 use std::io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
@@ -547,7 +548,8 @@ async fn obtener_trueque ( State(state): State<SharedState>,
 Json(query): Json<QueryObtenerTrueque>
 ) -> Json<ResponseObtenerTrueque> {
     let id = query.id;
-    let state = state.read().await;
+    let mut state = state.write().await;
+    state.db.validar_trueque(id);
     if let Some(trueque) = state.db.get_trueque(id) {
         Json(Ok(trueque.clone()))
     } else {
@@ -680,6 +682,9 @@ async fn finalizar_trueque (
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
     let mensajes = state.db.finalizar_trueque(query);
+    if mensajes.is_empty() {    
+        return Json(ResponseFinishTrade {respuesta: false});
+    }
     /* Contenido del Vec:
     0 --> Nombre Receptor
     1 --> Mail Receptor
@@ -688,19 +693,25 @@ async fn finalizar_trueque (
     4 --> Mail Ofertante
     5 --> Mensaje Ofertante
     */
-    match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-            "Finalizacion de Trueque en Fedeteria".to_string(),
-            mensajes.get(2).unwrap().clone()) {
-            Ok(_) => log::info!("Mail enviado al receptor."),
-            Err(_) => log::error!("Error al enviar mail al receptor."),
+    let mensajes_c = mensajes.clone();
+    spawn_local(async move {
+        let mensajes = mensajes_c;
+        match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                "Finalizacion de Trueque en Fedeteria".to_string(),
+                mensajes.get(2).unwrap().clone()) {
+                Ok(_) => log::info!("Mail enviado al receptor."),
+                Err(_) => log::error!("Error al enviar mail al receptor."),
         }
+    });
 
     //envio mail al ofertante
+    spawn_local(async move {
     match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
             "Finalizacion de Trueque en Fedeteria".to_string(),
             mensajes.get(5).unwrap().clone()) {
             Ok(_) => log::info!("Mail enviado al receptor."),
             Err(_) => log::error!("Error al enviar mail al receptor."),
         }
+    });
     Json(ResponseFinishTrade {respuesta: true})
 }
