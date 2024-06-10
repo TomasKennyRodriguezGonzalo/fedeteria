@@ -24,6 +24,10 @@
             transform: initial;
         }
 
+        ul {
+            list-style: none;
+        }
+
         button, a, input[type="submit"] {
             font-weight: bold;   
             text-decoration: none;
@@ -1071,6 +1075,18 @@
             background-color: red;
         }
 
+        .trueque-box .time-selector {
+            display: flex;
+        }
+        .trueque-box .input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .trueque-box .input * {
+            margin: 5px 0px;
+        }
+
         /* --- trueque-grid --- */
         .trueque-grid {
             background-color: #114232;
@@ -1097,6 +1113,33 @@
         .trueque-grid ul li > a{
             all: initial;
             cursor: pointer;
+        }
+        /* --- finish-trade --- */
+        .finish-trade {
+            background-color: #114232;
+            display: grid;
+            color: white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding: 10px;
+        }
+
+        .finish-trade .codes-input * {
+            margin: 2px 0px;
+        }
+
+        .finish-trade .show-trade {
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0px;
+        }
+
+        .finish-trade .show-trade ul {
+            display: flex;
+            justify-content: space-evenly;
         }
 
     </style>

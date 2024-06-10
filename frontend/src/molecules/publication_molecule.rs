@@ -345,11 +345,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
-                    <li><Link<Route, DniURLQuery> to={Route::Profile} query={
-                        DniURLQuery {
-                            dni: publicacion.dni_usuario
-                        }
-                    }>{"Perfil del dueño"}</Link<Route, DniURLQuery>></li>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
@@ -379,16 +374,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                // Seccion de propuesta de oferta
-                <div class="publication-selector-container">
-                    if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
-                        if *show_selector_state { 
-                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
-                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
-                        }
-                    }
-                </div>
                 // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
@@ -400,9 +385,26 @@ pub fn publication_molecule(props : &Props) -> Html {
                             <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
                         }
                         <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
-                    }  
+                    }
+
                 </div>
+                } else {
+                    <Link<Route, DniURLQuery> to={Route::Profile} query={
+                        DniURLQuery {
+                            dni: publicacion.dni_usuario
+                        }
+                    }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>  
                 }
+                // Seccion de propuesta de oferta
+                <div class="publication-selector-container">
+                    if publicacion.dni_usuario != dni.clone().unwrap() {
+                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                        if *show_selector_state { 
+                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
+                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
+                        }
+                    }
+                </div>
                 // Seccion de tasacion de publicacion
                 {
                     if let Some(role) = &*role_state{
