@@ -734,7 +734,8 @@ fn get_database_por_defecto() -> Database {
     let usuarios = [
         ("Alan", 1, Dueño),
         ("Bauti", 2, Empleado { sucursal: 0 }),
-        ("Carlos", 3, Normal),
+        ("Carlos", 3, Empleado { sucursal: 1 } ),
+        ("Delfina", 4, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
