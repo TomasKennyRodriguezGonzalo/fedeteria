@@ -552,17 +552,13 @@ impl Database {
                 //obtengo ofertante
                 let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.oferta.0).unwrap();
                 //creo mail receptor
-                let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
-                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
-                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
                                 trueque_actual.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque_actual.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
-                let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
-                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
-                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
                                 trueque_actual.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque_actual.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
@@ -685,23 +681,19 @@ impl Database {
         let mail_receptor; 
         let mail_ofertante;
         if query.estado == EstadoTrueque::Finalizado {
-            mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. 
-                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+            mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
                     receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
             
             //creo mail ofertante
-            mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. 
-                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+            mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
                     ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
         }
         else {
-            mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. 
-                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+            mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
                     receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
             
             //creo mail ofertante
-            mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. 
-                    \n Si cree que esto es un error, por favor contacte a un administrador.", 
+            mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
                     ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
         }
         

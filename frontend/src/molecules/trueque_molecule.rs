@@ -211,13 +211,24 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 filtro_id_publicacion: Some(id_publication.clone()),
                 filtro_sucursal: None,
             };
-    
+            
+            log::info!("ESTADO: {:?}", (cloned_trueque_state.as_ref()).unwrap().estado);
+
             //hago el mensaje
-            information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
+            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("Cancelaste el trueque con exito")));
+            }
+            else {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
+            }
             //vuelvo para atras
             let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query); 
         }
-
+        else {
+            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("No es posible cancelar un trueque definido antes de un día de su concretacion")));
+            }
+        }
     });
 
     //select_sucursal
@@ -537,6 +548,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
                                         <h1 class="title">{"Trueque Definido"}</h1>
+                                        <h2>{""}</h2>
                                         <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                     </>
                                 },
