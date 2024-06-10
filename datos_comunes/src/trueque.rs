@@ -37,6 +37,8 @@ pub struct Trueque {
     pub estado: EstadoTrueque,
     pub codigo_ofertante: Option<u64>,
     pub codigo_receptor: Option<u64>,
+    // Para el front end...
+    pub valido: bool,
 }
 
 impl Trueque {
@@ -77,6 +79,12 @@ impl Trueque {
 
     pub fn verificar_codigos (&self, codigo_ofertante: u64, codigo_receptor: u64) -> bool{
         (self.codigo_ofertante == Some(codigo_ofertante)) && (self.codigo_receptor == Some(codigo_receptor))
+    }
+
+    pub fn get_publicaciones(&self) -> Vec<usize> {
+        let mut pubs = self.oferta.1.clone();
+        pubs.push(self.receptor.1);
+        pubs
     }
 }
 
