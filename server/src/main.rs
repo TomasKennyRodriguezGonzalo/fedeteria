@@ -628,7 +628,7 @@ Json(query): Json<QueryCambiarTruequeADefinido>
     if let Some(vec_string) = respuesta.1 {
         //envio mail a receptor
         match send_email(vec_string.get(0).unwrap().clone(), vec_string.get(1).unwrap().clone(),
-                "Registro en Fedeteria".to_string(),
+                "Definicion de Trueque en Fedeteria".to_string(),
                 vec_string.get(2).unwrap().clone()) {
                 Ok(_) => log::info!("Mail enviado al receptor."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
@@ -636,7 +636,7 @@ Json(query): Json<QueryCambiarTruequeADefinido>
         
         //envio mail al ofertante
         match send_email(vec_string.get(3).unwrap().clone(), vec_string.get(4).unwrap().clone(),
-                "Registro en Fedeteria".to_string(),
+                "Definicion de Trueque en Fedeteria".to_string(),
                 vec_string.get(5).unwrap().clone()) {
                 Ok(_) => log::info!("Mail enviado al ofertante."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
@@ -689,7 +689,7 @@ async fn finalizar_trueque (
     5 --> Mensaje Ofertante
     */
     match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-            "Registro en Fedeteria".to_string(),
+            "Finalizacion de Trueque en Fedeteria".to_string(),
             mensajes.get(2).unwrap().clone()) {
             Ok(_) => log::info!("Mail enviado al receptor."),
             Err(_) => log::error!("Error al enviar mail al receptor."),
@@ -697,7 +697,7 @@ async fn finalizar_trueque (
 
     //envio mail al ofertante
     match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
-            "Registro en Fedeteria".to_string(),
+            "Finalizacion de Trueque en Fedeteria".to_string(),
             mensajes.get(5).unwrap().clone()) {
             Ok(_) => log::info!("Mail enviado al receptor."),
             Err(_) => log::error!("Error al enviar mail al receptor."),
