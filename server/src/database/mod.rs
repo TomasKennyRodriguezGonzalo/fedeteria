@@ -672,13 +672,15 @@ impl Database {
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
         //cambio el estado del trueque, guardo, y lo obtengo
         self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
-        self.guardar();
+        
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
-
-        //obtengo receptor
-        let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque.receptor.0).unwrap();
-        //obtengo ofertante
-        let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
+        let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
+        let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
+        self.usuarios[ofertante].puntos += 1;
+        self.usuarios[receptor].puntos += 1;
+        self.guardar();
+        let ofertante = &self.usuarios[ofertante];
+        let receptor = &self.usuarios[receptor];
         //creo mail receptor
         let mail_receptor; 
         let mail_ofertante;
@@ -703,6 +705,9 @@ impl Database {
                     ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
         }
         
+
+
+
         //Creo un vec para pasarlo al main y enviarlo
         /* Contenido del Vec:
         0 --> Nombre Receptor
