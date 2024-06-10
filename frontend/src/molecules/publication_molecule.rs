@@ -157,7 +157,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                 window.location().reload().unwrap();
                             }
                         } else {
-                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido despasuada debido a que tienes trueques pendientes o definidos",nombre.clone())));
+                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido despasuada debido a que tienes trueques pendientes, definidos o finalizados",nombre.clone())));
                             log::info!("No se cambió la publicación.")
                         }
                     }

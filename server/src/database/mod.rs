@@ -670,7 +670,7 @@ impl Database {
         let trueques = &self.trueques;
         let publicacion = self.publicaciones.get_mut(id).unwrap();
         if publicacion.pausada {
-            if !Database::hay_trueques_pendientes_o_definidos(publicacion.ofertas.clone(), trueques) {
+            if !Database::hay_trueques_pendientes_definidos_finalizados(publicacion.ofertas.clone(), trueques) {
                 publicacion.alternar_pausa();
                 self.guardar();
                 return true;
@@ -684,9 +684,9 @@ impl Database {
         false
     }
         
-    fn hay_trueques_pendientes_o_definidos (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
+    fn hay_trueques_pendientes_definidos_finalizados (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
         for id_trueque in trueques_a_verificar {
-            if (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Pendiente) {
+            if (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Pendiente) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Finalizado) {
                 return true;
             }
         }
