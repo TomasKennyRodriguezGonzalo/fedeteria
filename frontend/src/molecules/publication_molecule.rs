@@ -278,13 +278,13 @@ pub fn publication_molecule(props : &Props) -> Html {
             dni_receptor : receptor.0,
             publicacion_receptora : receptor.1,
         };
-        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
+        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta| {
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         });
-        if let Some(window) = window() {
-            window.location().reload().unwrap();
-        }
 
     });
 
