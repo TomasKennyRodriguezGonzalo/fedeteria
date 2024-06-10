@@ -1,9 +1,10 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
-use crate::convenient_request::send_notification;
+use crate::pages::profile_page::DniURLQuery;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
+use yew_router::prelude::Link;
 use yewdux::use_store;
 use datos_comunes::*;
 use reqwasm::http::Request;
@@ -90,14 +91,14 @@ pub fn publication_molecule(props : &Props) -> Html {
         || {}
     });
 
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
-    let information_dispatch = information_dispatch.clone();
+
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     let navigator = use_navigator().unwrap();
     let cloned_navigator = navigator.clone();
     let delete_publication = Callback::from(move |_e:MouseEvent|{
         let cloned_navigator = cloned_navigator.clone();
-        let information_dispatch = information_dispatch.clone();
+        let information_dispatch = cloned_information_dispatch.clone();
         let cloned_id = cloned_id.clone();
         let query = QueryEliminarPublicacion
         {
@@ -119,15 +120,14 @@ pub fn publication_molecule(props : &Props) -> Html {
         });
     });
 
-    let cloned_datos_publicacion = datos_publicacion.clone();
     
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
-    let information_dispatch = information_dispatch.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     let toggle_publication_pause = Callback::from(move |()| {
         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
         let id = cloned_id.clone();
-        let information_dispatch = information_dispatch.clone();
+        let information_dispatch = cloned_information_dispatch.clone();
         spawn_local(async move{
             let cloned_datos_publicacion = cloned_datos_publicacion.clone();
             let information_dispatch = information_dispatch.clone();
@@ -142,8 +142,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                     Ok(response) => {
                         let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                         let information_dispatch = information_dispatch.clone();
+                        let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
                         if response.changed {
-                            let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
+                            //let nombre = (&*cloned_datos_publicacion).clone().unwrap().titulo.clone();
                             let publicacion_pausada = (&*cloned_datos_publicacion).clone().unwrap().pausada.clone();
                             let information_dispatch = information_dispatch.clone();
                             if (publicacion_pausada).clone() {
@@ -156,6 +157,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                 window.location().reload().unwrap();
                             }
                         } else {
+                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido despasuada debido a que tienes trueques pendientes o definidos",nombre.clone())));
                             log::info!("No se cambió la publicación.")
                         }
                     }
@@ -227,6 +229,7 @@ pub fn publication_molecule(props : &Props) -> Html {
     });
 
     //este es el estado de la publicacion en si, el que cambia cuando se aprieta el boton "tasar publicacion"
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_input_publication_price_state = input_publication_price_state.clone();
     let publication_price_state:UseStateHandle<Option<u64>> = use_state(|| None);
     let cloned_publication_price_state = publication_price_state.clone();
@@ -248,19 +251,14 @@ pub fn publication_molecule(props : &Props) -> Html {
                 let input_publication_price_state = input_publication_price_state.clone();
                 let cloned_datos_publicacion = cloned_datos_publicacion.clone();
                 let dni_usuario = (&*cloned_datos_publicacion).clone().unwrap().dni_usuario;
-                if let Some(window) = window() {
-                match window.location().href() {
-                    Ok(href) => {
-                        log::info!("la href es {}",href);
-                        send_notification("Publicación tasada!".to_string(), format!("tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!", (&*input_publication_price_state).clone().unwrap()), href, dni_usuario);
-                    },
-                    Err(err) => log::error!("Failed to get href: {:?}", err),
-                };
 
+                
+                if let Some(window) = window() {
                    window.location().reload().unwrap();
                 }
             });
         }
+        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Publicación tasada en ${}.", (input_publication_price_state.clone()).unwrap())));
         publication_price_state.set((&*input_publication_price_state).clone());
     });
 
@@ -280,17 +278,13 @@ pub fn publication_molecule(props : &Props) -> Html {
             dni_receptor : receptor.0,
             publicacion_receptora : receptor.1,
         };
-        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
+        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta| {
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         });
-        if let Some(window) = window() {
-            let dni_receptor = receptor.0;
-            send_notification("Nueva Oferta de Trueque!".to_string(), format!("Has recibido una oferta de trueque en tu {} cliquea aquí para verla!", ((&*cloned_datos_publicacion).clone().unwrap().titulo)), window.location().href().unwrap(), dni_receptor);
-        }
-        if let Some(window) = window() {
-            window.location().reload().unwrap();
-        }
 
     });
 
@@ -351,7 +345,11 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
-                    <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
+                    <li><Link<Route, DniURLQuery> to={Route::Profile} query={
+                        DniURLQuery {
+                            dni: publicacion.dni_usuario
+                        }
+                    }>{"Perfil del dueño"}</Link<Route, DniURLQuery>></li>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
@@ -394,7 +392,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
-                    <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
                     if publicacion.precio.is_some() {
                         if publicacion.pausada {
                             <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
@@ -436,9 +434,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
-                if (&*activate_delete_publication_state).clone(){
-                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
-                }
+                // if (&*activate_delete_publication_state).clone(){
+                //     <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
+                // }
                 if (&*activate_assign_price_state).clone(){
                     <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }

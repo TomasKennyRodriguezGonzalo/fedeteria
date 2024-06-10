@@ -6,7 +6,6 @@ use datos_comunes::*;
 use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
-
 use crate::mail::send_email;
 
 use self::usuario::{EstadoCuenta, Usuario};
@@ -292,12 +291,6 @@ impl Database {
         self.guardar();
         true
     }
-
-    pub fn alternar_pausa_publicacion (&mut self, id : &usize) {
-        self.publicaciones.get_mut(id).unwrap().alternar_pausa();
-        self.guardar();
-    }
-
     pub fn eliminar_publicacion (&mut self, id : usize)->bool{
         if self.publicaciones.get(&id).unwrap().ofertas.is_empty(){
             self.publicaciones.remove(&id);
@@ -347,7 +340,7 @@ impl Database {
     }
 
 
-    pub fn tasar_publicacion(&mut self, query:QueryTasarPublicacion)-> bool{
+    pub fn tasar_publicacion(&mut self, query: &QueryTasarPublicacion)-> bool{
         let publicacion = self.publicaciones
         .get_mut(&query.id);
 
@@ -360,24 +353,18 @@ impl Database {
         }
     }
 
-    pub fn enviar_notificacion(&mut self, query:QueryEnviarNotificacion, index:Option<usize>)-> bool{
-        if index.is_none(){
-            log::error!("index de usuario inexistente!");
-            return false
-        }
-        let usuario = self.usuarios.get_mut(index.unwrap());
-        let nueva_notificacion = Notificacion{
-            titulo : query.titulo,
-            detalle : query.detalle,
-            url : query.url,
+    pub fn enviar_notificacion(&mut self, indice_usuario_receptor: usize, titulo: String, detalle: String, url: String) {
+        let nueva_notificacion = Notificacion {
+            titulo,
+            detalle,
+            url,
         };
-        usuario.unwrap().notificaciones.push(nueva_notificacion);
+        self.usuarios[indice_usuario_receptor].notificaciones.push(nueva_notificacion);
         self.guardar();
-        true
     }
 
-    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> bool {
-        if let Some(indice) = self.encontrar_dni(query.dni_receptor) {
+    pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> Option<usize> {
+        if let Some(_) = self.encontrar_dni(query.dni_receptor) {
             // Crea el Trueque en estado de Oferta
             let oferta = Trueque{
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
@@ -410,32 +397,13 @@ impl Database {
                     }
                 }
                 self.guardar();
-                return true
+                return Some(index);
             }
             
         }
-        return false
+        return None
     }
 
-    /* .filter(|(_, publication)| {
-            query.filtro_nombre.as_ref()
-            .map(|nombre| publication.titulo.to_lowercase().contains(&nombre.to_lowercase()))
-            .unwrap_or(true) */
-
-    /*pub fn obtener_trueques (&self, query: QueryObtenerTrueques) -> Vec<usize> {
-        let obtenidos = self.trueques.iter().
-                        enumerate().
-                        filter(|(_, trueque)| trueque.1.estado == query.estado).
-                        filter(|(_,trueque)|{
-                            query.id_publicacion.as_ref()
-                            .map(|publicacion| trueque.1.receptor.1 == *publicacion)
-                            .unwrap_or(true)
-                        }) 
-                        .map(|(indice, _)| indice).
-                        collect();
-
-        obtenidos
-    }*/
 
     pub fn obtener_trueques (&self, query: QueryTruequesFiltrados) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
@@ -447,14 +415,6 @@ impl Database {
                         query.filtro_id_publicacion.map(|publicacion| (trueque.receptor.1 == publicacion) || (trueque.oferta.1.contains(&publicacion)))
                         .unwrap_or(true)
                     }).
-                    /*filter(|(_, trueque)| {
-                        query.filtro_ofertante.map(|dni_ofertante| trueque.oferta.0 == dni_ofertante)
-                        .unwrap_or(true)
-                    }).
-                    filter(|(_, trueque)| {
-                        query.filtro_receptor.map(|dni_receptor| trueque.receptor.0 == dni_receptor)
-                        .unwrap_or(true)
-                    }).*/
                     filter(|(_, trueque)| {
                         query.filtro_dni_integrantes.map(|dni_a_buscar| (trueque.oferta.0 == dni_a_buscar) || (trueque.receptor.0 == dni_a_buscar))
                         .unwrap_or(true)
@@ -554,7 +514,7 @@ impl Database {
         //los hago antes a los codigos porque tira error de borrowing
         //codigos.0 ----> codigo_receptor
         //codigos.1 ----> codigo_ofertante
-        let codigos = self.generar_codigos_de_trueque();
+        let codigos = self.generar_codigos_de_trueque() ;
         let trueque = self.trueques.get_mut(&query.id);
         if let Some(trueque_actual) = trueque {
             /*let hay_otros_trueques = trueques_copia.iter().
@@ -592,17 +552,13 @@ impl Database {
                 //obtengo ofertante
                 let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.oferta.0).unwrap();
                 //creo mail receptor
-                let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
-                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
-                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
                                 trueque_actual.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque_actual.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
-                let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, 
-                                junto al usuario {}, con DNI {}. Su codigo para presentar al momento del interacmbio es: {}. Por favor, no lo
-                                extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().to_string(), trueque_actual.clone().hora.unwrap(), 
+                let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
+                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
                                 trueque_actual.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque_actual.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
@@ -649,6 +605,119 @@ impl Database {
         (receptor, ofertante)
     }
 
+    pub fn obtener_sucursal (&self, id: usize) -> String {
+        let sucursal = self.sucursales.get(id).unwrap().clone();
+        sucursal.nombre
+    }
+    pub fn alternar_pausa_publicacion (&mut self, id : &usize) -> bool{
+        let trueques = &self.trueques;
+        let publicacion = self.publicaciones.get_mut(id).unwrap();
+        if publicacion.pausada {
+            if !Database::hay_trueques_pendientes_o_definidos(publicacion.ofertas.clone(), trueques) {
+                publicacion.alternar_pausa();
+                self.guardar();
+                return true;
+            }
+        }
+        else {
+            publicacion.alternar_pausa();
+            self.guardar();
+            return true;
+        }
+        false
+    }
+        
+    fn hay_trueques_pendientes_o_definidos (trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
+        for id_trueque in trueques_a_verificar {
+            if (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Pendiente) {
+                return true;
+            }
+        }
+        false
+    }
+    pub fn obtener_trueque_por_codigos (&self, query: QueryTruequesFiltrados) -> Vec<usize>  {
+        let codigo_receptor = query.filtro_codigo_receptor.unwrap();
+        let codigo_ofertante = query.filtro_codigo_ofertante.unwrap();
+        log::info!("CODIGOS RECIBIDOS: RECEPTOR: {:?}, OFERTANTE: {:?}", codigo_receptor, codigo_ofertante);
+        let obtenidos = self.trueques.iter()
+                    .filter(|(_, trueque)| trueque.estado == EstadoTrueque::Definido)
+                    .filter(|(_, trueque)| {
+                        trueque.codigo_ofertante.map(|ofertante| ofertante == codigo_ofertante)
+                        .unwrap_or(true)
+                    })
+                    .filter(|(_, trueque)| {
+                        trueque.codigo_receptor.map(|receptor| receptor == codigo_receptor)
+                        .unwrap_or(true)
+                    })
+                    .filter(|(_, trueque)| {
+                        query.filtro_sucursal.as_ref().map(|sucursal_filtro| {
+                            if let Some(sucursal) = &trueque.sucursal {
+                                sucursal_filtro == sucursal
+                            }
+                            else {
+                                true
+                            }
+                        })
+                        .unwrap_or(true)
+                    });
+        let respuesta = obtenidos.map(|(i, _)| *i).collect();
+        log::info!("RESPUESTA: {:?}", respuesta);
+        respuesta
+    }
+    //puede concretarse o rechazarse
+    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
+        //cambio el estado del trueque, guardo, y lo obtengo
+        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
+        
+        let trueque = self.trueques.get(&query.id_trueque).unwrap();
+        let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
+        let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
+        self.usuarios[ofertante].puntos += 1;
+        self.usuarios[receptor].puntos += 1;
+        self.guardar();
+        let ofertante = &self.usuarios[ofertante];
+        let receptor = &self.usuarios[receptor];
+        //creo mail receptor
+        let mail_receptor; 
+        let mail_ofertante;
+        if query.estado == EstadoTrueque::Finalizado {
+            mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            
+            //creo mail ofertante
+            mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+        }
+        else {
+            mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            
+            //creo mail ofertante
+            mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
+                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+        }
+        
+
+
+
+        //Creo un vec para pasarlo al main y enviarlo
+        /* Contenido del Vec:
+        0 --> Nombre Receptor
+        1 --> Mail Receptor
+        2 --> Mensaje Receptor
+        3 --> Nombre Ofertante
+        4 --> Mail Ofertante
+        5 --> Mensaje Ofertante
+            */
+        let mut contenidos_mensajes = Vec::new();
+        contenidos_mensajes.push(receptor.nombre_y_apellido.clone());
+        contenidos_mensajes.push(receptor.email.clone());
+        contenidos_mensajes.push(mail_receptor.clone());
+        contenidos_mensajes.push(ofertante.nombre_y_apellido.clone());
+        contenidos_mensajes.push(ofertante.email.clone());
+        contenidos_mensajes.push(mail_ofertante.clone());
+        contenidos_mensajes
+    }
 }
 
 fn get_database_por_defecto() -> Database {
@@ -660,9 +729,10 @@ fn get_database_por_defecto() -> Database {
     ];
     // (nombre, dni, rol). la contraseña es igual al dni. el email se genera en base al nombre
     let usuarios = [
-        ("Fede", 1, Dueño),
-        ("Lucas", 2, Empleado { sucursal: 0 }),
-        ("Matías", 3, Normal),
+        ("Alan", 1, Dueño),
+        ("Bauti", 2, Empleado { sucursal: 0 }),
+        ("Carlos", 3, Empleado { sucursal: 1 } ),
+        ("Delfina", 4, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
@@ -671,6 +741,7 @@ fn get_database_por_defecto() -> Database {
         (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
         (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
         (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
+        (2, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
     ];
     
     for sucursal in sucursales {

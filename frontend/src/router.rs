@@ -1,3 +1,5 @@
+use crate::pages::defined_trades_page::DefinedTradesPage;
+use crate::pages::finish_trade_page::FinishTradePage;
 use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
 use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
 use crate::pages::my_pending_trades_page::MyPendingTradesPage;
@@ -70,6 +72,10 @@ pub enum Route {
     ChangeUserRole,
     #[at("/acciones-privilegiadas/esperando-tasacion")]
     AwaitingPricePublication,
+    #[at("/acciones-privilegiadas/concretar-trueque")]
+    FinishTrade,
+    #[at("/acciones-privilegiadas/trueques-definidos")]
+    DefinedTrades,
     #[at("/resultados-busqueda")]
     SearchResults,
     #[at("/resultados-trueque")]
@@ -113,6 +119,8 @@ pub fn switch(routes: Route) -> Html {
                 //Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
                 Route::SearchTrueques => html!(<SearchTruequesPage/>),
+                Route::FinishTrade => html!{<FinishTradePage/>},
+                Route::DefinedTrades => html!{<DefinedTradesPage/>}
             }}
     </>}
 }
@@ -160,6 +168,8 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::AwaitingPricePublication => [false, false, true, true],
         //Route::PublicationTradeOffers => [false, true, true, true],
         Route::Trueque { id : _ } => [false, true, true, true],
+        Route::FinishTrade => [false, false, true, true],
+        Route::DefinedTrades => [false, false, false, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

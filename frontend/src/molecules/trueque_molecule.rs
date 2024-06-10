@@ -4,7 +4,7 @@ use web_sys::{window, FormData, HtmlFormElement, HtmlInputElement};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use crate::information_store::InformationStore;
-use crate::{convenient_request::send_notification, router::Route};
+use crate::router::Route;
 use crate::request_post;
 use crate::components::publication_thumbnail::PublicationThumbnail;
 use crate::store::UserStore;
@@ -14,6 +14,7 @@ use yew_hooks::use_effect_once;
 use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use chrono::{DateTime, Datelike, Local, NaiveDate, TimeZone, Weekday};
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -26,12 +27,20 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let (user_store, user_dispatch) = use_store::<UserStore>();
     let dni = user_store.dni.unwrap();
 
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
+    let show_accept_offer_state = use_state(|| false);
+    let show_decline_offer_state = use_state(|| false);
+    let show_call_off_offer_state = use_state(|| false);
+
+
     let loaded: UseStateHandle<bool> = use_state(|| false);
     let cloned_loaded = loaded.clone();
 
     let id_trueque = props.id;
     let trueque_state: UseStateHandle<Option<Trueque>> = use_state(||None);
     let cloned_trueque_state = trueque_state.clone();
+
 
     let receptor_username: UseStateHandle<String> = use_state(|| "".to_string());
     let cloned_receptor_username = receptor_username.clone();
@@ -40,10 +49,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let cloned_ofertante_username = ofertante_username.clone();
     let state_office_list:UseStateHandle<Vec<Sucursal>> = use_state(|| Vec::new());
     let cloned_state_office_list = state_office_list.clone();
+    //hago un estado para la fecha para la verificacion de cancelacion antes de 1 dia del trueque
+    let trade_date_state = use_state(|| None);
+    let cloned_trade_date_state = trade_date_state.clone();
 
     use_effect_once(move ||{
         let cloned_state_office_list = cloned_state_office_list.clone();
         let trueque_state = cloned_trueque_state.clone();
+        let cloned_trade_date_state = cloned_trade_date_state.clone();
         let query = QueryObtenerTrueque{
             id : id_trueque,  
         };
@@ -51,12 +64,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
         request_post("/api/obtener_trueque", query, move |respuesta:ResponseObtenerTrueque|{
             let cloned_state_office_list = cloned_state_office_list.clone();
             let cloned_trueque_state = trueque_state.clone();
+            let cloned_trade_date_state = cloned_trade_date_state.clone();
             match respuesta {
                 Ok(trueque) =>{
                     cloned_trueque_state.set(Some(trueque.clone()));
 
                     let ofertante_username = cloned_ofertante_username.clone();
                     let receptor_username = cloned_receptor_username.clone();
+                    cloned_trade_date_state.set(trueque.fecha);
 
                     if trueque.estado == EstadoTrueque::Pendiente{
                         spawn_local(async move {
@@ -87,12 +102,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
                             }
                         });  
                     }
-
                     let query = QueryGetUserInfo{
                         dni: trueque.oferta.0 
                     };
         
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         ofertante_username.set(respuesta.nombre_y_ap)
                     });
         
@@ -100,7 +114,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         dni: trueque.receptor.0  
                     };
                     
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         receptor_username.set(respuesta.nombre_y_ap)
                     });
 
@@ -118,9 +132,15 @@ pub fn trueque_molecule (props : &Props) -> Html {
         ||{}
     });
 
+    let cloned_trade_date_state = trade_date_state.clone();
+
+    let cloned_trade_date_state = trade_date_state.clone();
+
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_receptor_username = receptor_username.clone();
     let cloned_trueque_state = trueque_state.clone();
     let accept_offer = Callback::from(move |_event: MouseEvent| {
+        let cloned_information_dispatch = cloned_information_dispatch.clone();
         // Lógica de aceptar oferta
         let trueque_state = cloned_trueque_state.clone();
         let receptor_username = cloned_receptor_username.clone();
@@ -131,13 +151,10 @@ pub fn trueque_molecule (props : &Props) -> Html {
             let receptor_username = receptor_username.clone();
             let trueque_state = trueque_state.clone();
             if let Some(window) = window() {
-                //enviar notificacion al ofertante
-                send_notification("Oferta Aceptada".to_string(), format!("{} ha aceptado tu oferta! cliquea aquí para ver los detalles!",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
-            }
-            if let Some(window) = window() {
                 window.location().reload().unwrap();
-            }
-        });
+                }
+            });
+            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
     });
 
     //traigo el navigator para volver para atras    
@@ -145,7 +162,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let navigator_cloned = navigator.clone();
 
     //traigo y clone el dispatch para el feedback
-    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
     let information_dispatch = information_dispatch.clone();
 
     let cloned_receptor_username = receptor_username.clone();
@@ -159,38 +176,59 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let query = QueryRechazarOferta{
             id : id_trueque,
         };
-        request_post("/api/rechazar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
-            let trueque_state = trueque_state.clone();
-            let receptor_username = receptor_username.clone();
-            if let Some(window) = window() {
-                //enviar notificacion al ofertante
-                send_notification("Oferta Rechazada".to_string(), format!("{} ha rechazado tu oferta :(",(&*receptor_username)), window.location().href().unwrap(), (&*trueque_state).clone().unwrap().oferta.0); 
+
+        //hardcodeo una diferencia, para cancelar en el caso de que sea una oferta
+        let mut diferencia_dias = 2;
+
+        //si hay una fecha, quiere decir que se definio el trueque, entonces, obtengo la diferencia verdadera
+        if let Some (fecha_trueque) = &*cloned_trade_date_state {
+            let fecha_actual = Local::now();
+            diferencia_dias = fecha_trueque.signed_duration_since(fecha_actual).num_days();
+            log::info!("CALCULE LA DIFERENCIA DE DIAS, ES: {:?}", diferencia_dias);
+        }
+        
+        //si la diferencia de dias, es mayor a 1, rechazo el trueque, (u oferta, dependiendo del estado)
+        if diferencia_dias >= 1 {
+            request_post("/api/rechazar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
+                let trueque_state = trueque_state.clone();
+                let receptor_username = receptor_username.clone();
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
+                }
+            });
+    
+            //obtengo DNI de receptor e ID de su publicacion, y armo la query
+            let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
+            let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
+            let query = QueryTruequesFiltrados {
+                filtro_codigo_ofertante: None,
+                filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
+                //filtro_ofertante: None,
+                //filtro_receptor: cloned_dni,
+                filtro_dni_integrantes: Some(dni_receptor.clone()),
+                filtro_estado: Some(EstadoTrueque::Oferta),
+                filtro_fecha: None,
+                filtro_id_publicacion: Some(id_publication.clone()),
+                filtro_sucursal: None,
+            };
+            
+            log::info!("ESTADO: {:?}", (cloned_trueque_state.as_ref()).unwrap().estado);
+
+            //hago el mensaje
+            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("Cancelaste el trueque con exito")));
             }
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
+            else {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
             }
-        });
-
-        //obtengo DNI de receptor e ID de su publicacion, y armo la query
-        let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
-        let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
-        let query = QueryTruequesFiltrados {
-            filtro_codigo_ofertante: None,
-            filtro_codigo_receptor: Some(dni_receptor.clone()),
-            //filtro_ofertante: None,
-            //filtro_receptor: cloned_dni,
-            filtro_dni_integrantes: None,
-            filtro_estado: Some(EstadoTrueque::Oferta),
-            filtro_fecha: None,
-            filtro_id_publicacion: Some(id_publication.clone()),
-            filtro_sucursal: None,
-        };
-
-        //hago el mensaje
-        information_dispatch.reduce_mut(|store| store.messages.push(format!("Rechazaste la oferta con exito")));
-        //vuelvo para atras
-        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
-
+            //vuelvo para atras
+            let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query); 
+        }
+        else {
+            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido {
+                information_dispatch.reduce_mut(|store| store.messages.push(format!("No es posible cancelar un trueque definido antes de un día de su concretacion")));
+            }
+        }
     });
 
     //select_sucursal
@@ -308,6 +346,90 @@ pub fn trueque_molecule (props : &Props) -> Html {
     }
     );
 
+    let cloned_show_accept_offer = show_accept_offer_state.clone();
+    let show_accept_offer = Callback::from(move |_| {
+        cloned_show_accept_offer.set(true);
+    });
+
+    let cloned_show_accept_offer = show_accept_offer_state.clone();
+    let hide_accept_offer = Callback::from(move |_| {
+        cloned_show_accept_offer.set(false);
+    });
+    
+    let cloned_show_decline_offer_state = show_decline_offer_state.clone();
+    let show_decline_offer = Callback::from(move |_|{
+        let cloned_show_decline_offer_state = cloned_show_decline_offer_state.clone();
+        cloned_show_decline_offer_state.set(true);
+    });
+
+    let cloned_show_decline_offer_state = show_decline_offer_state.clone();
+    let hide_decline_offer = Callback::from(move |_|{
+        let cloned_show_decline_offer_state = cloned_show_decline_offer_state.clone();
+        cloned_show_decline_offer_state.set(false);
+    });
+
+    let cloned_show_call_off_offer_state = show_call_off_offer_state.clone();
+    let show_call_off_offer = Callback::from(move |_|{
+        let cloned_show_call_off_offer_state = cloned_show_call_off_offer_state.clone();
+        cloned_show_call_off_offer_state.set(true);
+    });
+
+    let cloned_show_call_off_offer_state = show_call_off_offer_state.clone();
+    let hide_call_off_offer = Callback::from(move |_|{
+        let cloned_show_call_off_offer_state = cloned_show_call_off_offer_state.clone();
+        cloned_show_call_off_offer_state.set(false);
+    });
+
+
+    
+    // Llamado cuando el ofertante cancela la oferta, se utiliza la misma lógica que el rechazar oferta salvo en el frontend
+    //traigo el navigator para volver para atras    
+    let navigator = use_navigator().unwrap();
+    let navigator_cloned = navigator.clone();
+    //traigo y clone el dispatch para el feedback
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+    let information_dispatch = information_dispatch.clone();
+    let cloned_receptor_username = receptor_username.clone();
+    let cloned_trueque_state = trueque_state.clone();
+    let call_off_offer = Callback::from(move |_event: MouseEvent| {
+        // Lógica de cancelar oferta
+        let receptor_username = cloned_receptor_username.clone();
+        let trueque_state = cloned_trueque_state.clone();
+        //hago otro clone para armar la query mas abajo
+        let cloned_trueque_state = cloned_trueque_state.clone();
+        let query = QueryRechazarOferta{
+            id : id_trueque,
+        };
+        request_post("/api/cancelar_oferta", query, move |_respuesta:ResponseRechazarOferta|{
+            let trueque_state = trueque_state.clone();
+            let receptor_username = receptor_username.clone();
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
+        });
+
+        //obtengo DNI de receptor e ID de su publicacion, y armo la query
+        let dni_receptor = (cloned_trueque_state.as_ref()).unwrap().receptor.0;
+        let id_publication = (cloned_trueque_state.as_ref()).unwrap().receptor.1;
+        let query = QueryTruequesFiltrados {
+            filtro_codigo_ofertante: None,
+            filtro_codigo_receptor: None,//Some(dni_receptor.clone()),
+            //filtro_ofertante: None,
+            //filtro_receptor: cloned_dni,
+            filtro_dni_integrantes: Some(dni_receptor.clone()),
+            filtro_estado: Some(EstadoTrueque::Oferta),
+            filtro_fecha: None,
+            filtro_id_publicacion: Some(id_publication.clone()),
+            filtro_sucursal: None,
+        };
+
+        //hago el mensaje
+        information_dispatch.reduce_mut(|store| store.messages.push(format!("Cancelaste la oferta con exito")));
+        //vuelvo para atras
+        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+
+    });
+
     html! {
         <div class="trueque-box">
             if *loaded {
@@ -326,6 +448,9 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Finalizado => html! {  
                                         <h1 class="title">{"Trueque Finalizado"}</h1>
                                 },
+                                datos_comunes::EstadoTrueque::Rechazado => html! {  
+                                    <h1 class="title">{"Trueque Rechazado"}</h1>
+                            },
                             }
                         }
                         <div class="publications-container">
@@ -356,13 +481,13 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Oferta => html!{
                                     if dni == trueque.receptor.0 {
                                         <div class="accept-offer">
-                                            <button class="accept" onclick={accept_offer}>{"Aceptar Oferta"}</button>
-                                            <button class="decline" onclick={decline_offer}>{"Rechazar Oferta"}</button>
+                                            <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
+                                            <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
                                         </div>
                                     }
                                     else {
                                         if dni == trueque.oferta.0 {
-                                            <button class="decline" onclick={decline_offer}>{"Cancelar Oferta"}</button>
+                                            <button class="decline" onclick={show_call_off_offer}>{"Cancelar Oferta"}</button>
                                         }
                                     }
                                 },
@@ -370,7 +495,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                     <>
                                         if dni == trueque.receptor.0 {
                                             if *show_time_error_state{
-                                                <h2 class="error-text">{"Debes seleccionar una fecha y horario válidos"}</h2>
+                                                <h2 class="error-text">{"Debes seleccionar una fecha valida"}</h2>
                                             }
                                             if *show_another_trade_error_state{
                                                 <h2 class="error-text">{"Selecciona otra fecha y/o horario, la seleccionada esta ocupada"}</h2>
@@ -422,7 +547,10 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
-                                        <h1 class="title">{"Trueque Definido"}</h1>
+                                        <h1 class="title"> {
+                                            msg_trueque_definido(trueque, dni)
+                                        } </h1>
+                                        <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                     </>
                                 },
                                 datos_comunes::EstadoTrueque::Finalizado => html! {
@@ -430,14 +558,44 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                         <h1 class="title">{"Trueque Finalizado"}</h1>
                                     </>
                                 },
+                                datos_comunes::EstadoTrueque::Rechazado => html! {
+                                    <>
+                                        <h1 class="title">{"Trueque Rechazado"}</h1>
+                                    </>
+                                },
                             }
                         }
+                }
+                if *show_decline_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere rechazar la oferta?" confirm_func={(decline_offer).clone()} reject_func={hide_decline_offer} />
+                }
+                if *show_accept_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere aceptar la oferta?" confirm_func={accept_offer} reject_func={hide_accept_offer} />
+                }
+                if *show_call_off_offer_state{
+                    <ConfirmPromptButtonMolecule text="¿Seguro que quiere cancelar la oferta?" confirm_func={call_off_offer} reject_func={hide_call_off_offer} />
                 }
         } else {
             <div class="loading"></div>
         } 
         </div>
     }
+}
+
+fn msg_trueque_definido(trueque: &Trueque, dni: u64) -> String {
+    let mut msg = format!("Trueque Definido para el día {} a las {}:{} en la sucursal '{}'.",
+        trueque.fecha.unwrap().format("%Y-%m-%d"),
+        trueque.hora.as_ref().unwrap(),
+        trueque.minutos.as_ref().unwrap(),
+        trueque.sucursal.as_ref().unwrap()
+    );
+    if dni == trueque.receptor.0 {
+        msg += &format!(" Su código de receptor es {}", trueque.codigo_receptor.unwrap());
+    }
+    if dni == trueque.oferta.0 {
+        msg += &format!(" Su código de ofertante es {}", trueque.codigo_ofertante.unwrap());
+    }
+    msg
 }
 
 fn obtener_horas_sucursal() -> Vec<String> {

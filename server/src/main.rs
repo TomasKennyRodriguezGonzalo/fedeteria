@@ -96,13 +96,17 @@ async fn main() {
         .route("/api/eliminar_notificacion", post(eliminar_notificacion))
         .route("/api/tasar_publicacion", post(tasar_publicacion))
         .route("/api/obtener_publicaciones_sin_tasar", post(obtener_publicaciones_sin_tasar))
-        .route("/api/enviar_notificacion", post(enviar_notificacion))
         .route("/api/crear_oferta", post(crear_oferta))
         .route("/api/obtener_trueques", post(obtener_trueques))
         .route("/api/obtener_trueque", post(obtener_trueque))
         .route("/api/aceptar_oferta", post(aceptar_oferta))
         .route("/api/rechazar_oferta", post(rechazar_oferta))
+        .route("/api/cancelar_oferta", post(cancelar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
+        .route("/api/obtener_sucursal_por_dni", post(obtener_sucursal))
+        .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
+        .route("/api/finalizar_trueque", post(finalizar_trueque))
+        .route("/api/rechazar_trueque", post(finalizar_trueque))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -212,16 +216,11 @@ async fn obtener_rol(
     State(state): State<SharedState>,
     Json(query): Json<QueryGetUserRole>
 ) -> Json<Option<ResponseGetUserRole>> {
-    log::info!("Entré a obtener rol!");
     let state = state.read().await;
-    log::info!("El dni recibido es: {}", query.dni);
     let indice = state.db.encontrar_dni(query.dni);
-    log::info!("El indice es: {:?}", indice);
     if indice.is_some() {
         let rol_obtenido = state.db.obtener_rol_usuario(indice.unwrap());
-        log::info!("El rol es: {:?}", rol_obtenido.clone());
         let respuesta = ResponseGetUserRole{rol:rol_obtenido.clone()};
-        log::info!("La respuesta es: {:?}", respuesta.clone());
         return Json(Some(respuesta));
     }
     Json(None)
@@ -232,15 +231,12 @@ async fn retornar_usuario(
     Json(query): Json<QueryObtenerUsuario>
 ) -> Json<Option<ResponseObtenerUsuario>> {
     let state = state.write().await;
-    log::info!("we are checking with {} dni ",query.dni.clone()); 
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
        let usuario = state.db.obtener_datos_usuario(res);
        let response = ResponseObtenerUsuario{nombre:usuario.nombre_y_apellido.clone()};
-       log::info!("username found "); 
        Json(Some(response))
     } else{
-        log::info!("username not found "); 
         Json(None)
     }
 }
@@ -258,15 +254,13 @@ async fn registrar_usuario(
             "Registro en Fedeteria".to_string(),
             format!("Hola {}!\nUsted ha creado una cuenta en la página https://fedeteria.com, con el DNI {}.\n
 Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, usuario.dni)
-        ).await {
+        ) {
             Ok(_) => log::info!("Mail enviado al usuario."),
             Err(_) => log::error!("Error al enviar mail."),
         }
     }
     
-    let res = Json(res);
-    log::info!("{res:?}");
-    res
+    Json(res)
 }
 
 async fn agregar_sucursal (State(state): State<SharedState>,
@@ -306,11 +300,8 @@ async fn obtener_sucursales (
 
 async fn crear_publicacion (
     State(state): State<SharedState>,
-    // req: Request,
     mut multipart: Multipart,
 ) -> Result<String, ()> {
-    // log::info!("La request es: {req:?}");
-    log::info!("Recibido mensaje de crear publicacion!");
     let titulo = multipart.next_field().await.unwrap().unwrap();
     assert_eq!(titulo.name().unwrap(), "Titulo");
     let titulo = titulo.text().await.unwrap();
@@ -327,13 +318,11 @@ async fn crear_publicacion (
     let dni_str = dni.text().await.unwrap();
     let dni: u64 = dni_str.parse().unwrap();
 
-    log::info!("Dni: {dni}, titulo: {titulo}, descripcion: {descripcion}");
     let mut imagenes = vec![];
     while let Ok(Some(field)) = multipart.next_field().await {
         let file_name = if let Some(file_name) = field.file_name() {
             file_name.to_owned()
         } else {
-            log::info!("Recibido field de otro tipo, nombre: {:?}", field.name());
             continue;
         };
         log::info!("Recibido archivo: {file_name}");
@@ -389,16 +378,19 @@ async fn get_datos_publicacion (
 
 async fn get_user_info( State(state): State<SharedState>,
 Json(query): Json<QueryGetUserInfo>
-) -> Json<Option<ResponseGetUserInfo>>{
+) -> Json<Option<ResponseGetUserInfo>> {
     let state = state.read().await;
     let res = state.db.encontrar_dni(query.dni);
     if let Some(res) = res {
         let usuario = state.db.obtener_datos_usuario(res);
-        let response = ResponseGetUserInfo{nombre_y_ap:usuario.nombre_y_apellido.clone(), email:usuario.email.clone(), nacimiento:usuario.nacimiento.clone() };
-        log::info!("username found "); 
+        let response = ResponseGetUserInfo {
+            nombre_y_ap: usuario.nombre_y_apellido.clone(),
+            email: usuario.email.clone(),
+            nacimiento: usuario.nacimiento.clone(),
+            puntos: usuario.puntos
+        };
         Json(Some(response))
-    } else{
-        log::info!("username not found "); 
+    } else {
         Json(None)
     }
 }
@@ -413,7 +405,6 @@ Json(query): Json<QueryCambiarDatosUsuario>
             index, query.full_name.clone(), query.email.clone(), query.born_date.clone()); 
         Json(response)
     } else {
-        log::error!("Usuario no encontrado!");
         Json(Err(ErrorCambiarDatosUsuario::ErrorIndeterminado))
     }
 }
@@ -423,8 +414,8 @@ Json(query): Json<QueryTogglePublicationPause>
 ) -> Json<ResponseTogglePublicationPause>{
     let mut state = state.write().await;
     let id = query.id;
-    state.db.alternar_pausa_publicacion(&id);
-    Json(ResponseTogglePublicationPause{changed : true})
+    let respuesta = state.db.alternar_pausa_publicacion(&id);
+    Json(ResponseTogglePublicationPause{changed : respuesta})
 }
 
 
@@ -505,25 +496,43 @@ async fn tasar_publicacion( State(state): State<SharedState>,
 Json(query): Json<QueryTasarPublicacion>
 ) -> Json<ResponseTasarPublicacion>{
     let mut state = state.write().await;
-    let respuesta = state.db.tasar_publicacion(query);
+    let respuesta = state.db.tasar_publicacion(&query);
+    if (respuesta) {
+        let titulo = "Publicación tasada!".to_string();
+        let publicacion = state.db.get_publicacion(query.id).unwrap();
+        let dni_usuario_receptor = publicacion.dni_usuario;
+        let indice_usuario_receptor = state.db.encontrar_dni(dni_usuario_receptor).unwrap();
+        let detalle = format!(
+            "Tu publicación ha sido tasada en un valor de {} pesos!, entrá al link para despausarla y empezar a recibir ofertas de trueque!",
+            query.precio.unwrap()
+        );
+        let url = format!("/publicacion/{}", query.id);
+        state.db.enviar_notificacion(indice_usuario_receptor, titulo, detalle, url);
+    }
     Json(ResponseTasarPublicacion{tasado: respuesta})
 }
 
-async fn enviar_notificacion( State(state): State<SharedState>,
-Json(query): Json<QueryEnviarNotificacion>
-) -> Json<ResponseEnviarNotificacion>{
-    let mut state = state.write().await;
-    let index = state.db.encontrar_dni(query.dni);
-    let respuesta = state.db.enviar_notificacion(query,index);
-    Json(ResponseEnviarNotificacion{enviada: respuesta})
-}
 
 async fn crear_oferta( State(state): State<SharedState>,
 Json(query): Json<QueryCrearOferta>
 ) -> Json<ResponseCrearOferta>{
     let mut state = state.write().await;
     let respuesta = state.db.crear_oferta(query);
-    Json(ResponseCrearOferta{estado: respuesta})
+
+    if let Some(id) = respuesta {
+        let oferta = state.db.get_trueque(id).unwrap();
+        let publicacion_receptora = oferta.receptor.1;
+        let publicacion_receptora = state.db.get_publicacion(publicacion_receptora).unwrap();
+        let dni_receptor = oferta.receptor.0;
+        let dni_ofertante = oferta.oferta.0;
+        let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
+        let titulo = "Nueva Oferta de Trueque!".to_string();
+        let detalle = format!("Has recibido una oferta de trueque en tu {} presiona aquí para verla!", publicacion_receptora.titulo);
+        let url = format!("/trueque/{id}");
+
+        state.db.enviar_notificacion(indice_receptor, titulo, detalle, url);
+    }
+    Json(ResponseCrearOferta{estado: respuesta.is_some()})
 }
 
 async fn obtener_trueques ( State(state): State<SharedState>,
@@ -551,7 +560,20 @@ Json(query): Json<QueryAceptarOferta>
 ) -> Json<ResponseAceptarOferta>{
     let id = query.id;
     let mut state = state.write().await;
+    
     let respuesta = state.db.aceptar_oferta(id);
+    let oferta = state.db.get_trueque(id).unwrap();
+    let dni_receptor = oferta.receptor.0;
+    let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
+    let dni_ofertante = oferta.oferta.0;
+    let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+    let receptor = state.db.obtener_datos_usuario(indice_receptor);
+    let titulo = "Oferta Aceptada".to_string();
+    let detalle = format!("{} ha aceptado tu oferta! presiona aquí para ver los detalles!", receptor.nombre_y_apellido);
+    let url = format!("/trueque/{id}");
+
+    state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    
     Json(ResponseAceptarOferta{aceptada : respuesta})
 
 }
@@ -562,9 +584,29 @@ Json(query): Json<QueryRechazarOferta>
 ) -> Json<ResponseRechazarOferta>{
     let id = query.id;
     let mut state = state.write().await;
+    let oferta = state.db.get_trueque(id).unwrap();
+    let dni_receptor = oferta.receptor.0;
+    let indice_receptor = state.db.encontrar_dni(dni_receptor).unwrap();
+    let dni_ofertante = oferta.oferta.0;
+    let indice_ofertante = state.db.encontrar_dni(dni_ofertante).unwrap();
+    let receptor = state.db.obtener_datos_usuario(indice_receptor);
+    let titulo = "Oferta Rechazada".to_string();
+    let detalle = format!("{} ha rechazado tu oferta :(",receptor.nombre_y_apellido);
+    let url = format!("/trueque/{id}");
+    let respuesta = state.db.rechazar_oferta(id);
+
+    state.db.enviar_notificacion(indice_ofertante, titulo, detalle, url);
+    log::info!("oferta rechazada notifiacion enviada a {}",dni_ofertante);
+    Json(ResponseRechazarOferta{rechazada : respuesta})
+}
+
+async fn cancelar_oferta( State(state): State<SharedState>,
+Json(query): Json<QueryRechazarOferta>
+) -> Json<ResponseRechazarOferta>{
+    let id = query.id;
+    let mut state = state.write().await;
     let respuesta = state.db.rechazar_oferta(id);
     Json(ResponseRechazarOferta{rechazada : respuesta})
-
 }
 
 async fn cambiar_trueque_a_definido( State(state): State<SharedState>,
@@ -584,17 +626,17 @@ Json(query): Json<QueryCambiarTruequeADefinido>
     if let Some(vec_string) = respuesta.1 {
         //envio mail a receptor
         match send_email(vec_string.get(0).unwrap().clone(), vec_string.get(1).unwrap().clone(),
-                "Registro en Fedeteria".to_string(),
-                vec_string.get(2).unwrap().clone()).await {
+                "Definicion de Trueque en Fedeteria".to_string(),
+                vec_string.get(2).unwrap().clone()) {
                 Ok(_) => log::info!("Mail enviado al receptor."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
             }
         
         //envio mail al ofertante
         match send_email(vec_string.get(3).unwrap().clone(), vec_string.get(4).unwrap().clone(),
-                "Registro en Fedeteria".to_string(),
-                vec_string.get(5).unwrap().clone()).await {
-                Ok(_) => log::info!("Mail enviado al receptor."),
+                "Definicion de Trueque en Fedeteria".to_string(),
+                vec_string.get(5).unwrap().clone()) {
+                Ok(_) => log::info!("Mail enviado al ofertante."),
                 Err(_) => log::error!("Error al enviar mail al receptor."),
             }
     }
@@ -602,3 +644,61 @@ Json(query): Json<QueryCambiarTruequeADefinido>
 
 }
 
+//devuelve solo el indice de uno, el deseado, obtenerlo en el front
+async fn obtener_trueque_por_codigos ( State(state): State<SharedState>,
+Json(query): Json<QueryTruequesFiltrados>
+) -> Json<ResponseTruequePorCodigos> {
+    let state = state.read().await;
+    let respuesta = state.db.obtener_trueque_por_codigos(query);
+    if respuesta.len() == 1 {
+        return Json(ResponseTruequePorCodigos {trueque_encontrado: Some(respuesta)})
+    }
+    Json(ResponseTruequePorCodigos {trueque_encontrado: None})
+}
+
+//forma rara de obtener sucursal, mala mia (Franco), implemente mal el trueque, guardo en el trueque el string de sucursal
+//en lugar del id, para la tercera demo si hago tiempo reacondiciono el tema ese
+async fn obtener_sucursal (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryGetOffice>
+) -> Json<ResponseGetOffice> {
+    let state = state.read().await;
+    let indice_usuario = state.db.encontrar_dni(query.dni).unwrap();
+    let rol = state.db.obtener_rol_usuario(indice_usuario);
+    if let RolDeUsuario::Empleado { sucursal } = rol {
+        let sucursal_empleado = state.db.obtener_sucursal(sucursal);
+        return Json(ResponseGetOffice {sucursal: Some(sucursal_empleado)});
+    }
+    Json(ResponseGetOffice {sucursal: None})  
+}
+
+async fn finalizar_trueque (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryFinishTrade>
+) -> Json<ResponseFinishTrade> {
+    let mut state = state.write().await;
+    let mensajes = state.db.finalizar_trueque(query);
+    /* Contenido del Vec:
+    0 --> Nombre Receptor
+    1 --> Mail Receptor
+    2 --> Mensaje Receptor
+    3 --> Nombre Ofertante
+    4 --> Mail Ofertante
+    5 --> Mensaje Ofertante
+    */
+    match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+            "Finalizacion de Trueque en Fedeteria".to_string(),
+            mensajes.get(2).unwrap().clone()) {
+            Ok(_) => log::info!("Mail enviado al receptor."),
+            Err(_) => log::error!("Error al enviar mail al receptor."),
+        }
+
+    //envio mail al ofertante
+    match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+            "Finalizacion de Trueque en Fedeteria".to_string(),
+            mensajes.get(5).unwrap().clone()) {
+            Ok(_) => log::info!("Mail enviado al receptor."),
+            Err(_) => log::error!("Error al enviar mail al receptor."),
+        }
+    Json(ResponseFinishTrade {respuesta: true})
+}

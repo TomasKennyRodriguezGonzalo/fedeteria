@@ -112,14 +112,15 @@ pub struct ResponseAddOffice {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct QueryGetUserInfo {
-    pub dni:u64,
+    pub dni: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseGetUserInfo {
-    pub nombre_y_ap:String,
-    pub email:String,
+    pub nombre_y_ap: String,
+    pub email: String,
     pub nacimiento: DateTime<Local>,
+    pub puntos: i64,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -289,20 +290,6 @@ pub struct ResponseTasarPublicacion{
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct QueryEnviarNotificacion{
-    pub dni:u64,
-    pub titulo:String,
-    pub detalle:String,
-    pub url:String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResponseEnviarNotificacion{
-    //podria no tener respuesta, charlar
-    pub enviada:bool
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct QueryObtenerPrecioMaxDeRango{
     pub rango:Option<u8>,
 }
@@ -380,3 +367,30 @@ pub struct ResponseCambiarTruequeADefinido {
     pub cambiado: bool
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryGetOffice {
+    //dni del empleado o dueño
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseGetOffice{
+    //si hay una sucursal, es empleado, sino, dueño
+    pub sucursal: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseTruequePorCodigos{
+    pub trueque_encontrado: Option<Vec<usize>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseFinishTrade {
+    pub respuesta: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryFinishTrade{
+    pub id_trueque: usize,
+    pub estado: EstadoTrueque,
+}

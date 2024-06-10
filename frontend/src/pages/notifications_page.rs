@@ -25,8 +25,9 @@ pub fn notifications_page() -> Html {
             dni,
         };
         request_post("/api/obtener_notificaciones", query, move |respuesta: ResponseNotificaciones|{
-            let notificaciones = respuesta;
-            notification_list.set(notificaciones.notificaciones);
+            let mut notificaciones = respuesta.notificaciones;
+            notificaciones.reverse();
+            notification_list.set(notificaciones);
         });
         
         || {}
@@ -52,9 +53,12 @@ let delete_notification = Callback::from(move |index| {
     html! {
         <div class="notifications-box">
             <h1 class="title">{"Notificaciones"}</h1>
+            if (&*notification_list).clone().is_empty(){
+                <h1>{"Aún no tienes notificaciones"}</h1>
+            }                
             <ul>
                 {
-                    (&*notification_list).iter().enumerate().map(|(index, _notification)| {
+                    (&*notification_list).iter().map(|index| {
                         html! {
                             <li>
                                 <NotificationThumbnail id={index} dni={dni.clone()}/>
