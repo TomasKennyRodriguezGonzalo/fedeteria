@@ -30,6 +30,7 @@ pub struct Trueque {
     /// receptor.1 --> indice de publicacion de receptor.
     pub receptor: (u64, usize),
     pub sucursal: Option<String>,
+    //pub sucursal: Option<usize>,
     pub fecha: Option<DateTime<Local>>,
     pub hora: Option<String>,
     pub minutos: Option<String>,
