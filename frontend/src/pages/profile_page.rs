@@ -6,8 +6,6 @@ use yewdux::prelude::*;
 extern crate chrono;
 use chrono::prelude::*;
 use crate::{request_post, router::Route, store::UserStore};
-use wasm_bindgen_futures::spawn_local;
-use reqwasm::http::Request;
 use datos_comunes::{self, QueryGetUserInfo, QueryPublicacionesFiltradas, ResponseGetUserInfo};
 use yew_router::prelude::Link;
 
@@ -27,7 +25,7 @@ impl DatosDeUsuario {
 
 
 // navigator_cloned.push_with_query(&Route::ProfilePage, &dni_query);
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Clone)]
 pub struct DniURLQuery {
     pub dni: u64,
 }
