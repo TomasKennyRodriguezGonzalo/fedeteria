@@ -801,15 +801,28 @@ fn get_database_por_defecto() -> Database {
         ("Bauti", 2, Empleado { sucursal: 0 }),
         ("Carlos", 3, Empleado { sucursal: 1 } ),
         ("Delfina", 4, Normal),
+        ("Esteban", 5, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
     let publicaciones = [
-        (3, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
         (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
-        (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
-        (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
-        (2, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (5, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
+        (5, "Mouse", "Un mouse. Anda bien", None, vec!["mouse.jpg"]),
+        (5, "Teclado", "Teclado tikitiki", Some(650), vec!["teclado.jpg"]),
+        (5, "Curita", "Curita para sanar :)", Some(800), vec!["curita.jpg"]),
+        (5, "Tenedor", "Tenedor. lo usé para comer milanesa.", Some(299), vec!["tenedor.jpg"]),
+        (5, "Cuchara", "No es comestible", Some(300), vec!["cuchara.jpg"]),
+        (5, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
+        (4, "Tornillo", "Un tornillo sin usar jeje", Some(400), vec!["tornillo.jpg"]),
+        (4, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (4, "Destornillador", "Destornillador que podes usar para destornillar o bien para atornillar", Some(300), vec!["destornillador.jpg"]),
+        (4, "Papel", "Papel SIN ESCRIBIR", Some(630), vec!["papel.jpg"]),
+        (4, "Mancha", "Una mancha porfavor saquenla de mi piso", Some(370), vec!["mancha.jpg"]),
+        (4, "Esponja", "Limpien no sean vagos dale", Some(230), vec!["esponja.jpg"]),
+        (4, "Reloj", "Un reloj les juro que se mueve", Some(900), vec!["reloj.jpg"]),
+        (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
+        (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
     
     for sucursal in sucursales {
