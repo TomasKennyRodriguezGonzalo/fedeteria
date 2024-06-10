@@ -148,14 +148,16 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let query = QueryAceptarOferta{
             id : id_trueque,
         };
-        request_post("/api/aceptar_oferta", query, move |_respuesta:ResponseAceptarOferta|{
-            let receptor_username = receptor_username.clone();
-            let trueque_state = trueque_state.clone();
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
+        request_post("/api/aceptar_oferta", query, move |respuesta: ResponseAceptarOferta|{
+            if respuesta.aceptada {
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
                 }
-            });
-            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
+                cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
+            } else {
+                cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Error al aceptar la oferta")));
+            }
+        });
     });
 
     //traigo el navigator para volver para atras    
@@ -484,10 +486,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
                             match trueque.estado {
                                 datos_comunes::EstadoTrueque::Oferta => html!{
                                     if dni == trueque.receptor.0 {
-                                        <div class="accept-offer">
-                                            <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
-                                            <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
-                                        </div>
+                                        if trueque.valido {
+                                            <div class="accept-offer">
+                                                <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
+                                                <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
+                                            </div>
+                                        } else {
+                                            <p> {"No se puede aceptar la oferta ya que uno o más de los productos están involucrados en otro trueque."} </p>
+                                        }
                                     }
                                     else {
                                         if dni == trueque.oferta.0 {
