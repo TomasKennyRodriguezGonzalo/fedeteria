@@ -546,8 +546,6 @@ Json(query): Json<QueryObtenerTrueque>
     }
 }
 
-
-
 async fn aceptar_oferta( State(state): State<SharedState>,
 Json(query): Json<QueryAceptarOferta>
 ) -> Json<ResponseAceptarOferta>{
