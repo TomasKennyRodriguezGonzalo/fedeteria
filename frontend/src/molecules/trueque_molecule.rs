@@ -106,7 +106,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         dni: trueque.oferta.0 
                     };
         
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         ofertante_username.set(respuesta.nombre_y_ap)
                     });
         
@@ -114,7 +114,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         dni: trueque.receptor.0  
                     };
                     
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         receptor_username.set(respuesta.nombre_y_ap)
                     });
 
@@ -418,7 +418,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
 
     });
-    
+
     html! {
         <div class="trueque-box">
             if *loaded {
@@ -536,7 +536,9 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
-                                        <h1 class="title">{"Trueque Definido"}</h1>
+                                        <h1 class="title"> {
+                                            msg_trueque_definido(trueque, dni)
+                                        } </h1>
                                         <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                     </>
                                 },
@@ -567,6 +569,22 @@ pub fn trueque_molecule (props : &Props) -> Html {
         } 
         </div>
     }
+}
+
+fn msg_trueque_definido(trueque: &Trueque, dni: u64) -> String {
+    let mut msg = format!("Trueque Definido para el día {} a las {}:{} en la sucursal '{}'.",
+        trueque.fecha.unwrap().format("%Y-%m-%d"),
+        trueque.hora.as_ref().unwrap(),
+        trueque.minutos.as_ref().unwrap(),
+        trueque.sucursal.as_ref().unwrap()
+    );
+    if dni == trueque.receptor.0 {
+        msg += &format!(" Su código de receptor es {}", trueque.codigo_receptor.unwrap());
+    }
+    if dni == trueque.oferta.0 {
+        msg += &format!(" Su código de ofertante es {}", trueque.codigo_ofertante.unwrap());
+    }
+    msg
 }
 
 fn obtener_horas_sucursal() -> Vec<String> {
