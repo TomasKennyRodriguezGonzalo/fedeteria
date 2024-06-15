@@ -1,15 +1,22 @@
+use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 use datos_comunes::{EstadoTrueque, QueryFinishTrade, QueryGetOffice, QueryObtenerTrueque, QueryTruequesFiltrados, ResponseFinishTrade, ResponseGetOffice, ResponseObtenerTrueque, ResponseTruequePorCodigos};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
 
-use crate::{components::{dni_input_field::DniInputField, generic_button::GenericButton}, molecules::trueque_molecule::TruequeMolecule, request_post, store::UserStore};
+use crate::{components::{dni_input_field::DniInputField, generic_button::GenericButton}, information_store::InformationStore, molecules::trueque_molecule::TruequeMolecule, request_post, store::UserStore};
 
 #[function_component(FinishTradeMolecule)]
 pub fn finish_trade_molecule () -> Html {
     let (user_store, _user_dispatch) = use_store::<UserStore>();
     let dni = user_store.dni.unwrap();
     let cloned_dni = dni.clone();
+
+    let (_information_store, information_dispatch) = use_store::<InformationStore>();
+
+    let finish_confirmation_state = use_state(|| false);
+    let abort_confirmation_state = use_state(|| false);
+    let cancel_confirmation_state = use_state(|| false);
 
     //me guardo la sucursal si encontro alguna (es decir, es un empleado)
     let sucursal_state = use_state(|| None);
@@ -91,67 +98,98 @@ pub fn finish_trade_molecule () -> Html {
                 cloned_trade_index_state.set(None);
             }
         });
-        || {};
     });
 
     //concreto el trueque (hay que ver como agregar la logica de las compras)
+    let cloned_information_dispatch = information_dispatch.clone();
+    let cloned_finish_confirmation_state = finish_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
-    let finish_trade = Callback::from(move |()| {
+    let finish_trade = Callback::from(move |_e| {
         let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
-        || {};
         cloned_show_trade_search_state.set(false);
+        cloned_finish_confirmation_state.set(false);
+        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque concretado!")));
     });
 
     //rechazo el trueque
+    let cloned_information_dispatch = information_dispatch.clone();
+    let cloned_abort_confirmation_state = abort_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
-    let abort_trade = Callback::from(move |()| {
+    let abort_trade = Callback::from(move |_e| {
         let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
-        || {};
         cloned_show_trade_search_state.set(false);
+        cloned_abort_confirmation_state.set(false);
+        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque rechazado!")));
     });
 
     //cancelo operacion
     let cloned_show_trade_search_state = show_trade_search_state.clone();
-    let cancel_operation = Callback::from(move |()| {
+    let cancel_operation = Callback::from(move |_e| {
         cloned_show_trade_search_state.set(false);
     });
 
+    // Manejo de prompt de confirmacion de CONCRETAR de trueque
+    let cloned_finish_confirmation_state = finish_confirmation_state.clone();
+    let show_finish_trade_confirmation = Callback::from(move |_e| {
+        cloned_finish_confirmation_state.set(true);
+        });
+        
+    let cloned_finish_confirmation_state = finish_confirmation_state.clone();
+    let hide_finish_trade_confirmation = Callback::from(move |_e| {
+        cloned_finish_confirmation_state.set(false);
+    });
+
+    // Manejo de prompt de confirmacion de RECHAZO de trueque
+    let cloned_abort_confirmation_state = abort_confirmation_state.clone();
+    let show_abort_trade_confirmation = Callback::from(move |_e| {
+        cloned_abort_confirmation_state.set(true);
+        });
+        
+    let cloned_abort_confirmation_state = abort_confirmation_state.clone();
+    let hide_abort_trade_confirmation = Callback::from(move |_e| {
+        cloned_abort_confirmation_state.set(false);
+    });
+
+    
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
-
     html! {
         <div class="finish-trade">
             <div class="codes-input">  
                 <h2>{"Ingrese Codigo de Trueque del Usuario Receptor de la oferta"}</h2>
-                <br/>
                 <DniInputField dni = "Codigo Receptor" tipo = "number" handle_on_change = {receptor_code_onchange} />
-                <br/>
                 <h2>{"Ingrese Codigo de Trueque del Usuario Ofertante de la oferta"}</h2>
-                <br/>
                 <DniInputField dni = "Codigo Ofertante" tipo = "number" handle_on_change = {offer_code_onchange} />
-                <br/>
                 <GenericButton text = "Buscar Trueque" onclick_event = {search_trade} />
             </div>
-            <div class="show-trade">
-                if *cloned_show_trade_search_state {
-                    if let Some(id) = &*cloned_trade_index_state {
+            if *cloned_show_trade_search_state {
+                if let Some(id) = &*cloned_trade_index_state {
+                    <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
-                            <li><GenericButton text = "Concretar Trueque" onclick_event = {finish_trade}/></li>
-                            <li><GenericButton text = "Rechazar Trueque" onclick_event = {abort_trade}/></li>
-                            <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation.clone()}/></li>
-                    }
-                    else {
-                        <h2>{"Los codigos ingresados no corresponden a un trueque"}</h2>
-                        <GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation} />
-                    }
+                        <ul>
+                            <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>
+                            <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>
+                            <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/></li>
+                        </ul>
+                    </div>
                 }
-            </div>
+                else {
+                    <h2 class="error-text">{"Los códigos ingresados no corresponden a un trueque."}</h2>
+                    <GenericButton text = "Cancelar Operación" onclick_event = {cancel_operation} />
+                }
+                }
+            if *finish_confirmation_state{
+                <ConfirmPromptButtonMolecule text = "¿Confirma la finalización de este trueque?" confirm_func = {finish_trade} reject_func = {hide_finish_trade_confirmation}/>
+            }
+            if *abort_confirmation_state{
+                <ConfirmPromptButtonMolecule text = "¿Confirma el rechazo a este trueque?" confirm_func = {abort_trade} reject_func = {hide_abort_trade_confirmation}/>
+            }
         </div>
     }
 }

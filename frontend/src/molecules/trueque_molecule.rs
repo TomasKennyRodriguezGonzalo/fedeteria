@@ -33,6 +33,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let show_decline_offer_state = use_state(|| false);
     let show_call_off_offer_state = use_state(|| false);
 
+    let loading_state = use_state(|| false);
 
     let loaded: UseStateHandle<bool> = use_state(|| false);
     let cloned_loaded = loaded.clone();
@@ -106,7 +107,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         dni: trueque.oferta.0 
                     };
         
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         ofertante_username.set(respuesta.nombre_y_ap)
                     });
         
@@ -114,7 +115,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         dni: trueque.receptor.0  
                     };
                     
-                    request_post("/api/get_user_info", query, move |respuesta:ResponseGetUserInfo|{
+                    request_post("/api/get_user_info", query, move |respuesta: ResponseGetUserInfo|{
                         receptor_username.set(respuesta.nombre_y_ap)
                     });
 
@@ -147,14 +148,16 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let query = QueryAceptarOferta{
             id : id_trueque,
         };
-        request_post("/api/aceptar_oferta", query, move |_respuesta:ResponseAceptarOferta|{
-            let receptor_username = receptor_username.clone();
-            let trueque_state = trueque_state.clone();
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
+        request_post("/api/aceptar_oferta", query, move |respuesta: ResponseAceptarOferta|{
+            if respuesta.aceptada {
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
                 }
-            });
-            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
+                cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Aceptaste la oferta con exito")));
+            } else {
+                cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Error al aceptar la oferta")));
+            }
+        });
     });
 
     //traigo el navigator para volver para atras    
@@ -280,6 +283,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         fecha_state_cloned.set(input_value);
     });
 
+    let cloned_loading_state = loading_state.clone();
     //clono estados para botones
     let show_another_trade_error_state = use_state(|| false);
     let cloned_show_another_trade_error_state = show_another_trade_error_state.clone();
@@ -291,6 +295,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let cloned_fecha_state = fecha_state.clone();
     //cambiar trueque a definido
     let change_trade_to_defined = Callback::from(move |()| {
+        cloned_loading_state.set(true);
         let cloned_show_time_error_state = cloned_show_time_error_state.clone();
         let cloned_show_another_trade_error_state = cloned_show_another_trade_error_state.clone();
         let cloned_minutos_state = cloned_select_minutes_value_state.clone();
@@ -343,6 +348,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         else {
             cloned_show_time_error_state.set(true);
         }
+        cloned_loading_state.set(false);
     }
     );
 
@@ -429,7 +435,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
 
     });
-    
+
     html! {
         <div class="trueque-box">
             if *loaded {
@@ -480,10 +486,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
                             match trueque.estado {
                                 datos_comunes::EstadoTrueque::Oferta => html!{
                                     if dni == trueque.receptor.0 {
-                                        <div class="accept-offer">
-                                            <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
-                                            <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
-                                        </div>
+                                        if trueque.valido {
+                                            <div class="accept-offer">
+                                                <button class="accept" onclick={show_accept_offer}>{"Aceptar Oferta"}</button>
+                                                <button class="decline" onclick={show_decline_offer}>{"Rechazar Oferta"}</button>
+                                            </div>
+                                        } else {
+                                            <p> {"No se puede aceptar la oferta ya que uno o más de los productos están involucrados en otro trueque."} </p>
+                                        }
                                     }
                                     else {
                                         if dni == trueque.oferta.0 {
@@ -501,12 +511,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                                 <h2 class="error-text">{"Selecciona otra fecha y/o horario, la seleccionada esta ocupada"}</h2>
                                             }
                                             <h1 class="title">{"Trueque Pendiente"}</h1>
-                                            <li>
                                             <div class="trueque-pendiente">
                                                 <h2>{"Seleccione una sucursal para concretar el trueque (los domingos ninguna sucursal se encontrará abierta)"}</h2>
                                                 <div class="input">
                                                     <select value="select-sucursal" id="sucursales" onchange={select_sucursal_onchange.clone()}>
-                                                        <option value="-1">{"---"}</option>
+                                                        <option value="-1" selected=true>{"---"}</option>
                                                         {
                                                             (&*state_office_list).iter().enumerate().map(|(index, sucursal)| html!{
                                                                 <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
@@ -516,29 +525,32 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                                     <h2>{"Ingrese una fecha"}</h2>
                                                     <input type="date" name="fecha-trueque" onchange={date_changed}/>
                                                     <h2>{"Horario: "}</h2>
-                                                    <select value="select-hora" id="horas" onchange={select_hora_onchange.clone()}>
-                                                        <option value="-1">{"---"}</option>
-                                                        {
-                                                            obtener_horas_sucursal().iter().enumerate().map(|(index, hora)| html!{
-                                                                <option value={index.to_string()}>{hora}</option>
-                                                            }).collect::<Html>()
-                                                        }
-                                                    </select>
-                                                    <h2>{":"}</h2>
-                                                    <select value="select-minutos" id="minutos" onchange={select_minutos_onchange.clone()}>
-                                                        <option value="-1">{"---"}</option>
-                                                        {
-                                                            obtener_minutos_posibles().iter().enumerate().map(|(index, minutos)| html!{
-                                                                <option value={index.to_string()}>{minutos}</option>
-                                                            }).collect::<Html>()
-                                                        }
-                                                    </select>
+                                                    <div class="time-selector">
+                                                        <select value="select-hora" id="horas" onchange={select_hora_onchange.clone()}>
+                                                            <option value="-1" selected=true>{"---"}</option>
+                                                            {
+                                                                obtener_horas_sucursal().iter().enumerate().map(|(index, hora)| html!{
+                                                                    <option value={index.to_string()}>{hora}</option>
+                                                                }).collect::<Html>()
+                                                            }
+                                                        </select>
+                                                        <h2>{":"}</h2>
+                                                        <select value="select-minutos" id="minutos" onchange={select_minutos_onchange.clone()}>
+                                                            <option value="-1" selected=true>{"---"}</option>
+                                                            {
+                                                                obtener_minutos_posibles().iter().enumerate().map(|(index, minutos)| html!{
+                                                                    <option value={index.to_string()}>{minutos}</option>
+                                                                }).collect::<Html>()
+                                                            }
+                                                        </select>
+                                                    </div>
                                                     if ((&*select_sucursal_value_state).clone() != -1) && ((&*select_hora_value_state).clone() != -1) && ((&*select_minutos_value_state).clone() != -1) && (!(&*fecha_state).clone().is_empty()) { 
-                                                        <GenericButton text="Rellenar Datos de Trueque" onclick_event={change_trade_to_defined}/>
+                                                        <GenericButton text="Confirmar Datos Ingresados" onclick_event={change_trade_to_defined}/>
+                                                    } else {
+                                                        <button class="disabled-dyn-element">{"Confirmar Datos Ingresados"}</button> 
                                                     }
                                                 </div>
                                             </div>
-                                            </li>
                                         }
                                         else {
                                             <h2>{format!("Contactate con el usuario {} para acordar una sucursal y un horario", &*receptor_username)}</h2>
@@ -547,8 +559,9 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
-                                        <h1 class="title">{"Trueque Definido"}</h1>
-                                        <h2>{""}</h2>
+                                        <h1 class="title"> {
+                                            msg_trueque_definido(trueque, dni)
+                                        } </h1>
                                         <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                     </>
                                 },
@@ -574,11 +587,31 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 if *show_call_off_offer_state{
                     <ConfirmPromptButtonMolecule text="¿Seguro que quiere cancelar la oferta?" confirm_func={call_off_offer} reject_func={hide_call_off_offer} />
                 }
+                if *loading_state {
+                    <div class="loading">
+                    </div>
+                }
         } else {
             <div class="loading"></div>
         } 
         </div>
     }
+}
+
+fn msg_trueque_definido(trueque: &Trueque, dni: u64) -> String {
+    let mut msg = format!("Trueque Definido para el día {} a las {}:{} en la sucursal '{}'.",
+        trueque.fecha.unwrap().format("%Y-%m-%d"),
+        trueque.hora.as_ref().unwrap(),
+        trueque.minutos.as_ref().unwrap(),
+        trueque.sucursal.as_ref().unwrap()
+    );
+    if dni == trueque.receptor.0 {
+        msg += &format!(" Su código de receptor es {}", trueque.codigo_receptor.unwrap());
+    }
+    if dni == trueque.oferta.0 {
+        msg += &format!(" Su código de ofertante es {}", trueque.codigo_ofertante.unwrap());
+    }
+    msg
 }
 
 fn obtener_horas_sucursal() -> Vec<String> {

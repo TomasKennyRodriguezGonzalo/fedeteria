@@ -366,7 +366,7 @@ impl Database {
     pub fn crear_oferta(&mut self, query:QueryCrearOferta) -> Option<usize> {
         if let Some(_) = self.encontrar_dni(query.dni_receptor) {
             // Crea el Trueque en estado de Oferta
-            let oferta = Trueque{
+            let oferta = Trueque {
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
                 receptor: (query.dni_receptor, query.publicacion_receptora),
                 sucursal: None,
@@ -376,6 +376,7 @@ impl Database {
                 estado: EstadoTrueque::Oferta,
                 codigo_ofertante: None,
                 codigo_receptor: None,
+                valido: true,
             };
             let index = self.agregar_trueque(oferta);
 
@@ -434,14 +435,20 @@ impl Database {
         respuesta
     }
 
-    pub fn get_trueque (&self, id: usize) -> Option<&Trueque> {
+    pub fn validar_trueque(&mut self, id: usize) {
+        self.resolver_estado_trueque(&id);
+    }
+    pub fn get_trueque(&self, id: usize) -> Option<&Trueque> {
         self.trueques.get(&id)
     }
 
     pub fn aceptar_oferta(&mut self, id:usize) -> bool {
         let trueque = self.trueques.get_mut(&id);
         if let Some(trueque) = trueque {
-            //aca se modificaria la variable de "en trueque"
+            if !trueque.valido {
+                return false;
+            }
+            // aca se modificaria la variable de "en trueque"
             let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
             publicacion_receptora.unwrap().pausada = true; 
             if let Some(publi1) = trueque.oferta.1.get(0) {
@@ -457,46 +464,99 @@ impl Database {
                 log::info!("No hay publicacion 2");
             }
             trueque.estado = EstadoTrueque::Pendiente;
+            for publicacion in trueque.get_publicaciones() {
+                self.resolver_estado_trueques_de_publicacion(&publicacion);
+            }
             self.guardar();
             return true;
         }
         false
     }
 
+    /// Retorna todos los trueques en los que están
+    fn trueques_de_publicacion(&self, id: &usize) -> Vec<usize> {
+        let mut trueques = vec![];
+        for (id_trueque, trueque) in self.trueques.iter() {
+            if trueque.get_publicaciones().contains(id) {
+                trueques.push(*id_trueque);
+            }
+        }
+        trueques
+    }
+    fn resolver_estado_trueques_de_publicacion(&mut self, id: &usize) {
+        for trueque in self.trueques_de_publicacion(id) {
+            self.resolver_estado_trueque(&trueque);
+        }
+    }
+    // invalida una oferta si alguna de sus publicaciones está en otro trueque. la deja valida en caso contrario.
+    fn resolver_estado_trueque(&mut self, id: &usize) {
+        let trueque = self.trueques.get(id).unwrap();
+        match trueque.estado {
+            EstadoTrueque::Oferta => {},
+            EstadoTrueque::Pendiente => {return; },
+            EstadoTrueque::Definido => {return; },
+            EstadoTrueque::Finalizado => {return; },
+            EstadoTrueque::Rechazado => {return; },
+        }
+        let mut todo_mal = false;
+        for id_publicacion in trueque.get_publicaciones() {
+    // para cada publicación, si está en un trueque cuyo estado es 
+    // Pendiente,
+    // Definido,
+    // Finalizado,
+    // tonces todo mal
+            for id_otro_trueque in self.trueques_de_publicacion(&id_publicacion) {
+                if id_otro_trueque == *id {continue; }
+                let otro_trueque = self.trueques.get(&id_otro_trueque).unwrap();
+                match otro_trueque.estado {
+                    EstadoTrueque::Oferta => {},
+                    EstadoTrueque::Pendiente => {todo_mal = true},
+                    EstadoTrueque::Definido => {todo_mal = true},
+                    EstadoTrueque::Finalizado => {todo_mal = true},
+                    EstadoTrueque::Rechazado => {},
+                }
+            }
+        }
+        self.trueques.get_mut(id).unwrap().valido = !todo_mal;
+    }
+
     pub fn rechazar_oferta(&mut self, id:usize) -> bool {
         let trueque = self.trueques.get_mut(&id);
-        if let Some(trueque_encontrado) = trueque {
+        if let Some(trueque) = trueque {
             //si el ofertante tiene 2 publicaciones, entra por aca, sino por el else
             //hay un error que no logro descifrar, el bloque del if funciona con 2 publicaciones, pero no con 1
-            if trueque_encontrado.oferta.1.len() > 1 {
+            if trueque.oferta.1.len() > 1 {
                 //elimino del vec de ofertas de las publicaciones involucradas, el trueque actual
                 //elimino la oferta de la primer publicacion del ofertante
-                if let Some (ubicacion_trueque_en_publi_1_ofertante) = self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                    self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_1_ofertante);
+                if let Some (ubicacion_trueque_en_publi_1_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_1_ofertante);
                 }
                 //elimino la oferta de la segunda publicacion del ofertante
-                if !trueque_encontrado.oferta.1.is_empty() {
-                    if let Some (ubicacion_trueque_en_publi_2_ofertante) = self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                        self.publicaciones.get_mut(trueque_encontrado.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_2_ofertante);
+                if !trueque.oferta.1.is_empty() {
+                    if let Some (ubicacion_trueque_en_publi_2_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_2_ofertante);
                     }
                 }
                 //elimino la oferta de la publicacion del receptor
-                if let Some (ubicacion_trueque_en_publi_receptor) = self.publicaciones.get_mut(&trueque_encontrado.receptor.1).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                    self.publicaciones.get_mut(&trueque_encontrado.receptor.1).unwrap().ofertas.remove(ubicacion_trueque_en_publi_receptor);
+                if let Some (ubicacion_trueque_en_publi_receptor) = self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
+                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.remove(ubicacion_trueque_en_publi_receptor);
                 }
             }
             //bloque para rechazar cuando el ofertante tiene una sola publicacion
             else {
                 //elimino el trueque del ofertante
-                if let Some (publicacion_ofertante) = self.publicaciones.get_mut(&trueque_encontrado.oferta.1.pop().unwrap()) {
+                if let Some (publicacion_ofertante) = self.publicaciones.get_mut(&trueque.oferta.1.pop().unwrap()) {
                     let trueque_a_borrar = publicacion_ofertante.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
                     publicacion_ofertante.ofertas.remove(trueque_a_borrar);
                 }
                 //elimino el trueque del receptor
-                if let Some (publicacion_receptor) = self.publicaciones.get_mut(&trueque_encontrado.receptor.1) {
+                if let Some (publicacion_receptor) = self.publicaciones.get_mut(&trueque.receptor.1) {
                     let trueque_a_borrar = publicacion_receptor.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
                     publicacion_receptor.ofertas.remove(trueque_a_borrar);
                 }
+            }
+            for publicacion in trueque.get_publicaciones() {
+                self.resolver_estado_trueques_de_publicacion(&publicacion);
             }
             //elimino el trueque de la DB
             self.trueques.remove(&id);
@@ -516,7 +576,7 @@ impl Database {
         //codigos.1 ----> codigo_ofertante
         let codigos = self.generar_codigos_de_trueque() ;
         let trueque = self.trueques.get_mut(&query.id);
-        if let Some(trueque_actual) = trueque {
+        if let Some(trueque) = trueque {
             /*let hay_otros_trueques = trueques_copia.iter().
                 filter(|(_, trueque)| {
                     trueque.sucursal.as_ref().map(|sucursal| sucursal == &query.sucursal)
@@ -540,26 +600,26 @@ impl Database {
                 //los hago antes a los codigos porque tira error de borrowing
                 //codigos.0 ----> codigo_receptor
                 //codigos.1 ----> codigo_ofertante
-                trueque_actual.estado = EstadoTrueque::Definido;
-                trueque_actual.fecha = Some(query.fecha);
-                trueque_actual.hora = Some(query.hora);
-                trueque_actual.minutos = Some(query.minutos);
-                trueque_actual.sucursal = Some(query.sucursal);
-                trueque_actual.codigo_receptor = Some(codigos.0);
-                trueque_actual.codigo_ofertante = Some(codigos.1);
+                trueque.estado = EstadoTrueque::Definido;
+                trueque.fecha = Some(query.fecha);
+                trueque.hora = Some(query.hora);
+                trueque.minutos = Some(query.minutos);
+                trueque.sucursal = Some(query.sucursal);
+                trueque.codigo_receptor = Some(codigos.0);
+                trueque.codigo_ofertante = Some(codigos.1);
                 //obtengo receptor
-                let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.receptor.0).unwrap();
+                let receptor = self.usuarios.iter().find(|usuario| usuario.dni == trueque.receptor.0).unwrap();
                 //obtengo ofertante
-                let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque_actual.oferta.0).unwrap();
+                let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
                 //creo mail receptor
                 let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
-                                trueque_actual.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque_actual.codigo_receptor.unwrap());
+                                receptor.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                trueque.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
                 let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque_actual.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque_actual.clone().hora.unwrap(), 
-                                trueque_actual.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque_actual.codigo_ofertante.unwrap());
+                                ofertante.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                trueque.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
                 /* Contenido del Vec:
@@ -578,6 +638,10 @@ impl Database {
                 contenidos_mensajes.push(ofertante.email.clone());
                 contenidos_mensajes.push(mail_ofertante.clone());
                 let mensajes = Some(contenidos_mensajes);
+
+                for publicacion in trueque.get_publicaciones() {
+                    self.resolver_estado_trueques_de_publicacion(&publicacion);
+                }
                 self.guardar();
                 return (true, mensajes);
             }
@@ -667,9 +731,13 @@ impl Database {
     //puede concretarse o rechazarse
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
         //cambio el estado del trueque, guardo, y lo obtengo
-        self.trueques.get_mut(&query.id_trueque).unwrap().estado = query.estado.clone();
-        
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        if trueque.estado != EstadoTrueque::Definido {
+            return vec![];
+        }
+        trueque.estado = query.estado.clone();
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
+        
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
         self.usuarios[ofertante].puntos += 1;
@@ -731,16 +799,30 @@ fn get_database_por_defecto() -> Database {
     let usuarios = [
         ("Alan", 1, Dueño),
         ("Bauti", 2, Empleado { sucursal: 0 }),
-        ("Carlos", 3, Normal),
+        ("Carlos", 3, Empleado { sucursal: 1 } ),
+        ("Delfina", 4, Normal),
+        ("Esteban", 5, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
     let publicaciones = [
-        (3, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
         (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
-        (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
-        (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
-        (2, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (5, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
+        (5, "Mouse", "Un mouse. Anda bien", None, vec!["mouse.jpg"]),
+        (5, "Teclado", "Teclado tikitiki", Some(650), vec!["teclado.jpg"]),
+        (5, "Curita", "Curita para sanar :)", Some(800), vec!["curita.jpg"]),
+        (5, "Tenedor", "Tenedor. lo usé para comer milanesa.", Some(299), vec!["tenedor.jpg"]),
+        (5, "Cuchara", "No es comestible", Some(300), vec!["cuchara.jpg"]),
+        (5, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
+        (4, "Tornillo", "Un tornillo sin usar jeje", Some(400), vec!["tornillo.jpg"]),
+        (4, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (4, "Destornillador", "Destornillador que podes usar para destornillar o bien para atornillar", Some(300), vec!["destornillador.jpg"]),
+        (4, "Papel", "Papel SIN ESCRIBIR", Some(630), vec!["papel.jpg"]),
+        (4, "Mancha", "Una mancha porfavor saquenla de mi piso", Some(370), vec!["mancha.jpg"]),
+        (4, "Esponja", "Limpien no sean vagos dale", Some(230), vec!["esponja.jpg"]),
+        (4, "Reloj", "Un reloj les juro que se mueve", Some(900), vec!["reloj.jpg"]),
+        (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
+        (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
     
     for sucursal in sucursales {

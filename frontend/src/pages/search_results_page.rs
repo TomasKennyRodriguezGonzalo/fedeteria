@@ -6,7 +6,7 @@ use crate::molecules::publication_grid_molecule::PublicationGridMolecule;
 
 
 #[function_component(SearchResultsPage)]
-pub fn search_results_page () -> Html {
+pub fn search_results_page() -> Html {
     let location = use_location().unwrap();
     let props = location.query::<QueryPublicacionesFiltradas>().unwrap();
     //let props_deserialized: QueryPublicacionesFiltradas = serde_json::from_str(&props.search_query).unwrap();

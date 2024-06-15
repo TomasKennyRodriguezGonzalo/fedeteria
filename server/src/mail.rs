@@ -4,6 +4,7 @@ use lettre::transport::smtp::{authentication::{Credentials}};
 /// Recibe el nombre del recipiente, el mail del recipiente, el asunto del mail, y el contenido.
 /// El email del negocio está prefijado.
 pub fn send_email(name_recipient: String, email_recipient: String, subject: String, content: String) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    return Ok(());
     // Build an email message using the builder pattern
     let name_and_email_sender = format!("{} <{}>", "Administración de Fedeteria", "administracion@fedeteria.com");
     let name_and_email_recipient = format!("{} <{}>", name_recipient, email_recipient);

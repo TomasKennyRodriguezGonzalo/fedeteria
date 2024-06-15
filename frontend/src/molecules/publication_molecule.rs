@@ -1,8 +1,10 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
+use crate::pages::profile_page::DniURLQuery;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
+use yew_router::prelude::Link;
 use yewdux::use_store;
 use datos_comunes::*;
 use reqwasm::http::Request;
@@ -276,13 +278,13 @@ pub fn publication_molecule(props : &Props) -> Html {
             dni_receptor : receptor.0,
             publicacion_receptora : receptor.1,
         };
-        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
+        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta| {
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         });
-        if let Some(window) = window() {
-            window.location().reload().unwrap();
-        }
 
     });
 
@@ -343,7 +345,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
-                    <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
@@ -373,16 +374,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                // Seccion de propuesta de oferta
-                <div class="publication-selector-container">
-                    if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
-                        if *show_selector_state { 
-                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
-                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
-                        }
-                    }
-                </div>
                 // Seccion de moderacion de publicacion propia
                 if publicacion.dni_usuario == dni.clone().unwrap(){
                 <div class="moderation-buttons">
@@ -394,9 +385,26 @@ pub fn publication_molecule(props : &Props) -> Html {
                             <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
                         }
                         <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
-                    }  
+                    }
+
                 </div>
+                } else {
+                    <Link<Route, DniURLQuery> to={Route::Profile} query={
+                        DniURLQuery {
+                            dni: publicacion.dni_usuario
+                        }
+                    }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>  
                 }
+                // Seccion de propuesta de oferta
+                <div class="publication-selector-container">
+                    if publicacion.dni_usuario != dni.clone().unwrap() {
+                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                        if *show_selector_state { 
+                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
+                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
+                        }
+                    }
+                </div>
                 // Seccion de tasacion de publicacion
                 {
                     if let Some(role) = &*role_state{
