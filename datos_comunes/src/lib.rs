@@ -355,7 +355,7 @@ pub struct ResponseRechazarOferta {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryCambiarTruequeADefinido {
     pub id: usize,
-    pub sucursal : String,
+    pub sucursal : usize,
     pub fecha: DateTime<Local>,
     pub hora: String,
     pub minutos: String,
@@ -369,14 +369,13 @@ pub struct ResponseCambiarTruequeADefinido {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryGetOffice {
-    //dni del empleado o dueño
-    pub dni: u64,
+    //idice de la sucursal
+    pub index: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseGetOffice{
-    //si hay una sucursal, es empleado, sino, dueño
-    pub sucursal: Option<String>,
+    pub sucursal: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

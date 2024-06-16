@@ -14,7 +14,7 @@ pub struct QueryTruequesFiltrados {
     pub filtro_estado: Option<EstadoTrueque>,
     pub filtro_codigo_ofertante: Option<u64>,
     pub filtro_codigo_receptor: Option<u64>,
-    pub filtro_sucursal: Option<String>,
+    pub filtro_sucursal: Option<usize>,
     // FALTA HACER: filtro por fecha
     pub filtro_fecha: Option<()>,
 }
@@ -29,8 +29,7 @@ pub struct Trueque {
     /// receptor.0 --> dni del usuario receptor.
     /// receptor.1 --> indice de publicacion de receptor.
     pub receptor: (u64, usize),
-    pub sucursal: Option<String>,
-    //pub sucursal: Option<usize>,
+    pub sucursal: Option<usize>,
     pub fecha: Option<DateTime<Local>>,
     pub hora: Option<String>,
     pub minutos: Option<String>,
@@ -57,7 +56,7 @@ impl Trueque {
                         fecha: DateTime<Local>, 
                         hora: String,
                         minutos: String,
-                        sucursal_elegida: String, 
+                        sucursal_elegida: usize, 
                         codigo_ofertante: u64, 
                         codigo_receptor: u64
                     ) {

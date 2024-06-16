@@ -104,10 +104,10 @@ async fn main() {
         .route("/api/rechazar_oferta", post(rechazar_oferta))
         .route("/api/cancelar_oferta", post(cancelar_oferta))
         .route("/api/cambiar_trueque_a_definido", post(cambiar_trueque_a_definido))
-        .route("/api/obtener_sucursal_por_dni", post(obtener_sucursal))
         .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
         .route("/api/finalizar_trueque", post(finalizar_trueque))
         .route("/api/rechazar_trueque", post(finalizar_trueque))
+        .route("/api/obtener_string_sucursal", post(obtener_string_sucursal))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -658,22 +658,6 @@ Json(query): Json<QueryTruequesFiltrados>
     Json(ResponseTruequePorCodigos {trueque_encontrado: None})
 }
 
-//forma rara de obtener sucursal, mala mia (Franco), implemente mal el trueque, guardo en el trueque el string de sucursal
-//en lugar del id, para la tercera demo si hago tiempo reacondiciono el tema ese
-async fn obtener_sucursal (
-    State(state): State<SharedState>,
-    Json(query): Json<QueryGetOffice>
-) -> Json<ResponseGetOffice> {
-    let state = state.read().await;
-    let indice_usuario = state.db.encontrar_dni(query.dni).unwrap();
-    let rol = state.db.obtener_rol_usuario(indice_usuario);
-    if let RolDeUsuario::Empleado { sucursal } = rol {
-        let sucursal_empleado = state.db.obtener_sucursal(sucursal);
-        return Json(ResponseGetOffice {sucursal: Some(sucursal_empleado)});
-    }
-    Json(ResponseGetOffice {sucursal: None})  
-}
-
 async fn finalizar_trueque (
     State(state): State<SharedState>,
     Json(query): Json<QueryFinishTrade>
@@ -712,4 +696,15 @@ async fn finalizar_trueque (
         }
     });
     Json(ResponseFinishTrade {respuesta: true})
+}
+
+async fn obtener_string_sucursal (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryGetOffice>
+) -> Json<ResponseGetOffice> {
+    let state = state.read().await;
+    //let indice_usuario = state.db.encontrar_dni(query.index).unwrap();
+    //let rol = state.db.obtener_rol_usuario(indice_usuario);
+    let sucursal_empleado = state.db.obtener_sucursal(query.index);
+    Json(ResponseGetOffice {sucursal: sucursal_empleado})  
 }

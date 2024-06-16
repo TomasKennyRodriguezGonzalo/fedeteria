@@ -62,35 +62,25 @@ pub fn privileged_actions_page() -> Html {
         ||{}
     });
 
-    //me guardo la sucursal si encontro alguna (es decir, es un empleado)
-    let sucursal_state = use_state(|| None);
-    let cloned_sucursal_state = sucursal_state.clone();
-    let cloned_dni = dni.clone();
-    use_effect_once(move || {
-        let query = QueryGetOffice {dni: cloned_dni.unwrap()};
-        request_post("/api/obtener_sucursal_por_dni", query, move |respuesta:ResponseGetOffice|{
-            cloned_sucursal_state.set(respuesta.sucursal.clone());
-            //log::info!("RESPUESTA OBTENER SUCURSAL POR DNI: {:?}", respuesta.sucursal);
-        });
-        || {}
-    });
-
-    //pusheo a buscar
-    let cloned_sucursal_state = sucursal_state.clone();
+    //pusheo a buscar trueques definidos para un empleado de una sucursal
+    let cloned_role_state = role_state.clone();
     let navigator_cloned = navigator.clone();
     let search_defined_trades_office = Callback::from(move |()| {
-        let sucursal = (&*cloned_sucursal_state).clone();
-        let query = QueryTruequesFiltrados {
-            filtro_codigo_ofertante: None,
-            filtro_codigo_receptor: None,
-            filtro_dni_integrantes: None,
-            filtro_estado: Some(EstadoTrueque::Definido),
-            filtro_fecha: None,
-            filtro_id_publicacion: None,
-            filtro_sucursal: sucursal,
-        };
+        let cloned_role_state = cloned_role_state.clone();
+        if let RolDeUsuario::Empleado { sucursal } = (&*cloned_role_state).as_ref().unwrap().clone() {
+            let query = QueryTruequesFiltrados {
+                filtro_codigo_ofertante: None,
+                filtro_codigo_receptor: None,
+                filtro_dni_integrantes: None,
+                filtro_estado: Some(EstadoTrueque::Definido),
+                filtro_fecha: None,
+                filtro_id_publicacion: None,
+                filtro_sucursal: Some(sucursal),
+            };
 
-        let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+            let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
+        }
+
     });
 
     html! {
