@@ -16,7 +16,8 @@ pub struct QueryTruequesFiltrados {
     pub filtro_codigo_receptor: Option<u64>,
     pub filtro_sucursal: Option<usize>,
     // FALTA HACER: filtro por fecha
-    pub filtro_fecha: Option<()>,
+    pub filtro_fecha_pactada: Option<()>,
+    pub filtro_fecha_trueque: Option<()>,
 }
 
 pub type ResponseTruequesFiltrados = Vec<usize>;
@@ -30,12 +31,14 @@ pub struct Trueque {
     /// receptor.1 --> indice de publicacion de receptor.
     pub receptor: (u64, usize),
     pub sucursal: Option<usize>,
-    pub fecha: Option<DateTime<Local>>,
+    pub fecha_pactada: Option<DateTime<Local>>,
+    pub fecha_trueque: Option<DateTime<Local>>,
     pub hora: Option<String>,
     pub minutos: Option<String>,
     pub estado: EstadoTrueque,
     pub codigo_ofertante: Option<u64>,
     pub codigo_receptor: Option<u64>,
+    pub ganancias: u64,
     // Para el front end...
     pub valido: bool,
 }
@@ -45,7 +48,8 @@ impl Trueque {
         //verifico que no este finalizada para que por algun error inesperado, no se vuelva a un estado previo
         if self.estado != EstadoTrueque::Finalizado {
             self.estado = EstadoTrueque::Pendiente;
-            self.fecha = None;
+            self.fecha_pactada = None;
+            self.fecha_trueque = None;
             self.hora = None;
             self.minutos = None;
             self.sucursal = None;
@@ -53,7 +57,7 @@ impl Trueque {
     }
 
     pub fn definir (&mut self, 
-                        fecha: DateTime<Local>, 
+                        fecha_pactada: DateTime<Local>, 
                         hora: String,
                         minutos: String,
                         sucursal_elegida: usize, 
@@ -63,7 +67,7 @@ impl Trueque {
          //verifico que no este finalizada para que por algun error inesperado, no se vuelva a un estado previo
         if self.estado != EstadoTrueque::Finalizado {
             self.sucursal = Some(sucursal_elegida);
-            self.fecha = Some(fecha);
+            self.fecha_pactada = Some(fecha_pactada);
             self.hora = Some(hora);
             self.minutos = Some(minutos);
             self.estado = EstadoTrueque::Definido;

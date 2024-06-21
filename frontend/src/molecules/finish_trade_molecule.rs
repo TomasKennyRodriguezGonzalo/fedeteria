@@ -48,6 +48,14 @@ pub fn finish_trade_molecule () -> Html {
     });
     let cloned_offer_code_state = offer_code_state.clone();
 
+    //estado de la ganancia
+    let gains_state = use_state(|| None);
+    let cloned_gains_state = gains_state.clone();
+    let gains_onchange = Callback::from(move |code: String| {
+        cloned_gains_state.set(Some(code.parse::<u64>().unwrap()));
+    });
+    let cloned_gains_state = gains_state.clone();
+
     //estado de muestreo de trueque
     let show_trade_search_state = use_state(|| false);
     let cloned_show_trade_search_state = show_trade_search_state.clone();
@@ -70,7 +78,8 @@ pub fn finish_trade_molecule () -> Html {
                 filtro_codigo_receptor: Some((&*cloned_receptor_code_state).clone()),
                 filtro_dni_integrantes: None,
                 filtro_estado: None,
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: None,
                 filtro_sucursal: Some(sucursal.clone()),
             };
@@ -82,7 +91,8 @@ pub fn finish_trade_molecule () -> Html {
                 filtro_codigo_receptor: Some((&*cloned_receptor_code_state).clone()),
                 filtro_dni_integrantes: None,
                 filtro_estado: None,
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: None,
                 filtro_sucursal: None,
             };
@@ -106,7 +116,8 @@ pub fn finish_trade_molecule () -> Html {
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let finish_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
+                                                                                                                                                        // si no se ingresaron ganancias, se toma 0
+        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(), ganancias: (&*cloned_gains_state).unwrap_or(0)};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
         cloned_show_trade_search_state.set(false);
@@ -120,7 +131,7 @@ pub fn finish_trade_molecule () -> Html {
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let abort_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
+        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(), ganancias: 0};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
         cloned_show_trade_search_state.set(false);
@@ -172,6 +183,8 @@ pub fn finish_trade_molecule () -> Html {
                 if let Some(id) = &*cloned_trade_index_state {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
+                        <h2>{"Ingrese Ganancias Totales del Trueque"}</h2>
+                        <li><DniInputField dni = "Ingrese Ganancias Totales del Trueque" tipo = "number" handle_on_change = {gains_onchange}/></li>
                         <ul>
                             <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>

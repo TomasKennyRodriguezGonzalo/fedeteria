@@ -73,7 +73,8 @@ pub fn privileged_actions_page() -> Html {
                 filtro_codigo_receptor: None,
                 filtro_dni_integrantes: None,
                 filtro_estado: Some(EstadoTrueque::Definido),
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: None,
                 filtro_sucursal: Some(sucursal),
             };

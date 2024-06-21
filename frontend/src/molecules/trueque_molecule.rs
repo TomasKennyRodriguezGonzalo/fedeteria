@@ -76,7 +76,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
                     let ofertante_username = cloned_ofertante_username.clone();
                     let receptor_username = cloned_receptor_username.clone();
-                    cloned_trade_date_state.set(trueque.fecha);
+                    cloned_trade_date_state.set(trueque.fecha_pactada);
 
                     if trueque.estado == EstadoTrueque::Pendiente{
                         spawn_local(async move {
@@ -221,7 +221,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 //filtro_receptor: cloned_dni,
                 filtro_dni_integrantes: Some(dni_receptor.clone()),
                 filtro_estado: Some(EstadoTrueque::Oferta),
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: Some(id_publication.clone()),
                 filtro_sucursal: None,
             };
@@ -428,7 +429,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
             //filtro_receptor: cloned_dni,
             filtro_dni_integrantes: Some(dni_receptor.clone()),
             filtro_estado: Some(EstadoTrueque::Oferta),
-            filtro_fecha: None,
+            filtro_fecha_pactada: None,
+            filtro_fecha_trueque: None,
             filtro_id_publicacion: Some(id_publication.clone()),
             filtro_sucursal: None,
         };
@@ -606,7 +608,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
 fn msg_trueque_definido(trueque: &Trueque, dni: u64, sucursal: String) -> String {
     let mut msg = format!("Trueque Definido para el día {} a las {}:{} en la sucursal '{}'.",
-        trueque.fecha.unwrap().format("%Y-%m-%d"),
+        trueque.fecha_pactada.unwrap().format("%Y-%m-%d"),
         trueque.hora.as_ref().unwrap(),
         trueque.minutos.as_ref().unwrap(),
         sucursal

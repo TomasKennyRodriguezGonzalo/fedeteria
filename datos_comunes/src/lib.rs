@@ -391,5 +391,6 @@ pub struct ResponseFinishTrade {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryFinishTrade{
     pub id_trueque: usize,
+    pub ganancias: u64,
     pub estado: EstadoTrueque,
 }

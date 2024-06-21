@@ -370,13 +370,15 @@ impl Database {
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
                 receptor: (query.dni_receptor, query.publicacion_receptora),
                 sucursal: None,
-                fecha: None,
+                fecha_pactada: None,
+                fecha_trueque: None,
                 hora: None,
                 minutos: None,
                 estado: EstadoTrueque::Oferta,
                 codigo_ofertante: None,
                 codigo_receptor: None,
                 valido: true,
+                ganancias: 0,
             };
             let index = self.agregar_trueque(oferta);
 
@@ -601,7 +603,7 @@ impl Database {
                 //codigos.0 ----> codigo_receptor
                 //codigos.1 ----> codigo_ofertante
                 trueque.estado = EstadoTrueque::Definido;
-                trueque.fecha = Some(query.fecha);
+                trueque.fecha_pactada = Some(query.fecha);
                 trueque.hora = Some(query.hora);
                 trueque.minutos = Some(query.minutos);
                 trueque.sucursal = Some(query.sucursal);
@@ -613,12 +615,12 @@ impl Database {
                 let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
                 //creo mail receptor
                 let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                receptor.nombre_y_apellido, trueque.fecha_pactada.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
                                 trueque.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
                 let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                ofertante.nombre_y_apellido, trueque.fecha_pactada.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
                                 trueque.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
@@ -735,7 +737,12 @@ impl Database {
         if trueque.estado != EstadoTrueque::Definido {
             return vec![];
         }
+        //actualizo la informacion del trueque
         trueque.estado = query.estado.clone();
+        trueque.ganancias = query.ganancias;
+        trueque.fecha_trueque = Some(Local::now());
+
+        //lo obtengo de vuelta por una cuestion de borrowing
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
         
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
