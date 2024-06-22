@@ -50,13 +50,13 @@ pub fn finish_trade_molecule () -> Html {
     });
     let cloned_offer_code_state = offer_code_state.clone();
 
-    //estado de la ganancia
+    /*//estado de la ganancia
     let gains_state = use_state(|| None);
     let cloned_gains_state = gains_state.clone();
     let gains_onchange = Callback::from(move |code: String| {
         cloned_gains_state.set(Some(code.parse::<u64>().unwrap()));
     });
-    let cloned_gains_state = gains_state.clone();
+    let cloned_gains_state = gains_state.clone();*/
 
     //estado de muestreo de trueque
     let show_trade_search_state = use_state(|| false);
@@ -199,7 +199,7 @@ pub fn finish_trade_molecule () -> Html {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
                         <h2>{"Ingrese Ganancias Totales del Trueque"}</h2>
-                        <li><DniInputField dni = "Ingrese Ganancias Totales del Trueque" tipo = "number" handle_on_change = {gains_onchange}/></li>
+                        //<li><DniInputField dni = "Ingrese Ganancias Totales del Trueque" tipo = "number" handle_on_change = {gains_onchange}/></li>
                         <ul>
                             <CheckedInputField name = "ventas-ofertante" label="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
                             <CheckedInputField name = "ventas-receptor" label="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
