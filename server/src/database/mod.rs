@@ -378,7 +378,8 @@ impl Database {
                 codigo_ofertante: None,
                 codigo_receptor: None,
                 valido: true,
-                ganancias: 0,
+                ventas_ofertante:None,
+                ventas_receptor:None,
             };
             let index = self.agregar_trueque(oferta);
 
@@ -453,14 +454,18 @@ impl Database {
             // aca se modificaria la variable de "en trueque"
             let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
             publicacion_receptora.unwrap().pausada = true; 
+            let publicacion_receptora = self.publicaciones.get_mut(&trueque.receptor.1);
+            publicacion_receptora.unwrap().en_trueque = true;
             if let Some(publi1) = trueque.oferta.1.get(0) {
                 self.publicaciones.get_mut(publi1).unwrap().pausada = true;
+                self.publicaciones.get_mut(publi1).unwrap().en_trueque = true;
             }
             else {
                 log::info!("No hay publicacion 1");
             }
             if let Some(publi2) = trueque.oferta.1.get(1) {
                 self.publicaciones.get_mut(publi2).unwrap().pausada = true;
+                self.publicaciones.get_mut(publi2).unwrap().en_trueque = true;
             }
             else {
                 log::info!("No hay publicacion 2");
@@ -529,19 +534,25 @@ impl Database {
             //hay un error que no logro descifrar, el bloque del if funciona con 2 publicaciones, pero no con 1
             if trueque.oferta.1.len() > 1 {
                 //elimino del vec de ofertas de las publicaciones involucradas, el trueque actual
-                //elimino la oferta de la primer publicacion del ofertante
+                //elimino la oferta de la primer publicacion del ofertante y le pongo el estado "en_trueque" en false y la despauso
                 if let Some (ubicacion_trueque_en_publi_1_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
                     self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_1_ofertante);
+                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().en_trueque = false;
+                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().pausada = false;
                 }
-                //elimino la oferta de la segunda publicacion del ofertante
+                //elimino la oferta de la segunda publicacion del ofertante y le pongo el estado "en_trueque" en false y la despauso
                 if !trueque.oferta.1.is_empty() {
                     if let Some (ubicacion_trueque_en_publi_2_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
                         self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_2_ofertante);
+                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().en_trueque = false;
+                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().pausada = false;
                     }
                 }
-                //elimino la oferta de la publicacion del receptor
+                //elimino la oferta de la publicacion del receptor y le pongo el estado "en_trueque" en false y la despauso
                 if let Some (ubicacion_trueque_en_publi_receptor) = self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
                     self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.remove(ubicacion_trueque_en_publi_receptor);
+                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().en_trueque = false;
+                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().pausada = false;
                 }
             }
             //bloque para rechazar cuando el ofertante tiene una sola publicacion
@@ -550,11 +561,15 @@ impl Database {
                 if let Some (publicacion_ofertante) = self.publicaciones.get_mut(&trueque.oferta.1.pop().unwrap()) {
                     let trueque_a_borrar = publicacion_ofertante.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
                     publicacion_ofertante.ofertas.remove(trueque_a_borrar);
+                    publicacion_ofertante.en_trueque = false;
+                    publicacion_ofertante.pausada = false;
                 }
                 //elimino el trueque del receptor
                 if let Some (publicacion_receptor) = self.publicaciones.get_mut(&trueque.receptor.1) {
                     let trueque_a_borrar = publicacion_receptor.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
                     publicacion_receptor.ofertas.remove(trueque_a_borrar);
+                    publicacion_receptor.en_trueque = false;
+                    publicacion_receptor.pausada = false;
                 }
             }
             for publicacion in trueque.get_publicaciones() {
@@ -739,12 +754,14 @@ impl Database {
         }
         //actualizo la informacion del trueque
         trueque.estado = query.estado.clone();
-        trueque.ganancias = query.ganancias;
         trueque.fecha_trueque = Some(Local::now());
 
         //lo obtengo de vuelta por una cuestion de borrowing
-        let trueque = self.trueques.get(&query.id_trueque).unwrap();
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        trueque.ventas_ofertante = Some(query.ventas_ofertante);
+        trueque.ventas_receptor = Some(query.ventas_receptor);
         
+        let trueque = self.trueques.get(&query.id_trueque).unwrap();
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
         self.usuarios[ofertante].puntos += 1;
@@ -865,6 +882,7 @@ fn get_database_por_defecto() -> Database {
             imagenes,
             precio,
             pausada: precio.is_none(),
+            en_trueque:false,
             ofertas: vec![],
         });
     }

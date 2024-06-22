@@ -41,6 +41,8 @@ pub struct Trueque {
     pub ganancias: u64,
     // Para el front end...
     pub valido: bool,
+    pub ventas_ofertante:Option<u64>,
+    pub ventas_receptor:Option<u64>,
 }
 
 impl Trueque {
