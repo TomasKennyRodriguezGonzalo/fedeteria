@@ -38,7 +38,7 @@ pub struct Trueque {
     pub estado: EstadoTrueque,
     pub codigo_ofertante: Option<u64>,
     pub codigo_receptor: Option<u64>,
-    pub ganancias: u64,
+    //pub ganancias: u64,
     // Para el front end...
     pub valido: bool,
     pub ventas_ofertante:Option<u64>,
