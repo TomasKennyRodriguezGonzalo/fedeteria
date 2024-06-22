@@ -218,7 +218,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
             log::info!("ESTADO: {:?}", (cloned_trueque_state.as_ref()).unwrap().estado);
 
             //hago el mensaje
-            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido {
+            if (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Definido || (cloned_trueque_state.as_ref()).unwrap().estado == EstadoTrueque::Pendiente {
                 information_dispatch.reduce_mut(|store| store.messages.push(format!("Cancelaste el trueque con exito")));
             }
             else {
@@ -543,6 +543,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                                                 }).collect::<Html>()
                                                             }
                                                         </select>
+                                                        <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                                     </div>
                                                     if ((&*select_sucursal_value_state).clone() != -1) && ((&*select_hora_value_state).clone() != -1) && ((&*select_minutos_value_state).clone() != -1) && (!(&*fecha_state).clone().is_empty()) { 
                                                         <GenericButton text="Confirmar Datos Ingresados" onclick_event={change_trade_to_defined}/>

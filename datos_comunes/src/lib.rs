@@ -393,4 +393,6 @@ pub struct ResponseFinishTrade {
 pub struct QueryFinishTrade{
     pub id_trueque: usize,
     pub estado: EstadoTrueque,
+    pub ventas_ofertante: u64,
+    pub ventas_receptor:u64,
 }
