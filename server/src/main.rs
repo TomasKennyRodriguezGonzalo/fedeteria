@@ -107,6 +107,7 @@ async fn main() {
         .route("/api/obtener_trueque_por_codigos", post(obtener_trueque_por_codigos))
         .route("/api/finalizar_trueque", post(finalizar_trueque))
         .route("/api/rechazar_trueque", post(finalizar_trueque))
+        .route("/api/preguntar",post(preguntar))
         .route("/api/obtener_string_sucursal", post(obtener_string_sucursal))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -696,6 +697,14 @@ async fn finalizar_trueque (
         }
     });
     Json(ResponseFinishTrade {respuesta: true})
+}
+
+async fn preguntar( State(state): State<SharedState>,
+Json(query): Json<QueryAskQuestion>
+) -> Json<ResponseAskQuestion>{
+    let mut state = state.write().await;
+    state.db.preguntar(query);
+    Json(ResponseAskQuestion{ok:true})
 }
 
 async fn obtener_string_sucursal (

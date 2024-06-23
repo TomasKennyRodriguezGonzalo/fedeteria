@@ -396,3 +396,13 @@ pub struct QueryFinishTrade{
     pub ventas_ofertante: u64,
     pub ventas_receptor:u64,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAskQuestion{
+    pub dni_preguntante:u64,
+    pub pregunta:String,
+    pub id_publicacion:usize,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAskQuestion{
+    pub ok:bool,
+}
