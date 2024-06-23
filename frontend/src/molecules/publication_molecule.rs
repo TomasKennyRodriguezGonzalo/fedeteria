@@ -468,8 +468,10 @@ pub fn publication_molecule(props : &Props) -> Html {
                 {
                     html!{
                         <>
-                        <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
-                        <GenericButton text="Realizar pregunta" onclick_event={ask_question}/>
+                        if publicacion.dni_usuario != dni.clone().unwrap(){
+                            <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
+                            <GenericButton text="Realizar pregunta" onclick_event={ask_question}/>
+                        } 
                         <h2>{"Preguntas:"}</h2>
                         {
                             publicacion.preguntas.iter().map(|pregunta|{
