@@ -31,6 +31,15 @@ pub fn publication_molecule(props : &Props) -> Html {
     
     let publicacion_en_trueque_state = use_state(|| false);
 
+    let question_text_state = use_state(||"".to_string());
+    let question_text_state_cloned = question_text_state.clone();
+    let question_text_changed = Callback::from(move|question|{
+        question_text_state_cloned.set(question);
+    });
+
+
+
+
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
@@ -322,6 +331,28 @@ pub fn publication_molecule(props : &Props) -> Html {
         cloned_activate_assign_price_state.set(false);
     });
 
+    let cloned_id = id.clone();
+
+    let cloned_dni = dni.clone();
+    let question_text_state_cloned = question_text_state.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let ask_question = Callback::from(move|_|{
+        if !(&*question_text_state_cloned).is_empty(){
+            if let Some(dni) = cloned_dni {
+                if let Some(_publicacion) = &*cloned_datos_publicacion{
+                    let query = QueryAskQuestion{ dni_preguntante:dni , pregunta:(&*question_text_state_cloned).clone(), id_publicacion:cloned_id};
+                    request_post("/api/preguntar",query, move |_respuesta:ResponseAskQuestion|{
+    
+                    });
+                }
+            }
+
+        } else{
+            //notificar que la pregunta no puede estar vacia
+        }
+
+    });
+
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
@@ -433,6 +464,33 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
+                //seccion preguntas y respuestas
+                {
+                    html!{
+                        <>
+                        <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
+                        <GenericButton text="Realizar pregunta" onclick_event={ask_question}/>
+                        <h2>{"Preguntas:"}</h2>
+                        {
+                            publicacion.preguntas.iter().map(|pregunta|{
+                                html!{
+                                    <>
+                                    <h2>{(pregunta.pregunta).clone()}</h2>
+                                    if let Some(respuesta) = (pregunta.respuesta).clone(){
+                                        <h3>{(pregunta.respuesta).clone().unwrap()}</h3>
+                                    } else {
+                                        <h3>{"el dueño de la publicación aún no ha respondido esta pregunta"}</h3>
+                                    }
+                                    </>
+                            
+                            }
+                            }).collect::<Html>()
+                        }
+                            </>
+                    }
+
+                }
+
                 // if (&*activate_delete_publication_state).clone(){
                 //     <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
                 // }

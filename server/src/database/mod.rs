@@ -805,6 +805,19 @@ impl Database {
         contenidos_mensajes.push(mail_ofertante.clone());
         contenidos_mensajes
     }
+
+    pub fn preguntar(&mut self, query:QueryAskQuestion){
+        let publicacion = self.publicaciones.get_mut(&query.id_publicacion);
+        if let Some(publicacion) = publicacion{
+            let pregunta = PregYRta {dni_preguntante : query.dni_preguntante, pregunta:query.pregunta, respuesta:None};
+            publicacion.preguntas.push(pregunta);
+        }else{
+            log::error!("error al buscar la publicacion (no deberia pasar)");
+        }
+
+    }
+
+
 }
 
 fn get_database_por_defecto() -> Database {
@@ -866,8 +879,10 @@ fn get_database_por_defecto() -> Database {
             pausada: precio.is_none(),
             en_trueque:false,
             ofertas: vec![],
+            preguntas: vec![],
         });
     }
 
     db
 }
+
