@@ -8,6 +8,8 @@ mod notificacion;
 pub use notificacion::*;
 mod trueque;
 pub use trueque::*;
+mod sucursal;
+pub use sucursal::*;
 
 
 
@@ -73,16 +75,11 @@ pub struct QueryLogin {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Serialize ,PartialEq, Clone)]
-pub struct Sucursal {
-    pub nombre: String,
-}
-
-impl Sucursal {
-    pub fn new (nombre: String) -> Sucursal {
+/*impl Sucursal {
+    pub fn new (nombre: String, ) -> Sucursal {
         Sucursal {nombre}
     }
-}
+}*/
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseGetOffices {
@@ -91,12 +88,13 @@ pub struct ResponseGetOffices {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryDeleteOffice {
-    pub office_to_delete: String,
+    pub office_to_delete: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseDeleteOffice {
-    pub respuesta: Vec<Sucursal>,
+    pub sucursales: Vec<Sucursal>,
+    pub eliminada: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

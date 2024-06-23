@@ -303,7 +303,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let cloned_show_time_error_state = show_time_error_state.clone();
     //clono lo referido a sucursales y fecha de trueque
     let cloned_sucursal_state = cloned_select_sucursal_value_state.clone();
-    //let cloned_state_office_list = state_office_list.clone();
+    let cloned_state_office_list = state_office_list.clone();
     let cloned_fecha_state = fecha_state.clone();
     //cambiar trueque a definido
     let change_trade_to_defined = Callback::from(move |()| {
@@ -312,6 +312,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let cloned_show_another_trade_error_state = cloned_show_another_trade_error_state.clone();
         let cloned_minutos_state = cloned_select_minutes_value_state.clone();
         let sucursal_trueque = (&*cloned_sucursal_state).clone() as usize;
+        let cloned_state_office_list = (&*cloned_state_office_list).clone();
         //inicializo una hora y minutos
         let mut hora_trueque = "".to_string();
         let mut minutos_trueque = "".to_string();
@@ -333,7 +334,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         if (fecha_trueque > fecha_actual) && (fecha_trueque.weekday() != Weekday::Sun) {
             let query = QueryCambiarTruequeADefinido{
                 id : id_trueque,
-                sucursal : sucursal_trueque,
+                sucursal : cloned_state_office_list[sucursal_trueque].id,
                 fecha : fecha_trueque.clone(),
                 hora: hora_trueque,
                 minutos: minutos_trueque,

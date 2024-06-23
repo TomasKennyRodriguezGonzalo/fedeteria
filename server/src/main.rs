@@ -269,7 +269,7 @@ async fn agregar_sucursal (State(state): State<SharedState>,
 Json(query): Json<QueryAddOffice>) ->  Json<ResponseAddOffice> {
     let mut state = state.write().await;
     let agrego = state.db.agregar_sucursal(query);
-    let respuesta = ResponseAddOffice { respuesta: state.db.obtener_sucursales(), agrego };
+    let respuesta = ResponseAddOffice { respuesta: state.db.obtener_sucursales_activas(), agrego };
     Json(respuesta) 
 }
 
@@ -285,8 +285,8 @@ async fn eliminar_sucursal (
     Json(query): Json<QueryDeleteOffice>
 ) -> Json<ResponseDeleteOffice> {
     let mut state = state.write().await;
-    let respuesta = ResponseDeleteOffice { respuesta: state.db.eliminar_sucursal(query) };
-    Json(respuesta)
+    let respuesta = state.db.eliminar_sucursal(query);
+    Json(ResponseDeleteOffice { sucursales: respuesta.0, eliminada:respuesta.1 })
 }
 
 
@@ -295,7 +295,7 @@ async fn obtener_sucursales (
     State(state): State<SharedState>,
 ) -> Json<ResponseGetOffices> {
     let state = state.read().await;
-    let sucursales=state.db.obtener_sucursales();
+    let sucursales=state.db.obtener_sucursales_activas();
     let respuesta = ResponseGetOffices{office_list : sucursales.clone()};
     Json(respuesta)
 }

@@ -73,12 +73,14 @@ pub fn defined_trades_page () -> Html {
     //busco los trueques de la sucursal ingresada
     let navigator = use_navigator().unwrap();
     let cloned_query = query.clone();
+    let cloned_office_list_state = office_list_state.clone();
     let cloned_select_sucursal_value_state = select_sucursal_value_state.clone();
     let search_defined_trades_office = Callback::from(move |()| {
         let navigator_cloned = navigator.clone();
         let mut cloned_query = cloned_query.clone();
-        let selected_office_index = (&*cloned_select_sucursal_value_state).clone() as usize;
-        cloned_query.filtro_sucursal = Some(selected_office_index);
+        let cloned_office_list_state = (&*cloned_office_list_state).clone();
+        let selected_office_id = cloned_office_list_state[(&*cloned_select_sucursal_value_state).clone() as usize].id;
+        cloned_query.filtro_sucursal = Some(selected_office_id);
 
         let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &cloned_query);
     });

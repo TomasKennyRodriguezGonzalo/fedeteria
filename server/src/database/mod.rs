@@ -16,6 +16,8 @@ pub mod usuario;
 pub struct Database {
 
     usuarios: Vec<Usuario>,
+
+    sucursales_auto_incremental: usize,
     sucursales: Vec<Sucursal>,
 
     publicaciones_auto_incremental: usize,
@@ -146,29 +148,38 @@ impl Database {
         self.publicaciones.get(&id)
     }
 
-    pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
-        self.sucursales.clone()
+    pub fn obtener_sucursales_activas (&self) -> Vec<Sucursal> {
+        let sucursales_activas: Vec<Sucursal> = self.sucursales.iter().filter(|sucursal| sucursal.esta_activa).map(|sucursal| sucursal.clone()).collect();
+        sucursales_activas
     }
 
     pub fn agregar_sucursal (&mut self, nueva: QueryAddOffice) -> bool {
-        if self.sucursales.iter().map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
-            self.sucursales.push(Sucursal { nombre: nueva.office_to_add });
+        //ver si se puede agregar una sucursal con el mismo nombre que una "eliminada"
+        if self.sucursales.iter().filter(|sucursal| sucursal.esta_activa).map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
+            self.sucursales.push(Sucursal { nombre: nueva.office_to_add, esta_activa: true, id: self.sucursales_auto_incremental});
+            self.sucursales_auto_incremental += 1;
             self.guardar();
             return true;
         }
         false
     }
+    
+    pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> (Vec<Sucursal>, bool) {
+        //verifico si la sucursal tiene empleados. De tener, no la elimina
+        if let Some (_empleado) = self.usuarios.iter().find(|usuario| usuario.rol == RolDeUsuario::Empleado { sucursal: eliminar.office_to_delete }) {
+            return (self.obtener_sucursales_activas(), false);
+        }
 
-    pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
+        //"elimino" la sucursal
         let ubicacion = self.sucursales.iter().
-                                    position(|actual| actual.nombre == eliminar.office_to_delete);
+                                    position(|actual| actual.id == eliminar.office_to_delete);
 
-        if let Some (i_eliminar) = ubicacion {
-            self.sucursales.remove(i_eliminar);
+        if let Some (indice) = ubicacion {
+            self.sucursales[indice].esta_activa = false;
             self.guardar();
         }
 
-        self.sucursales.clone()
+        (self.obtener_sucursales_activas(), true)
     }
 
     pub fn cambiar_usuario (&mut self,
