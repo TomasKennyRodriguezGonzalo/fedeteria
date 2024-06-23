@@ -345,6 +345,10 @@ pub fn publication_molecule(props : &Props) -> Html {
                     request_post("/api/preguntar",query, move |_respuesta:ResponseAskQuestion|{
     
                     });
+
+                    if let Some(window) = window() {
+                        window.location().reload().unwrap();
+                    }
                 }
             }
 

@@ -816,6 +816,7 @@ impl Database {
         if let Some(publicacion) = publicacion{
             let pregunta = PregYRta {dni_preguntante : query.dni_preguntante, pregunta:query.pregunta, respuesta:None};
             publicacion.preguntas.push(pregunta);
+            self.guardar();
         }else{
             log::error!("error al buscar la publicacion (no deberia pasar)");
         }
