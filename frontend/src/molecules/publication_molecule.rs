@@ -338,10 +338,24 @@ pub fn publication_molecule(props : &Props) -> Html {
 
     let cloned_id = id.clone();
 
+    let show_question_state = use_state(||false);
+
+    let cloned_show_question_state = show_question_state.clone();
+    let show_question_prompt = Callback::from(move|_|{
+        cloned_show_question_state.set(true);
+    });
+
+    let cloned_show_question_state = show_question_state.clone();
+    let hide_show_question_state = Callback::from(move|_:MouseEvent|{
+        cloned_show_question_state.set(false);
+    });
+
+
+
     let cloned_dni = dni.clone();
     let question_text_state_cloned = question_text_state.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
-    let ask_question = Callback::from(move|_|{
+    let ask_question = Callback::from(move|_:MouseEvent|{
         if (&*question_text_state_cloned).split_whitespace().count() >= 2{
             if let Some(dni) = cloned_dni {
                 if let Some(_publicacion) = &*cloned_datos_publicacion{
@@ -351,7 +365,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                     });
                 }
             }
-
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
         } else{
             //notificar que la pregunta no puede estar vacia
         }
@@ -493,8 +509,14 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <>
                         if publicacion.dni_usuario != dni.clone().unwrap(){
                             <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
-                            <GenericButton text="Realizar pregunta" onclick_event={ask_question}/>
+                            <GenericButton text="Realizar pregunta" onclick_event={show_question_prompt}/>
                         }
+
+                        if (&*show_question_state).clone(){
+                            <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
+                        }
+
+
                         {
                             publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
                                 html!{
