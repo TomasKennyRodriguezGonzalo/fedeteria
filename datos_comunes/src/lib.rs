@@ -393,4 +393,27 @@ pub struct ResponseFinishTrade {
 pub struct QueryFinishTrade{
     pub id_trueque: usize,
     pub estado: EstadoTrueque,
+    pub ventas_ofertante: u64,
+    pub ventas_receptor:u64,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAskQuestion{
+    pub dni_preguntante:u64,
+    pub pregunta:String,
+    pub id_publicacion:usize,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAskQuestion{
+    pub ok:bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAnswerQuestion{
+    pub indice_pregunta:usize,
+    pub id_publicacion: usize,
+    pub respuesta:String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAnswerQuestion{
+    pub ok:bool,
 }

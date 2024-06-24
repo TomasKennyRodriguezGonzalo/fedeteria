@@ -1,10 +1,8 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
-use crate::pages::profile_page::DniURLQuery;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
-use yew_router::prelude::Link;
 use yewdux::use_store;
 use datos_comunes::*;
 use reqwasm::http::Request;
@@ -14,6 +12,7 @@ use yew_hooks::use_effect_once;
 use crate::information_store::InformationStore;
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 use crate::molecules::publication_selector_molecule::PublicationSelectorMolecule;
+
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -30,6 +29,22 @@ pub fn publication_molecule(props : &Props) -> Html {
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
     
+    let publicacion_en_trueque_state = use_state(|| false);
+
+    let question_text_state = use_state(||"".to_string());
+    let question_text_state_cloned = question_text_state.clone();
+    let question_text_changed = Callback::from(move|question|{
+        question_text_state_cloned.set(question);
+    });
+
+    let answer_text_state = use_state(||"".to_string());
+    let answer_text_state_cloned = answer_text_state.clone();
+    let answer_text_changed = Callback::from(move|answer|{
+        answer_text_state_cloned.set(answer);
+    });
+
+
+
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
     let cloned_role_state = role_state.clone();
     let cloned_dni = dni.clone();
@@ -262,6 +277,8 @@ pub fn publication_molecule(props : &Props) -> Html {
         publication_price_state.set((&*input_publication_price_state).clone());
     });
 
+
+    let cloned_information_dispatch = information_dispatch.clone();
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
     let created_offer_state = use_state(|| false);
@@ -278,13 +295,13 @@ pub fn publication_molecule(props : &Props) -> Html {
             dni_receptor : receptor.0,
             publicacion_receptora : receptor.1,
         };
-        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta| {
+        request_post("/api/crear_oferta", query, move |respuesta:ResponseCrearOferta|{
             let created_offer_state = created_offer_state.clone();
             created_offer_state.set(respuesta.estado);
-            if let Some(window) = window() {
-                window.location().reload().unwrap();
-            }
         });
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
 
     });
 
@@ -319,6 +336,62 @@ pub fn publication_molecule(props : &Props) -> Html {
         cloned_activate_assign_price_state.set(false);
     });
 
+    let cloned_id = id.clone();
+
+    let show_question_state = use_state(||false);
+
+    let cloned_show_question_state = show_question_state.clone();
+    let show_question_prompt = Callback::from(move|_|{
+        cloned_show_question_state.set(true);
+    });
+
+    let cloned_show_question_state = show_question_state.clone();
+    let hide_show_question_state = Callback::from(move|_:MouseEvent|{
+        cloned_show_question_state.set(false);
+    });
+
+
+
+    let cloned_dni = dni.clone();
+    let question_text_state_cloned = question_text_state.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let ask_question = Callback::from(move|_:MouseEvent|{
+        if (&*question_text_state_cloned).split_whitespace().count() >= 2{
+            if let Some(dni) = cloned_dni {
+                if let Some(_publicacion) = &*cloned_datos_publicacion{
+                    let query = QueryAskQuestion{ dni_preguntante:dni , pregunta:(&*question_text_state_cloned).clone(), id_publicacion:cloned_id};
+                    request_post("/api/preguntar",query, move |_respuesta:ResponseAskQuestion|{
+    
+                    });
+                }
+            }
+            if let Some(window) = window() {
+                window.location().reload().unwrap();
+            }
+        } else{
+            //notificar que la pregunta no puede estar vacia
+        }
+    });
+
+
+    let cloned_id = id.clone();
+    let cloned_datos_publicacion = datos_publicacion.clone();
+    let cloned_dni = dni.clone();
+    let answer_text_state_cloned = answer_text_state.clone();
+    let answer_question = Callback::from(move |index|{
+        if !(&*answer_text_state_cloned).is_empty(){
+                if let Some(_publicacion) = &*cloned_datos_publicacion{
+                    let query = QueryAnswerQuestion{indice_pregunta : index, id_publicacion:cloned_id, respuesta:(*answer_text_state_cloned).clone()};
+                    request_post("/api/responder",query, move |_respuesta:ResponseAnswerQuestion|{
+
+                    });
+            }
+        }
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
+    });
+
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
@@ -345,6 +418,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
+                    <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
@@ -374,27 +448,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                // Seccion de moderacion de publicacion propia
-                if publicacion.dni_usuario == dni.clone().unwrap(){
-                <div class="moderation-buttons">
-                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
-                    if publicacion.precio.is_some() {
-                        if publicacion.pausada {
-                            <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
-                        } else {
-                            <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
-                        }
-                        <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
-                    }
-
-                </div>
-                } else {
-                    <Link<Route, DniURLQuery> to={Route::Profile} query={
-                        DniURLQuery {
-                            dni: publicacion.dni_usuario
-                        }
-                    }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>  
-                }
                 // Seccion de propuesta de oferta
                 <div class="publication-selector-container">
                     if publicacion.dni_usuario != dni.clone().unwrap() {
@@ -405,6 +458,20 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     }
                 </div>
+                // Seccion de moderacion de publicacion propia
+                if publicacion.dni_usuario == dni.clone().unwrap(){
+                <div class="moderation-buttons">
+                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                    if (publicacion.precio.is_some()) && (!publicacion.en_trueque) {
+                        if publicacion.pausada {
+                            <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
+                        } else {
+                            <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
+                        }
+                        <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
+                    }  
+                </div>
+                }
                 // Seccion de tasacion de publicacion
                 {
                     if let Some(role) = &*role_state{
@@ -436,9 +503,45 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
-                // if (&*activate_delete_publication_state).clone(){
-                //     <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar su publicación?" confirm_func={delete_publication} reject_func={reject_func} />
-                // }
+                //seccion preguntas y respuestas
+                {
+                    html!{
+                        <>
+                        if publicacion.dni_usuario != dni.clone().unwrap(){
+                            <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
+                            <GenericButton text="Realizar pregunta" onclick_event={show_question_prompt}/>
+                        }
+
+                        if (&*show_question_state).clone(){
+                            <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
+                        }
+
+
+                        {
+                            publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
+                                html!{
+                                    <>
+                                    <h2>{"Pregunta: "}{(pregunta.pregunta).clone()}</h2>
+                                    if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
+                                        <CheckedInputField name = "answer-field" label="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
+                                        <IndexedButton text="Confirmar" index={index} onclick_event={(answer_question).clone()}/>
+                                    }
+                                    
+                                    if let Some(respuesta) = (pregunta.respuesta).clone(){
+                                        <h4>{"Respuesta: "}{(respuesta).clone()}</h4>
+                                    } else {
+                                        <h4>{"el dueño de la publicación aún no ha respondido esta pregunta"}</h4>
+                                    }
+                                    </>
+                            
+                            }
+                            }).collect::<Html>()
+                        }
+                            </>
+                    }
+
+                }
+
                 if (&*activate_assign_price_state).clone(){
                     <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
                 }

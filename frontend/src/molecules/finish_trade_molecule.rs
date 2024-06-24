@@ -4,13 +4,15 @@ use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
 
-use crate::{components::{dni_input_field::DniInputField, generic_button::GenericButton}, information_store::InformationStore, molecules::trueque_molecule::TruequeMolecule, request_post, store::UserStore};
+use crate::{components::{dni_input_field::DniInputField, checked_input_field::CheckedInputField, generic_button::GenericButton}, information_store::InformationStore, molecules::trueque_molecule::TruequeMolecule, request_post, store::UserStore};
 
 #[function_component(FinishTradeMolecule)]
 pub fn finish_trade_molecule () -> Html {
     let (user_store, _user_dispatch) = use_store::<UserStore>();
     let dni = user_store.dni.unwrap();
     let cloned_dni = dni.clone();
+    let ventas_ofertante_state:UseStateHandle<u64> = use_state(|| 0);
+    let ventas_receptor_state:UseStateHandle<u64> = use_state(|| 0);
 
     let (_information_store, information_dispatch) = use_store::<InformationStore>();
 
@@ -105,8 +107,11 @@ pub fn finish_trade_molecule () -> Html {
     let cloned_finish_confirmation_state = finish_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
+    let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
+    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
+
     let finish_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
+        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(),ventas_ofertante:(*ventas_ofertante_state_cloned),ventas_receptor:(*ventas_receptor_state_cloned)};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
         cloned_show_trade_search_state.set(false);
@@ -120,9 +125,10 @@ pub fn finish_trade_molecule () -> Html {
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let abort_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone()};
+        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(),ventas_ofertante:0,ventas_receptor:0};
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
         });
+        
         cloned_show_trade_search_state.set(false);
         cloned_abort_confirmation_state.set(false);
         cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque rechazado!")));
@@ -156,6 +162,16 @@ pub fn finish_trade_molecule () -> Html {
         cloned_abort_confirmation_state.set(false);
     });
 
+    let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
+    let ventas_ofertante_state_changed = Callback::from(move |ventas_ofertante:String|{
+        ventas_ofertante_state_cloned.set(ventas_ofertante.parse::<u64>().unwrap())
+    });
+
+    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
+    let ventas_receptor_state_changed = Callback::from(move |ventas_receptor:String|{
+        ventas_receptor_state_cloned.set(ventas_receptor.parse::<u64>().unwrap())
+    });
+    
     
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
@@ -173,7 +189,9 @@ pub fn finish_trade_molecule () -> Html {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
                         <ul>
-                            <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>
+                            <CheckedInputField name = "ventas-ofertante" label="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
+                            <CheckedInputField name = "ventas-receptor" label="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
+                            <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>                          
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>
                             <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/></li>
                         </ul>

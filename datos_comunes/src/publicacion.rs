@@ -3,6 +3,12 @@ use std::ops::RangeInclusive;
 use serde::{Deserialize, Serialize};
 
 //use crate::Trueque;
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PregYRta {
+    pub dni_preguntante: u64,
+    pub pregunta:String,
+    pub respuesta:Option<String>,
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Publicacion {
@@ -13,8 +19,10 @@ pub struct Publicacion {
     pub imagenes: Vec<String>,
     pub precio: Option<u64>,
     pub pausada: bool,
+    pub en_trueque: bool,
     //indice de las ofertas/trueques en el vec de la database
     pub ofertas: Vec<usize>,
+    pub preguntas:Vec<PregYRta>,
 }
 
 impl Publicacion {
@@ -26,7 +34,9 @@ impl Publicacion {
             dni_usuario,
             precio: None,
             pausada: true,
+            en_trueque: false,
             ofertas: Vec::new(),
+            preguntas: Vec::new(),
         }
     }
 
