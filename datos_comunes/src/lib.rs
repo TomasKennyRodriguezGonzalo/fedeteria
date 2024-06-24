@@ -406,3 +406,14 @@ pub struct QueryAskQuestion{
 pub struct ResponseAskQuestion{
     pub ok:bool,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAnswerQuestion{
+    pub indice_pregunta:usize,
+    pub id_publicacion: usize,
+    pub respuesta:String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAnswerQuestion{
+    pub ok:bool,
+}
