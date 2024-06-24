@@ -54,9 +54,11 @@ pub fn generic_field(props: &Props)-> Html{
 
     html! {
         <>
-            <div>
-                <label for={id.clone()}>{&props.label}</label>
-            </div>
+            if !(props.label.is_empty()) {
+                <div>
+                    <label for={id.clone()}>{&props.label}</label>
+                </div>
+            }
             <div>
                 if props.maxlength == 0 {
                     <input type = {props.tipo.clone()} placeholder={props.placeholder.clone()} name = {props.name.clone()} onchange={onchange} />

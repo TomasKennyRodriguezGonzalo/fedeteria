@@ -722,13 +722,11 @@ Json(query): Json<QueryAskQuestion>
     let mut state = state.write().await;
     state.db.preguntar(query);
     Json(ResponseAskQuestion{ok:true})
-
 }
 
 async fn responder( State(state): State<SharedState>,
 Json(query): Json<QueryAnswerQuestion>
 ) -> Json<ResponseAnswerQuestion>{
-    log::info!("estoy en el backend?");
     let mut state = state.write().await;
     state.db.responder(query);
     Json(ResponseAnswerQuestion{ok:true})
