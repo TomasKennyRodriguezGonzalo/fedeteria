@@ -3,8 +3,9 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use datos_comunes::{self, QueryChangeUserRole, QueryGetUserRole,ResponseGetOffices, ResponseGetUserRole, RolDeUsuario, Sucursal};
+use datos_comunes::{self, QueryChangeUserRole, QueryGetUserRole, ResponseGetOffices, ResponseGetUserRole, RolDeUsuario, Sucursal};
 use reqwasm::http::Request;
+use yew_hooks::use_effect_once;
 use yewdux::use_store;
 use crate::components::dni_input_field::DniInputField;
 use crate::components::generic_button::GenericButton;
@@ -117,14 +118,16 @@ pub fn change_user_rol_molecule () -> Html {
         cloned_role_state.set(None);
     });
     
+    let state_office_list_clone = state_office_list.clone();
     let cloned_role_state = role_state.clone();
     let information_dispatch_cloned = information_dispatch.clone();
     let dni_state_cloned = dni_state.clone();
     let select_value_state_cloned = select_value_state.clone();
     let change_user_to_employed = Callback::from(move |()| {
+        let office_list_cloned = (&*state_office_list_clone).clone();
         let select_value_state_cloned = select_value_state_cloned.clone();
-        change_role (*dni_state_cloned.clone(), RolDeUsuario::Empleado { sucursal: ((&*select_value_state_cloned).clone() as usize) });
-        information_dispatch_cloned.reduce_mut( |store| store.messages.push(format!("El usuario con DNI {} cambió su rol a Empleado de la sucursal {}.", (&*dni_state_cloned.clone()), ((&*select_value_state_cloned).clone() as usize))));
+        change_role (*dni_state_cloned.clone(), RolDeUsuario::Empleado { sucursal: office_list_cloned[(&*select_value_state_cloned).clone() as usize].id });
+        information_dispatch_cloned.reduce_mut( |store| store.messages.push(format!("El usuario con DNI {} cambió su rol a Empleado de la sucursal {}.", (&*dni_state_cloned.clone()), office_list_cloned[(&*select_value_state_cloned).clone() as usize].nombre)));
         cloned_role_state.set(None);
     });
     
@@ -157,7 +160,39 @@ pub fn change_user_rol_molecule () -> Html {
     let dni_state_cloned = dni_state.clone();
     let cloned_role_state = role_state.clone();
 
- 
+    //me traigo las sucursales para sacar el nombre de ser un empleado al que se le quiere sacar
+    //(para que no muestre el numero es esto)
+    let office_list_state = use_state(|| Vec::new());
+    let cloned_office_list_state = office_list_state.clone();
+    use_effect_once(move || {
+        spawn_local(async move {
+            let cloned_office_list_state = cloned_office_list_state.clone();
+            log::info!("entre al spawn local");
+            let respuesta = Request::get("/api/obtener_sucursales")
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+        match respuesta{
+            Ok(respuesta) =>{
+                let response:Result<ResponseGetOffices, reqwasm::Error> = respuesta.json().await;
+                match response{
+                    Ok(respuesta) => {           
+                        cloned_office_list_state.set(respuesta.office_list.clone());
+                        }
+                        Err(error)=>{
+                            log::error!("Error en deserializacion: {}", error);
+                        }
+                    }
+                }
+                Err(error)=>{
+                    log::error!("Error en llamada al backend: {}", error);
+                }
+            }
+        });
+    ||{}
+    });
+
+    let office_list = (&*office_list_state).clone();
 
     html!(
         <div class="change-user-role-box">
@@ -172,7 +207,7 @@ pub fn change_user_rol_molecule () -> Html {
                         Some(role) => {
                             match role {
                                 RolDeUsuario::Normal | RolDeUsuario::Dueño => {html!{<h1 class="user-info">{format!("El usuario DNI {} actualmente tiene rol {:?}", &*dni_state_cloned.clone(), role)}</h1>}},
-                                RolDeUsuario::Empleado { sucursal } => {html!{<h1 class="user-info">{format!("El usuario DNI {} actualmente tiene rol Empleado en la sucursal {}", &*dni_state_cloned.clone(), sucursal)}</h1>}},
+                                RolDeUsuario::Empleado { sucursal } => {html!{<h1 class="user-info">{format!("El usuario DNI {} actualmente tiene rol Empleado en la sucursal {}", &*dni_state_cloned.clone(), obtener_sucursal_empleado(sucursal, office_list))}</h1>}},
                             }
                         }
                         None => {html!{}}
@@ -225,4 +260,9 @@ fn change_role (dni: u64, rol: RolDeUsuario) {
             }
         });
     }
+}
+
+fn obtener_sucursal_empleado (sucursal_id: usize, sucursales: Vec<Sucursal>) -> String {
+    let sucursal_encontrada = sucursales.iter().find(|sucursal| sucursal.id == sucursal_id);
+    sucursal_encontrada.unwrap().nombre.clone()
 }

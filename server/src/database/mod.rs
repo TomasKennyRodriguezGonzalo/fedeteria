@@ -16,6 +16,8 @@ pub mod usuario;
 pub struct Database {
 
     usuarios: Vec<Usuario>,
+
+    sucursales_auto_incremental: usize,
     sucursales: Vec<Sucursal>,
 
     publicaciones_auto_incremental: usize,
@@ -146,29 +148,38 @@ impl Database {
         self.publicaciones.get(&id)
     }
 
-    pub fn obtener_sucursales (&self) -> Vec<Sucursal> {
-        self.sucursales.clone()
+    pub fn obtener_sucursales_activas (&self) -> Vec<Sucursal> {
+        let sucursales_activas: Vec<Sucursal> = self.sucursales.iter().filter(|sucursal| sucursal.esta_activa).map(|sucursal| sucursal.clone()).collect();
+        sucursales_activas
     }
 
     pub fn agregar_sucursal (&mut self, nueva: QueryAddOffice) -> bool {
-        if self.sucursales.iter().map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
-            self.sucursales.push(Sucursal { nombre: nueva.office_to_add });
+        //ver si se puede agregar una sucursal con el mismo nombre que una "eliminada"
+        if self.sucursales.iter().filter(|sucursal| sucursal.esta_activa).map(|sucursal| sucursal.nombre.to_lowercase()).find(|actual| actual == &nueva.office_to_add.to_lowercase()).is_none() {
+            self.sucursales.push(Sucursal { nombre: nueva.office_to_add, esta_activa: true, id: self.sucursales_auto_incremental});
+            self.sucursales_auto_incremental += 1;
             self.guardar();
             return true;
         }
         false
     }
+    
+    pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> (Vec<Sucursal>, bool) {
+        //verifico si la sucursal tiene empleados. De tener, no la elimina
+        if let Some (_empleado) = self.usuarios.iter().find(|usuario| usuario.rol == RolDeUsuario::Empleado { sucursal: eliminar.office_to_delete }) {
+            return (self.obtener_sucursales_activas(), false);
+        }
 
-    pub fn eliminar_sucursal (&mut self, eliminar: QueryDeleteOffice) -> Vec<Sucursal> {
+        //"elimino" la sucursal
         let ubicacion = self.sucursales.iter().
-                                    position(|actual| actual.nombre == eliminar.office_to_delete);
+                                    position(|actual| actual.id == eliminar.office_to_delete);
 
-        if let Some (i_eliminar) = ubicacion {
-            self.sucursales.remove(i_eliminar);
+        if let Some (indice) = ubicacion {
+            self.sucursales[indice].esta_activa = false;
             self.guardar();
         }
 
-        self.sucursales.clone()
+        (self.obtener_sucursales_activas(), true)
     }
 
     pub fn cambiar_usuario (&mut self,
@@ -370,7 +381,8 @@ impl Database {
                 oferta: (query.dni_ofertante, query.publicaciones_ofertadas.clone()),
                 receptor: (query.dni_receptor, query.publicacion_receptora),
                 sucursal: None,
-                fecha: None,
+                fecha_pactada: None,
+                fecha_trueque: None,
                 hora: None,
                 minutos: None,
                 estado: EstadoTrueque::Oferta,
@@ -617,7 +629,7 @@ impl Database {
                 //codigos.0 ----> codigo_receptor
                 //codigos.1 ----> codigo_ofertante
                 trueque.estado = EstadoTrueque::Definido;
-                trueque.fecha = Some(query.fecha);
+                trueque.fecha_pactada = Some(query.fecha);
                 trueque.hora = Some(query.hora);
                 trueque.minutos = Some(query.minutos);
                 trueque.sucursal = Some(query.sucursal);
@@ -629,12 +641,12 @@ impl Database {
                 let ofertante = self.usuarios.iter().find(|usuario| usuario.dni == trueque.oferta.0).unwrap();
                 //creo mail receptor
                 let mail_receptor = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de receptor para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                receptor.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                receptor.nombre_y_apellido, trueque.fecha_pactada.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
                                 trueque.clone().minutos.unwrap(), ofertante.nombre_y_apellido, ofertante.dni, trueque.codigo_receptor.unwrap());
                 
                 //creo mail ofertante
                 let mail_ofertante = format!("Hola {}!\nUsted ha definido un Trueque para la fecha {}, en el horario {}:{}, junto al usuario {}, con DNI {}. Su codigo de ofertante para presentar al momento del intercambio es: {}. Por favor, no lo extravíe.\n Si cree que esto es un error, por favor contacte a un administrador.", 
-                                ofertante.nombre_y_apellido, trueque.fecha.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
+                                ofertante.nombre_y_apellido, trueque.fecha_pactada.unwrap().format("%Y-%m-%d").to_string(), trueque.clone().hora.unwrap(), 
                                 trueque.clone().minutos.unwrap(), receptor.nombre_y_apellido, receptor.dni, trueque.codigo_ofertante.unwrap());
                 
                 //Creo un vec para pasarlo al main y enviarlo
@@ -751,7 +763,11 @@ impl Database {
         if trueque.estado != EstadoTrueque::Definido {
             return vec![];
         }
+        //actualizo la informacion del trueque
         trueque.estado = query.estado.clone();
+        trueque.fecha_trueque = Some(Local::now());
+
+        //lo obtengo de vuelta por una cuestion de borrowing
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         trueque.ventas_ofertante = Some(query.ventas_ofertante);
         trueque.ventas_receptor = Some(query.ventas_receptor);
@@ -808,6 +824,7 @@ impl Database {
         if let Some(publicacion) = publicacion{
             let pregunta = PregYRta {dni_preguntante : query.dni_preguntante, pregunta:query.pregunta, respuesta:None};
             publicacion.preguntas.push(pregunta);
+            self.guardar();
         }else{
             log::error!("error al buscar la publicacion (no deberia pasar)");
         }
@@ -839,15 +856,28 @@ fn get_database_por_defecto() -> Database {
         ("Bauti", 2, Empleado { sucursal: 0 }),
         ("Carlos", 3, Empleado { sucursal: 1 } ),
         ("Delfina", 4, Normal),
+        ("Esteban", 5, Normal),
     ];
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
     let publicaciones = [
-        (3, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
         (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
-        (1, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
-        (2, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
-        (2, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (5, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
+        (5, "Mouse", "Un mouse. Anda bien", None, vec!["mouse.jpg"]),
+        (5, "Teclado", "Teclado tikitiki", Some(650), vec!["teclado.jpg"]),
+        (5, "Curita", "Curita para sanar :)", Some(800), vec!["curita.jpg"]),
+        (5, "Tenedor", "Tenedor. lo usé para comer milanesa.", Some(299), vec!["tenedor.jpg"]),
+        (5, "Cuchara", "No es comestible", Some(300), vec!["cuchara.jpg"]),
+        (5, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
+        (4, "Tornillo", "Un tornillo sin usar jeje", Some(400), vec!["tornillo.jpg"]),
+        (4, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
+        (4, "Destornillador", "Destornillador que podes usar para destornillar o bien para atornillar", Some(300), vec!["destornillador.jpg"]),
+        (4, "Papel", "Papel SIN ESCRIBIR", Some(630), vec!["papel.jpg"]),
+        (4, "Mancha", "Una mancha porfavor saquenla de mi piso", Some(370), vec!["mancha.jpg"]),
+        (4, "Esponja", "Limpien no sean vagos dale", Some(230), vec!["esponja.jpg"]),
+        (4, "Reloj", "Un reloj les juro que se mueve", Some(900), vec!["reloj.jpg"]),
+        (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
+        (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
     
     for sucursal in sucursales {

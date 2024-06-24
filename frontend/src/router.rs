@@ -4,6 +4,7 @@ use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
 use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
 use crate::pages::my_pending_trades_page::MyPendingTradesPage;
 use crate::pages::my_trades_offers_page::MyTradesOffersPage;
+use crate::pages::my_trades_page::MyTradesPage;
 use crate::pages::search_trueques_page::SearchTruequesPage;
 use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequePage};
 use crate::pages::search_results_page::SearchResultsPage;
@@ -44,13 +45,15 @@ pub enum Route {
     SavedPublications,
     #[at("/perfil/visto-recientemente")]
     RecentlySeenPublications,
-    #[at("/perfil/ofertas-de-trueques")]
+    #[at("/perfil/trueques")]
+    MyTrades,
+    #[at("/perfil/trueques/ofertas-de-trueques")]
     MyTradesOffers,
-    #[at("/perfil/trueques-pendientes")]
+    #[at("/perfil/trueques/trueques-pendientes")]
     MyPendingTrades,
-    #[at("/perfil/trueques-definidos")]
+    #[at("/perfil/trueques/trueques-definidos")]
     MyDefinedTrades,
-    #[at("/perfil/trueques-concretados")]
+    #[at("/perfil/trueques/trueques-concretados")]
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
@@ -120,7 +123,8 @@ pub fn switch(routes: Route) -> Html {
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
                 Route::SearchTrueques => html!(<SearchTruequesPage/>),
                 Route::FinishTrade => html!{<FinishTradePage/>},
-                Route::DefinedTrades => html!{<DefinedTradesPage/>}
+                Route::DefinedTrades => html!{<DefinedTradesPage/>},
+                Route::MyTrades => html!{<MyTradesPage/>},
             }}
     </>}
 }
@@ -170,6 +174,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::Trueque { id : _ } => [false, true, true, true],
         Route::FinishTrade => [false, false, true, true],
         Route::DefinedTrades => [false, false, false, true],
+        Route::MyTrades => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

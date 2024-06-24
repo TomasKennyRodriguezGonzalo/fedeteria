@@ -23,7 +23,8 @@ pub fn my_pending_trades_page() -> Html {
             //filtro_receptor: cloned_dni,
             filtro_dni_integrantes: cloned_dni,
             filtro_estado: Some(EstadoTrueque::Pendiente),
-            filtro_fecha: None,
+            filtro_fecha_pactada: None,
+            filtro_fecha_trueque: None,
             filtro_id_publicacion: None,
             filtro_sucursal: None,
         };

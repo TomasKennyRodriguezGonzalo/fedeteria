@@ -8,6 +8,8 @@ mod notificacion;
 pub use notificacion::*;
 mod trueque;
 pub use trueque::*;
+mod sucursal;
+pub use sucursal::*;
 
 
 
@@ -73,16 +75,11 @@ pub struct QueryLogin {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Serialize ,PartialEq, Clone)]
-pub struct Sucursal {
-    pub nombre: String,
-}
-
-impl Sucursal {
-    pub fn new (nombre: String) -> Sucursal {
+/*impl Sucursal {
+    pub fn new (nombre: String, ) -> Sucursal {
         Sucursal {nombre}
     }
-}
+}*/
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseGetOffices {
@@ -91,12 +88,13 @@ pub struct ResponseGetOffices {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryDeleteOffice {
-    pub office_to_delete: String,
+    pub office_to_delete: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseDeleteOffice {
-    pub respuesta: Vec<Sucursal>,
+    pub sucursales: Vec<Sucursal>,
+    pub eliminada: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -355,7 +353,7 @@ pub struct ResponseRechazarOferta {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryCambiarTruequeADefinido {
     pub id: usize,
-    pub sucursal : String,
+    pub sucursal : usize,
     pub fecha: DateTime<Local>,
     pub hora: String,
     pub minutos: String,
@@ -369,14 +367,13 @@ pub struct ResponseCambiarTruequeADefinido {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryGetOffice {
-    //dni del empleado o dueño
-    pub dni: u64,
+    //idice de la sucursal
+    pub index: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseGetOffice{
-    //si hay una sucursal, es empleado, sino, dueño
-    pub sucursal: Option<String>,
+    pub sucursal: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -392,6 +389,7 @@ pub struct ResponseFinishTrade {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryFinishTrade{
     pub id_trueque: usize,
+    //pub ganancias: u64,
     pub estado: EstadoTrueque,
     pub ventas_ofertante: u64,
     pub ventas_receptor:u64,

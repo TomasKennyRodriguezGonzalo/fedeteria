@@ -1,5 +1,5 @@
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
-use datos_comunes::{EstadoTrueque, QueryFinishTrade, QueryGetOffice, QueryObtenerTrueque, QueryTruequesFiltrados, ResponseFinishTrade, ResponseGetOffice, ResponseObtenerTrueque, ResponseTruequePorCodigos};
+use datos_comunes::{EstadoTrueque, QueryFinishTrade, /*QueryGetOffice,*/ QueryGetUserRole, /*QueryObtenerTrueque,*/ QueryTruequesFiltrados, ResponseFinishTrade, /*ResponseGetOffice,*/ ResponseGetUserRole, /*ResponseObtenerTrueque,*/ ResponseTruequePorCodigos, RolDeUsuario};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
@@ -20,19 +20,19 @@ pub fn finish_trade_molecule () -> Html {
     let abort_confirmation_state = use_state(|| false);
     let cancel_confirmation_state = use_state(|| false);
 
-    //me guardo la sucursal si encontro alguna (es decir, es un empleado)
-    let sucursal_state = use_state(|| None);
-    let cloned_sucursal_state = sucursal_state.clone();
+    //obtengo el rol de usuario, para distinguir la sucursal de ser empleado
+    let role_state = use_state(|| RolDeUsuario::Normal);
+    let cloned_role_state = role_state.clone();
 
     use_effect_once(move || {
-        let query = QueryGetOffice {dni: cloned_dni};
-        request_post("/api/obtener_sucursal_por_dni", query, move |respuesta:ResponseGetOffice|{
-            cloned_sucursal_state.set(respuesta.sucursal.clone());
-            log::info!("RESPUESTA OBTENER SUCURSAL POR DNI: {:?}", respuesta.sucursal);
+        let query = QueryGetUserRole {dni: cloned_dni};
+        request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
+            cloned_role_state.set(respuesta.rol.clone());
+            log::info!("RESPUESTA OBTENER ROL: {:?}", respuesta.rol);
         });
         || {}
     });
-    let cloned_sucursal_state = sucursal_state.clone();
+    let cloned_role_state = role_state.clone();
 
     //estado del codigo del receptor
     let receptor_code_state = use_state(|| 0);
@@ -50,6 +50,14 @@ pub fn finish_trade_molecule () -> Html {
     });
     let cloned_offer_code_state = offer_code_state.clone();
 
+    /*//estado de la ganancia
+    let gains_state = use_state(|| None);
+    let cloned_gains_state = gains_state.clone();
+    let gains_onchange = Callback::from(move |code: String| {
+        cloned_gains_state.set(Some(code.parse::<u64>().unwrap()));
+    });
+    let cloned_gains_state = gains_state.clone();*/
+
     //estado de muestreo de trueque
     let show_trade_search_state = use_state(|| false);
     let cloned_show_trade_search_state = show_trade_search_state.clone();
@@ -64,15 +72,16 @@ pub fn finish_trade_molecule () -> Html {
         cloned_show_trade_search_state.set(true);
 
         let query;
-        log::info!("SUCURSAL: {:?}", &*cloned_sucursal_state);
+        log::info!("ROL: {:?}", &*cloned_role_state);
         //armo la query para empleado
-        if let Some(sucursal) = &*cloned_sucursal_state {
+        if let RolDeUsuario::Empleado { sucursal }  = &*cloned_role_state {
             query = QueryTruequesFiltrados {
                 filtro_codigo_ofertante: Some((&*cloned_offer_code_state).clone()),
                 filtro_codigo_receptor: Some((&*cloned_receptor_code_state).clone()),
                 filtro_dni_integrantes: None,
                 filtro_estado: None,
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: None,
                 filtro_sucursal: Some(sucursal.clone()),
             };
@@ -84,7 +93,8 @@ pub fn finish_trade_molecule () -> Html {
                 filtro_codigo_receptor: Some((&*cloned_receptor_code_state).clone()),
                 filtro_dni_integrantes: None,
                 filtro_estado: None,
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: None,
                 filtro_sucursal: None,
             };
@@ -188,6 +198,8 @@ pub fn finish_trade_molecule () -> Html {
                 if let Some(id) = &*cloned_trade_index_state {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
+                        <h2>{"Ingrese Ganancias Totales del Trueque"}</h2>
+                        //<li><DniInputField dni = "Ingrese Ganancias Totales del Trueque" tipo = "number" handle_on_change = {gains_onchange}/></li>
                         <ul>
                             <CheckedInputField name = "ventas-ofertante" label="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
                             <CheckedInputField name = "ventas-receptor" label="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>

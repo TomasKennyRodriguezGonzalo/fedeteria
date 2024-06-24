@@ -50,8 +50,7 @@ pub fn delete_office_molecule () -> Html {
             });
         }
     });
-
-    let state_office_list_clone = state_office_list.clone();
+    let cloned_state_office_list = state_office_list.clone();
     
     let oficces_deleted_boolean = use_state(|| false);
     let oficces_deleted_boolean_clone = oficces_deleted_boolean.clone();
@@ -77,24 +76,26 @@ pub fn delete_office_molecule () -> Html {
     let state_index_office_to_delete_clone = state_index_office_to_delete.clone(); 
     let cloned_show_button_state = show_button_state.clone();
     
+    let cloned_state_office_list = cloned_state_office_list.clone();
     let cloned_information_dispatch = information_dispatch.clone();
     let delete_office = Callback::from(move |_e: MouseEvent| {
         let cloned_information_dispatch = cloned_information_dispatch.clone();
         cloned_show_button_state.set(false);
-        let index = &*state_index_office_to_delete_clone.clone(); 
+        let cloned_state_office_list = cloned_state_office_list.clone();
+        let index = (&*state_index_office_to_delete_clone).clone(); 
         let oficces_deleted_boolean_clone = oficces_deleted_boolean_clone.clone();
-        let state_office_list_clone = state_office_list_clone.clone();
-        let office_to_delete = (&state_office_list_clone).clone().get(*index).unwrap().nombre.clone();
+        let office_list = (&*cloned_state_office_list).clone();
+        let office_to_delete = office_list[index].clone();
         let informe_cloned = informe_cloned.clone();
         {   
                     let cloned_information_dispatch = cloned_information_dispatch.clone();
                     let informe_cloned = informe_cloned.clone();
-                    let state_office_list_clone = state_office_list_clone.clone();
+                    let cloned_state_office_list = cloned_state_office_list.clone();
                     spawn_local(async move {
                         let cloned_information_dispatch = cloned_information_dispatch.clone();
                         let office_to_delete = office_to_delete.clone();
                         log::info!("entre al spawn local");
-                        let query = QueryDeleteOffice {office_to_delete: office_to_delete.clone()};
+                        let query = QueryDeleteOffice {office_to_delete: office_to_delete.id.clone()};
                         let respuesta = Request::post("/api/eliminar_sucursal")
                                                                         .header("Content-Type", "application/json")
                                                                         .body(serde_json::to_string(&query).unwrap())
@@ -106,10 +107,15 @@ pub fn delete_office_molecule () -> Html {
                                 log::info!("deserailice la respuesta {:?}",response);
                                 match response{
                                     Ok(respuesta) => {
-                                        oficces_deleted_boolean_clone.set(true);
-                                        state_office_list_clone.set(respuesta.respuesta.clone());
-                                        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Sucursal {} eliminada con éxito", office_to_delete)));
-                                        log::info!("{:?}", respuesta.respuesta);
+                                        if respuesta.eliminada {
+                                            oficces_deleted_boolean_clone.set(true);
+                                            cloned_state_office_list.set(respuesta.sucursales.clone());
+                                            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("La sucursal {} ha sido eliminada con éxito", office_to_delete.nombre.clone())));
+                                            log::info!("{:?}", respuesta.sucursales);
+                                        }
+                                        else {
+                                            cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("La sucursal {} no ha sido eliminada ya que cuenta con empleados asignados a ella. Reasignelos a otra sucursal o baje su rango a Normal", office_to_delete.nombre)));
+                                        }
                                     }
                                     Err(error)=>{
                                         log::error!("Error en deserializacion: {}", error);

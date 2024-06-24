@@ -111,10 +111,7 @@ pub fn profile_page() -> Html {
                     }>{"Ver Publicaciones"}</Link<Route, QueryPublicacionesFiltradas>></li>
                 }
                 if informacion_propia {
-                    <li><Link<Route> to={Route::MyTradesOffers}>{"Ofertas de Trueque"}</Link<Route>></li>
-                    <li><Link<Route> to={Route::MyPendingTrades}>{"Trueques Pendientes"}</Link<Route>></li>
-                    <li><Link<Route> to={Route::MyDefinedTrades}>{"Trueques Definidos"}</Link<Route>></li>
-                    <li><Link<Route> to={Route::MyCompletedTrades}>{"Trueques Concretados"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::MyTrades}>{"Mis Ofertas y Trueques"}</Link<Route>></li>
                     <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
                 }
             </ul>

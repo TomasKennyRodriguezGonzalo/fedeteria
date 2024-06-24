@@ -27,7 +27,8 @@ pub fn trade_grid_molecule(props: &Props) -> Html {
                 //filtro_receptor: None,
                 filtro_dni_integrantes: None,
                 filtro_estado: Some(EstadoTrueque::Finalizado),
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_sucursal: None,
             };
         if let Some(query_options) = props_cloned {

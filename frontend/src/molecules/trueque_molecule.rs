@@ -1,4 +1,4 @@
-use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
+use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetOffice, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffice, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, FormData, HtmlFormElement, HtmlInputElement};
 use yew_router::hooks::use_navigator;
@@ -42,6 +42,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
     let trueque_state: UseStateHandle<Option<Trueque>> = use_state(||None);
     let cloned_trueque_state = trueque_state.clone();
 
+    let sucursal_state = use_state(|| "".to_string());
+    let cloned_sucursal_state = sucursal_state.clone();
 
     let receptor_username: UseStateHandle<String> = use_state(|| "".to_string());
     let cloned_receptor_username = receptor_username.clone();
@@ -58,6 +60,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let cloned_state_office_list = cloned_state_office_list.clone();
         let trueque_state = cloned_trueque_state.clone();
         let cloned_trade_date_state = cloned_trade_date_state.clone();
+        let cloned_sucursal_state = cloned_sucursal_state.clone();
         let query = QueryObtenerTrueque{
             id : id_trueque,  
         };
@@ -66,13 +69,14 @@ pub fn trueque_molecule (props : &Props) -> Html {
             let cloned_state_office_list = cloned_state_office_list.clone();
             let cloned_trueque_state = trueque_state.clone();
             let cloned_trade_date_state = cloned_trade_date_state.clone();
+            let cloned_sucursal_state = cloned_sucursal_state.clone();
             match respuesta {
                 Ok(trueque) =>{
                     cloned_trueque_state.set(Some(trueque.clone()));
 
                     let ofertante_username = cloned_ofertante_username.clone();
                     let receptor_username = cloned_receptor_username.clone();
-                    cloned_trade_date_state.set(trueque.fecha);
+                    cloned_trade_date_state.set(trueque.fecha_pactada);
 
                     if trueque.estado == EstadoTrueque::Pendiente{
                         spawn_local(async move {
@@ -119,6 +123,12 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         receptor_username.set(respuesta.nombre_y_ap)
                     });
 
+                    if let Some(sucursal_index) = trueque.sucursal {
+                        let query = QueryGetOffice {index: sucursal_index};
+                        request_post("/api/obtener_string_sucursal", query, move |respuesta: ResponseGetOffice| {
+                            cloned_sucursal_state.set(respuesta.sucursal);
+                        });
+                    }
 
         
                 }
@@ -127,6 +137,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 }
             }
         });
+
 
         cloned_loaded.set(true);
 
@@ -210,7 +221,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 //filtro_receptor: cloned_dni,
                 filtro_dni_integrantes: Some(dni_receptor.clone()),
                 filtro_estado: Some(EstadoTrueque::Oferta),
-                filtro_fecha: None,
+                filtro_fecha_pactada: None,
+                filtro_fecha_trueque: None,
                 filtro_id_publicacion: Some(id_publication.clone()),
                 filtro_sucursal: None,
             };
@@ -299,14 +311,12 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let cloned_show_time_error_state = cloned_show_time_error_state.clone();
         let cloned_show_another_trade_error_state = cloned_show_another_trade_error_state.clone();
         let cloned_minutos_state = cloned_select_minutes_value_state.clone();
-        let cloned_sucursal_state = cloned_sucursal_state.clone();
-        //inicializo una hora. minutos y sucursal
+        let sucursal_trueque = (&*cloned_sucursal_state).clone() as usize;
+        let cloned_state_office_list = (&*cloned_state_office_list).clone();
+        //inicializo una hora y minutos
         let mut hora_trueque = "".to_string();
         let mut minutos_trueque = "".to_string();
-        let mut sucursal_trueque = "".to_string();
-        //obtengo la fecha en String y la lista de sucursales
         let fecha_trueque = (&*cloned_fecha_state).clone();
-        let office_list = &*cloned_state_office_list.clone();
         //obtengo la hora
         if let Some(hora) = obtener_horas_sucursal().get((&*cloned_select_hora_value_state).clone() as usize) {
             hora_trueque = hora.clone();
@@ -314,10 +324,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
         //obtengo los minutos
         if let Some(minutos) = obtener_minutos_posibles().get((&*cloned_minutos_state).clone() as usize) {
             minutos_trueque = minutos.clone();
-        }
-        //obtengo la sucursal
-        if let Some(sucursal) = office_list.get((&*cloned_sucursal_state).clone() as usize) {
-            sucursal_trueque = sucursal.clone().nombre;
         }
         //obtengo la fecha en DateTime
         let fecha = NaiveDate::parse_from_str(&fecha_trueque, "%Y-%m-%d").unwrap();
@@ -328,7 +334,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
         if (fecha_trueque > fecha_actual) && (fecha_trueque.weekday() != Weekday::Sun) {
             let query = QueryCambiarTruequeADefinido{
                 id : id_trueque,
-                sucursal : sucursal_trueque,
+                sucursal : cloned_state_office_list[sucursal_trueque].id,
                 fecha : fecha_trueque.clone(),
                 hora: hora_trueque,
                 minutos: minutos_trueque,
@@ -424,7 +430,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
             //filtro_receptor: cloned_dni,
             filtro_dni_integrantes: Some(dni_receptor.clone()),
             filtro_estado: Some(EstadoTrueque::Oferta),
-            filtro_fecha: None,
+            filtro_fecha_pactada: None,
+            filtro_fecha_trueque: None,
             filtro_id_publicacion: Some(id_publication.clone()),
             filtro_sucursal: None,
         };
@@ -435,6 +442,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
         let _ = navigator_cloned.push_with_query(&Route::SearchTrueques, &query);
 
     });
+
+    let sucursal = (&*sucursal_state).clone();
 
     html! {
         <div class="trueque-box">
@@ -561,7 +570,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Definido => html! {
                                     <>
                                         <h1 class="title"> {
-                                            msg_trueque_definido(trueque, dni)
+                                            msg_trueque_definido(trueque, dni, sucursal)
                                         } </h1>
                                         <button class="decline" onclick={decline_offer.clone()}>{"Cancelar Trueque"}</button>
                                     </>
@@ -599,12 +608,12 @@ pub fn trueque_molecule (props : &Props) -> Html {
     }
 }
 
-fn msg_trueque_definido(trueque: &Trueque, dni: u64) -> String {
+fn msg_trueque_definido(trueque: &Trueque, dni: u64, sucursal: String) -> String {
     let mut msg = format!("Trueque Definido para el día {} a las {}:{} en la sucursal '{}'.",
-        trueque.fecha.unwrap().format("%Y-%m-%d"),
+        trueque.fecha_pactada.unwrap().format("%Y-%m-%d"),
         trueque.hora.as_ref().unwrap(),
         trueque.minutos.as_ref().unwrap(),
-        trueque.sucursal.as_ref().unwrap()
+        sucursal
     );
     if dni == trueque.receptor.0 {
         msg += &format!(" Su código de receptor es {}", trueque.codigo_receptor.unwrap());
