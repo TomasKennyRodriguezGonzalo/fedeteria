@@ -20,6 +20,7 @@ pub struct Publicacion {
     pub precio: Option<u64>,
     pub pausada: bool,
     pub en_trueque: bool,
+    pub eliminada: bool,
     //indice de las ofertas/trueques en el vec de la database
     pub ofertas: Vec<usize>,
     pub preguntas:Vec<PregYRta>,
@@ -35,6 +36,7 @@ impl Publicacion {
             precio: None,
             pausada: true,
             en_trueque: false,
+            eliminada: false,
             ofertas: Vec::new(),
             preguntas: Vec::new(),
         }

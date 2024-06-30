@@ -129,7 +129,7 @@ pub fn publication_molecule(props : &Props) -> Html {
             }
             else {
                 let information_dispatch = information_dispatch.clone();
-                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas".to_string()));
+                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas. Rechazelas si desea eliminar la publicación".to_string()));
             }
             log::info!("resultado de eliminar publicacion : {}", respuesta.ok);
         });
@@ -422,7 +422,11 @@ pub fn publication_molecule(props : &Props) -> Html {
                         if let Some(precio) = publicacion.precio {
                             if publicacion.pausada {
                                 "Publicación Pausada".to_string()
-                            } else {
+                            } 
+                            else if publicacion.eliminada {
+                                "Publicación Eliminada".to_string()
+                            }
+                            else {
                                 let mut incluir = false;
                                 if let Some(dni) = dni {
                                     if publicacion.dni_usuario == dni {
@@ -446,60 +450,64 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                // Seccion de propuesta de oferta
-                <div class="publication-selector-container">
-                    if publicacion.dni_usuario != dni.clone().unwrap() {
-                        <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
-                        if *show_selector_state { 
-                            <GenericButton text="X" onclick_event={hide_selector.clone()}/>
-                            <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
+                if !publicacion.eliminada {
+                    // Seccion de propuesta de oferta
+                    <div class="publication-selector-container">
+                        if publicacion.dni_usuario != dni.clone().unwrap() {
+                            <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                            if *show_selector_state { 
+                                <GenericButton text="X" onclick_event={hide_selector.clone()}/>
+                                <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
+                            }
                         }
+                    </div>
+                    // Seccion de moderacion de publicacion propia
+                    if publicacion.dni_usuario == dni.clone().unwrap(){
+                    <div class="moderation-buttons">
+                        if !publicacion.en_trueque {
+                            <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                        }
+                        if (publicacion.precio.is_some()) && (!publicacion.en_trueque) {
+                            if publicacion.pausada {
+                                <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
+                            } else {
+                                <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
+                            }
+                            <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
+                        }  
+                    </div>
                     }
-                </div>
-                // Seccion de moderacion de publicacion propia
-                if publicacion.dni_usuario == dni.clone().unwrap(){
-                <div class="moderation-buttons">
-                    // <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
-                    if (publicacion.precio.is_some()) && (!publicacion.en_trueque) {
-                        if publicacion.pausada {
-                            <GenericButton text="Despausar Publicación" onclick_event={toggle_publication_pause}/>
-                        } else {
-                            <GenericButton text="Pausar Publicación" onclick_event={toggle_publication_pause}/>
-                        }
-                        <GenericButton text="Ver Ofertas de Trueque" onclick_event={goto_trade_offers}/>
-                    }  
-                </div>
-                }
-                // Seccion de tasacion de publicacion
-                {
-                    if let Some(role) = &*role_state{
-                        match role { 
-                            RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
-                                if publicacion.precio.is_none(){
-                                    html! {
-                                        <div class="assign-price-box">  
-                                            <h1 class="title">{"Tasar"}</h1>
-                                            <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change={price_changed} />
-                                            if let Some(input) = &*input_publication_price_state {
-                                                if input != &(0 as u64) {
-                                                    <GenericButton text="Tasar Publicación" onclick_event={ask_assign_price_confirmation}/>
+                    // Seccion de tasacion de publicacion
+                    {
+                        if let Some(role) = &*role_state{
+                            match role { 
+                                RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                    if publicacion.precio.is_none(){
+                                        html! {
+                                            <div class="assign-price-box">  
+                                                <h1 class="title">{"Tasar"}</h1>
+                                                <CheckedInputField name = "publication_price_assignment" label="Ingrese el precio de la publicación" tipo = "number" on_change={price_changed} />
+                                                if let Some(input) = &*input_publication_price_state {
+                                                    if input != &(0 as u64) {
+                                                        <GenericButton text="Tasar Publicación" onclick_event={ask_assign_price_confirmation}/>
+                                                    } else {
+                                                        <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
+                                                    }
                                                 } else {
                                                     <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
                                                 }
-                                            } else {
-                                                <button class="disabled-dyn-element">{"Tasar Publicación"}</button>
-                                            }
-                                        </div>
+                                            </div>
+                                        }
+                                    } else {
+                                        html! {}
                                     }
-                                } else {
-                                    html! {}
+                                },
+                                RolDeUsuario::Normal => {
+                                    html!{}
                                 }
-                            },
-                            RolDeUsuario::Normal => {
-                                html!{}
                             }
-                        }
-                    } else {html!{}}
+                        } else {html!{}}
+                    }
                 }
                 //seccion preguntas y respuestas
                 {
@@ -507,7 +515,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                         <div class="question-answer-box">
                             <h1 class="title">{"Preguntas y respuestas"}</h1>
                             <div class="question-input">
-                                if publicacion.dni_usuario != dni.clone().unwrap(){
+                                if (publicacion.dni_usuario != dni.clone().unwrap()) && (!publicacion.eliminada) {
                                     <CheckedInputField name = "question-field" placeholder="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
                                     <GenericButton text="Enviar pregunta" onclick_event={show_question_prompt}/>
                                 }
@@ -521,7 +529,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                         html!{
                                             <li class="question-answer-item">
                                                 <h2 class="question">{""}{(pregunta.pregunta).clone()}</h2>
-                                                if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
+                                                if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none() && !publicacion.eliminada {
                                                     <div class="answer-input">
                                                         <CheckedInputField name = "answer-field" placeholder="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
                                                         <IndexedButton text="Enviar" index={index} onclick_event={(answer_question).clone()}/>
@@ -547,6 +555,10 @@ pub fn publication_molecule(props : &Props) -> Html {
 
                 if (&*activate_assign_price_state).clone(){
                     <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
+                }
+
+                if (&*activate_delete_publication_state).clone() {
+                    <ConfirmPromptButtonMolecule text="¿Desea eliminar la publicación de forma permanente?" confirm_func={delete_publication} reject_func={reject_func} />
                 }
             } else {
                 {"Cargando..."}

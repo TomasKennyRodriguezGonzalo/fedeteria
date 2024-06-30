@@ -224,6 +224,7 @@ impl Database {
 
     pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         let publicaciones = self.publicaciones.iter()
+        .filter(|(_, p)| !p.eliminada)
         .filter(|(_, p)| {
             query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
         })
@@ -303,10 +304,19 @@ impl Database {
         true
     }
     pub fn eliminar_publicacion (&mut self, id : usize)->bool{
-        if self.publicaciones.get(&id).unwrap().ofertas.is_empty(){
-            self.publicaciones.remove(&id);
+        if (self.publicaciones.get(&id).unwrap().ofertas.is_empty()) || (!Database::hay_trueques_activos(self.publicaciones.get(&id).unwrap().ofertas.clone(), &self.trueques.clone())){
+            self.publicaciones.get_mut(&id).unwrap().eliminada = true;
             self.guardar();
             return true;
+        }
+        false
+    }
+
+    fn hay_trueques_activos(trueques_a_verificar: Vec<usize>, trueques: &HashMap<usize, Trueque>) -> bool {
+        for id_trueque in trueques_a_verificar {
+            if (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Oferta) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Definido) || (trueques.get(&id_trueque).unwrap().estado == EstadoTrueque::Pendiente) {
+                return true;
+            }
         }
         false
     }
@@ -422,6 +432,7 @@ impl Database {
 
     pub fn obtener_trueques (&self, query: QueryTruequesFiltrados) -> Vec<usize> {
         let obtenidos = self.trueques.iter().
+                    filter(|(_, trueque)| trueque.estado != EstadoTrueque::Cancelado).
                     filter(|(_, trueque)| {
                         query.filtro_estado.as_ref().map(|estado_trueque| estado_trueque == &trueque.estado)
                         .unwrap_or(true)
@@ -514,7 +525,8 @@ impl Database {
             EstadoTrueque::Pendiente => {return; },
             EstadoTrueque::Definido => {return; },
             EstadoTrueque::Finalizado => {return; },
-            EstadoTrueque::Rechazado => {return; },
+            EstadoTrueque::Rechazado => {},//{return; },
+            EstadoTrueque::Cancelado => {},
         }
         let mut todo_mal = false;
         for id_publicacion in trueque.get_publicaciones() {
@@ -532,6 +544,7 @@ impl Database {
                     EstadoTrueque::Definido => {todo_mal = true},
                     EstadoTrueque::Finalizado => {todo_mal = true},
                     EstadoTrueque::Rechazado => {},
+                    EstadoTrueque::Cancelado => {},
                 }
             }
         }
@@ -541,53 +554,15 @@ impl Database {
     pub fn rechazar_oferta(&mut self, id:usize) -> bool {
         let trueque = self.trueques.get_mut(&id);
         if let Some(trueque) = trueque {
-            //si el ofertante tiene 2 publicaciones, entra por aca, sino por el else
-            //hay un error que no logro descifrar, el bloque del if funciona con 2 publicaciones, pero no con 1
-            if trueque.oferta.1.len() > 1 {
-                //elimino del vec de ofertas de las publicaciones involucradas, el trueque actual
-                //elimino la oferta de la primer publicacion del ofertante y le pongo el estado "en_trueque" en false y la despauso
-                if let Some (ubicacion_trueque_en_publi_1_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_1_ofertante);
-                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().en_trueque = false;
-                    self.publicaciones.get_mut(trueque.oferta.1.get_mut(0).unwrap()).unwrap().pausada = false;
-                }
-                //elimino la oferta de la segunda publicacion del ofertante y le pongo el estado "en_trueque" en false y la despauso
-                if !trueque.oferta.1.is_empty() {
-                    if let Some (ubicacion_trueque_en_publi_2_ofertante) = self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().ofertas.remove(ubicacion_trueque_en_publi_2_ofertante);
-                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().en_trueque = false;
-                        self.publicaciones.get_mut(trueque.oferta.1.get_mut(1).unwrap()).unwrap().pausada = false;
-                    }
-                }
-                //elimino la oferta de la publicacion del receptor y le pongo el estado "en_trueque" en false y la despauso
-                if let Some (ubicacion_trueque_en_publi_receptor) = self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.iter().position(|oferta| oferta == &id) {
-                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().ofertas.remove(ubicacion_trueque_en_publi_receptor);
-                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().en_trueque = false;
-                    self.publicaciones.get_mut(&trueque.receptor.1).unwrap().pausada = false;
-                }
-            }
-            //bloque para rechazar cuando el ofertante tiene una sola publicacion
-            else {
-                //elimino el trueque del ofertante
-                if let Some (publicacion_ofertante) = self.publicaciones.get_mut(&trueque.oferta.1.pop().unwrap()) {
-                    let trueque_a_borrar = publicacion_ofertante.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
-                    publicacion_ofertante.ofertas.remove(trueque_a_borrar);
-                    publicacion_ofertante.en_trueque = false;
-                    publicacion_ofertante.pausada = false;
-                }
-                //elimino el trueque del receptor
-                if let Some (publicacion_receptor) = self.publicaciones.get_mut(&trueque.receptor.1) {
-                    let trueque_a_borrar = publicacion_receptor.ofertas.iter().position(|id_trueque| id_trueque == &id).unwrap();
-                    publicacion_receptor.ofertas.remove(trueque_a_borrar);
-                    publicacion_receptor.en_trueque = false;
-                    publicacion_receptor.pausada = false;
-                }
-            }
+            //por cada publicacion del trueque, modifico los booleanos "en_trueque" y "pausada" para que puedan 
+            //volver a realizar trueques
             for publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&publicacion).unwrap().en_trueque = false;
+                self.publicaciones.get_mut(&publicacion).unwrap().pausada = false;
                 self.resolver_estado_trueques_de_publicacion(&publicacion);
             }
-            //elimino el trueque de la DB
-            self.trueques.remove(&id);
+            //elimino logicamente el trueque de la DB
+            self.trueques.get_mut(&id).unwrap().estado = EstadoTrueque::Cancelado;
             self.guardar();
             return true;
         }
@@ -775,8 +750,18 @@ impl Database {
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
-        self.usuarios[ofertante].puntos += 1;
-        self.usuarios[receptor].puntos += 1;
+        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
+        //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
+        if (query.estado == EstadoTrueque::Finalizado) {
+            self.usuarios[ofertante].puntos += 1;
+            self.usuarios[receptor].puntos += 1;
+        }
+        else {
+            //cambio el booleano "en_trueque" de cada publicacion
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+            }
+        }
         self.guardar();
         let ofertante = &self.usuarios[ofertante];
         let receptor = &self.usuarios[receptor];
@@ -914,6 +899,7 @@ fn get_database_por_defecto() -> Database {
             precio,
             pausada: precio.is_none(),
             en_trueque:false,
+            eliminada: false,
             ofertas: vec![],
             preguntas: vec![],
         });

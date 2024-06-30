@@ -95,6 +95,7 @@ impl Trueque {
 
 #[derive(Debug, Deserialize, Serialize, Clone ,PartialEq)]
 pub enum EstadoTrueque {
+    Cancelado,
     Oferta,
     Pendiente,
     Definido,

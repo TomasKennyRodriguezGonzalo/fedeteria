@@ -465,7 +465,10 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 },
                                 datos_comunes::EstadoTrueque::Rechazado => html! {  
                                     <h1 class="title">{"Trueque Rechazado"}</h1>
-                            },
+                                },
+                                datos_comunes::EstadoTrueque::Cancelado => html! {  
+                                    <h1 class="title">{"Trueque Cancelado"}</h1>
+                                },
                             }
                         }
                         <div class="publications-container">
@@ -583,6 +586,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                 datos_comunes::EstadoTrueque::Rechazado => html! {
                                     <>
                                         <h1 class="title">{"Trueque Rechazado"}</h1>
+                                    </>
+                                },
+                                datos_comunes::EstadoTrueque::Cancelado => html! {
+                                    <>
+                                        <h1 class="title">{"Trueque Cancelado"}</h1>
                                     </>
                                 },
                             }
