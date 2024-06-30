@@ -541,59 +541,62 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     } else {html!{}}
                 }
-                //seccion preguntas y respuestas
-                {
-                    html!{
-                        <>
-                        if publicacion.dni_usuario != dni.clone().unwrap(){
-                            <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
-                            <GenericButton text="Realizar pregunta" onclick_event={show_question_prompt}/>
-                        }
 
-                        if (&*show_question_state).clone(){
-                            <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
-                        }
-
-
-                        {
-                            publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
-                                html!{
-                                    <>
-                                    <h2>{"Pregunta: "}{(pregunta.pregunta).clone()}</h2>
-                                    if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
-                                        <CheckedInputField name = "answer-field" label="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
-                                        <IndexedButton text="Confirmar" index={index} onclick_event={(answer_question).clone()}/>
-                                    }
-                                    
-                                    if let Some(respuesta) = (pregunta.respuesta).clone(){
-                                        <h4>{"Respuesta: "}{(respuesta).clone()}</h4>
-                                    } else {
-                                        <h4>{"el dueño de la publicación aún no ha respondido esta pregunta"}</h4>
-                                    }
-                                    </>
-                            
+                if !publicacion.pausada{
+                    //seccion preguntas y respuestas
+                    {
+                        html!{
+                            <>
+                            if publicacion.dni_usuario != dni.clone().unwrap(){
+                                <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
+                                <GenericButton text="Realizar pregunta" onclick_event={show_question_prompt}/>
                             }
-                            }).collect::<Html>()
+    
+                            if (&*show_question_state).clone(){
+                                <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
+                            }
+    
+    
+                            {
+                                publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
+                                    html!{
+                                        <>
+                                        <h2>{"Pregunta: "}{(pregunta.pregunta).clone()}</h2>
+                                        if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
+                                            <CheckedInputField name = "answer-field" label="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
+                                            <IndexedButton text="Confirmar" index={index} onclick_event={(answer_question).clone()}/>
+                                        }
+                                        
+                                        if let Some(respuesta) = (pregunta.respuesta).clone(){
+                                            <h4>{"Respuesta: "}{(respuesta).clone()}</h4>
+                                        } else {
+                                            <h4>{"el dueño de la publicación aún no ha respondido esta pregunta"}</h4>
+                                        }
+                                        </>
+                                
+                                }
+                                }).collect::<Html>()
+                            }
+                                </>
                         }
-                            </>
-                    }
-
-                }
-
-                //guardar publicacion
-                if publicacion.dni_usuario != dni.unwrap(){
-                    if !*is_in_saved_state{
-                        //entonces agregar publicacion a guardados  
-                        <GenericButton text="Agregar publicacion a guardados" onclick_event={add_pub_to_saved}/>
-                    } else{
-                        <GenericButton text="Eliminar publicacion de guardados" onclick_event={remove_saved_pub}/>
+    
                     }
     
-                    if (&*activate_assign_price_state).clone(){
-                        <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
+                    //guardar publicacion
+                    if publicacion.dni_usuario != dni.unwrap(){
+                        if !*is_in_saved_state{
+                            //entonces agregar publicacion a guardados  
+                            <GenericButton text="Agregar publicacion a guardados" onclick_event={add_pub_to_saved}/>
+                        } else{
+                            <GenericButton text="Eliminar publicacion de guardados" onclick_event={remove_saved_pub}/>
+                        }
                     }
                 }
-                //si la publicacion NO esta guardada
+    
+            if (&*activate_assign_price_state).clone(){
+                <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
+            }
+
             } else {
                 {"Cargando..."}
             }
