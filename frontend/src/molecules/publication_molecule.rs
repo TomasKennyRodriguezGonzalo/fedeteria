@@ -172,7 +172,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                                 window.location().reload().unwrap();
                             }
                         } else {
-                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido pasuada debido a que tienes trueques definidos",nombre.clone())));
+                            information_dispatch.reduce_mut(|store| store.messages.push(format!("La publicacion {} no ha sido despasuada debido a que tienes trueques pendientes, definidos o finalizados",nombre.clone())));
                             log::info!("No se cambió la publicación.")
                         }
                     }
@@ -350,9 +350,8 @@ pub fn publication_molecule(props : &Props) -> Html {
     let hide_show_question_state = Callback::from(move|_:MouseEvent|{
         cloned_show_question_state.set(false);
     });
-
-
-
+    
+    let cloned_show_question_state = show_question_state.clone();
     let cloned_dni = dni.clone();
     let question_text_state_cloned = question_text_state.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
@@ -360,14 +359,8 @@ pub fn publication_molecule(props : &Props) -> Html {
         if (&*question_text_state_cloned).split_whitespace().count() >= 2{
             if let Some(dni) = cloned_dni {
                 if let Some(_publicacion) = &*cloned_datos_publicacion{
-                    let query = QueryAskQuestion{ dni_preguntante:dni , pregunta:(&*question_text_state_cloned).clone(), id_publicacion:cloned_id};
-                    request_post("/api/preguntar",query, move |_respuesta:ResponseAskQuestion|{
-    
-                    });
-
-                    if let Some(window) = window() {
-                        window.location().reload().unwrap();
-                    }
+                    let query = QueryAskQuestion{ dni_preguntante:dni, pregunta:(&*question_text_state_cloned).clone(), id_publicacion:cloned_id};
+                    request_post("/api/preguntar",query, move |_respuesta:ResponseAskQuestion|{});
                 }
             }
             if let Some(window) = window() {
@@ -376,12 +369,12 @@ pub fn publication_molecule(props : &Props) -> Html {
         } else{
             //notificar que la pregunta no puede estar vacia
         }
+        cloned_show_question_state.set(false);
     });
 
 
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
-    let cloned_dni = dni.clone();
     let answer_text_state_cloned = answer_text_state.clone();
     let answer_question = Callback::from(move |index|{
         if !(&*answer_text_state_cloned).is_empty(){
@@ -511,38 +504,43 @@ pub fn publication_molecule(props : &Props) -> Html {
                 //seccion preguntas y respuestas
                 {
                     html!{
-                        <>
-                        if publicacion.dni_usuario != dni.clone().unwrap(){
-                            <CheckedInputField name = "question-field" label="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
-                            <GenericButton text="Realizar pregunta" onclick_event={show_question_prompt}/>
-                        }
-
-                        if (&*show_question_state).clone(){
-                            <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
-                        }
-
-
-                        {
-                            publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
-                                html!{
-                                    <>
-                                    <h2>{"Pregunta: "}{(pregunta.pregunta).clone()}</h2>
-                                    if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
-                                        <CheckedInputField name = "answer-field" label="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
-                                        <IndexedButton text="Confirmar" index={index} onclick_event={(answer_question).clone()}/>
+                        <div class="question-answer-box">
+                            <h1 class="title">{"Preguntas y respuestas"}</h1>
+                            <div class="question-input">
+                                if publicacion.dni_usuario != dni.clone().unwrap(){
+                                    <CheckedInputField name = "question-field" placeholder="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
+                                    <GenericButton text="Enviar pregunta" onclick_event={show_question_prompt}/>
+                                }
+                                if (&*show_question_state).clone(){
+                                    <ConfirmPromptButtonMolecule text = "¿Seguro que quiere realizar esta pregunta?" confirm_func = {ask_question} reject_func = {hide_show_question_state}  />
+                                }
+                            </div>
+                            <ul class="question-answer-list">
+                                {
+                                    publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
+                                        html!{
+                                            <li class="question-answer-item">
+                                                <h2 class="question">{""}{(pregunta.pregunta).clone()}</h2>
+                                                if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none(){
+                                                    <div class="answer-input">
+                                                        <CheckedInputField name = "answer-field" placeholder="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
+                                                        <IndexedButton text="Enviar" index={index} onclick_event={(answer_question).clone()}/>
+                                                    </div>
+                                                }
+                                                
+                                                if let Some(respuesta) = (pregunta.respuesta).clone(){
+                                                    <h4 class="answer">{""}{(respuesta).clone()}</h4>
+                                                } else {
+                                                    if publicacion.dni_usuario != dni.clone().unwrap(){
+                                                        <h4 class="unanswered">{"el dueño de la publicación aún no ha respondido esta pregunta."}</h4>
+                                                    }
+                                                }
+                                            </li>    
                                     }
-                                    
-                                    if let Some(respuesta) = (pregunta.respuesta).clone(){
-                                        <h4>{"Respuesta: "}{(respuesta).clone()}</h4>
-                                    } else {
-                                        <h4>{"el dueño de la publicación aún no ha respondido esta pregunta"}</h4>
-                                    }
-                                    </>
-                            
-                            }
-                            }).collect::<Html>()
-                        }
-                            </>
+                                    }).collect::<Html>()
+                                }
+                            </ul>
+                        </div>
                     }
 
                 }

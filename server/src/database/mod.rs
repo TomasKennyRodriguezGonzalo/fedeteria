@@ -800,9 +800,6 @@ impl Database {
                     ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
         }
         
-
-
-
         //Creo un vec para pasarlo al main y enviarlo
         /* Contenido del Vec:
         0 --> Nombre Receptor
@@ -832,11 +829,9 @@ impl Database {
             log::error!("error al buscar la publicacion (no deberia pasar)");
         }
         self.guardar();
-
     }
 
     pub fn responder(&mut self, query:QueryAnswerQuestion){
-        log::info!("estoy en el backend. responder");
         let publicacion = self.publicaciones.get_mut(&query.id_publicacion);
         if let Some(publicacion) = publicacion{
             if let Some(pregunta)=publicacion.preguntas.get_mut(query.indice_pregunta){
