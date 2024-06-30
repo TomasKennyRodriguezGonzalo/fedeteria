@@ -109,6 +109,7 @@ async fn main() {
         .route("/api/rechazar_trueque", post(finalizar_trueque))
         .route("/api/preguntar",post(preguntar))
         .route("/api/obtener_string_sucursal", post(obtener_string_sucursal))
+        .route("/api/responder",post(responder))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -705,6 +706,15 @@ Json(query): Json<QueryAskQuestion>
     let mut state = state.write().await;
     state.db.preguntar(query);
     Json(ResponseAskQuestion{ok:true})
+}
+
+async fn responder( State(state): State<SharedState>,
+Json(query): Json<QueryAnswerQuestion>
+) -> Json<ResponseAnswerQuestion>{
+    log::info!("estoy en el backend?");
+    let mut state = state.write().await;
+    state.db.responder(query);
+    Json(ResponseAnswerQuestion{ok:true})
 }
 
 async fn obtener_string_sucursal (
