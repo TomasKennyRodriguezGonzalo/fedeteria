@@ -110,6 +110,10 @@ async fn main() {
         .route("/api/rechazar_trueque", post(finalizar_trueque))
         .route("/api/preguntar",post(preguntar))
         .route("/api/responder",post(responder))
+        .route("/api/guardar_publicacion", post(guardar_publicacion))
+        .route("/api/eliminar_publicacion_guardados", post(eliminar_publicacion_guardadas))
+        .route("/api/publicacion_guardada", post(publicacion_guardada))
+        .route("/api/obtener_guardadas", post(obtener_publicaciones_guardadas))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -735,3 +739,33 @@ Json(query): Json<QueryAnswerQuestion>
 }
 
 
+async fn guardar_publicacion( State(state): State<SharedState>,
+Json(query): Json<QueryAgregarAGuardados>
+) -> Json<ResponseAgregarAGuardados>{
+    let mut state = state.write().await;
+    state.db.guardar_publicacion(query);
+    Json(ResponseAgregarAGuardados{ok:true})
+}
+
+async fn eliminar_publicacion_guardadas( State(state): State<SharedState>,
+Json(query): Json<QueryEliminarGuardados>
+) -> Json<ResponseEliminarGuardados>{
+    let mut state = state.write().await;
+    state.db.eliminar_publicacion_guardadas(query);
+    Json(ResponseEliminarGuardados{ok:true})
+}
+
+async fn publicacion_guardada( State(state): State<SharedState>,
+Json(query): Json<QueryPublicacionGuardada>
+) -> Json<ResponsePublicacionGuardada>{
+    let mut state = state.write().await;
+    Json(ResponsePublicacionGuardada{guardada : state.db.publicacion_guardada(query)})
+}
+
+
+async fn obtener_publicaciones_guardadas( State(state): State<SharedState>,
+Json(query): Json<QueryObtenerGuardadas>
+) -> Json<ResponseObtenerGuardadas>{
+    let mut state = state.write().await;
+    Json(ResponseObtenerGuardadas{publicaciones_guardadas : state.db.obtener_publicaciones_guardadas(query)})
+}

@@ -3,14 +3,14 @@ use std::ops::RangeInclusive;
 use serde::{Deserialize, Serialize};
 
 //use crate::Trueque;
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct PregYRta {
     pub dni_preguntante: u64,
     pub pregunta:String,
     pub respuesta:Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Publicacion {
     pub dni_usuario: u64,
     pub titulo: String,

@@ -42,8 +42,11 @@ pub fn publication_molecule(props : &Props) -> Html {
     let answer_text_changed = Callback::from(move|answer|{
         answer_text_state_cloned.set(answer);
     });
-
-
+    
+    let id = props.id.clone();
+    let cloned_id = id.clone();
+    let is_in_saved_state = use_state(||false);
+    let cloned_is_in_saved_state = is_in_saved_state.clone();
 
     let role_state: UseStateHandle<Option<RolDeUsuario>> = use_state(|| None);
     let cloned_role_state = role_state.clone();
@@ -54,12 +57,15 @@ pub fn publication_molecule(props : &Props) -> Html {
             request_post("/api/obtener_rol", query, move |respuesta:ResponseGetUserRole|{
                 cloned_role_state.set(Some(respuesta.rol));
             });
+            let query = QueryPublicacionGuardada{ dni:dni , id_publicacion:cloned_id};
+            request_post("/api/publicacion_guardada", query, move|respuesta:ResponsePublicacionGuardada|{
+                cloned_is_in_saved_state.set(respuesta.guardada);
+            });
         }
 
         || {}
     });
 
-    let id = props.id.clone();
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
 
@@ -84,7 +90,6 @@ pub fn publication_molecule(props : &Props) -> Html {
                             Ok(respuesta) => {
                                 match respuesta {
                                     Ok(publicacion) => {
-                                        log::info!("Datos de publicacion!: {publicacion:?}");
                                         datos_publicacion_setter.set(Some(publicacion));
                                     },
                                     Err(error) => {
@@ -226,7 +231,6 @@ pub fn publication_molecule(props : &Props) -> Html {
     });
 
     let props = *props_state.clone();
-    log::info!("Las props tienen {:?}", props.clone());
     //este es el estado del input, el que va cambiando dinamicamente
     let input_publication_price_state = use_state(|| None);
     let cloned_input_publication_price_state = input_publication_price_state.clone();
@@ -373,6 +377,37 @@ pub fn publication_molecule(props : &Props) -> Html {
         }
     });
 
+    let cloned_dni = dni.clone();
+    let add_pub_to_saved = Callback::from(move|_|{
+        if let Some(dni) = cloned_dni {
+            let query = QueryAgregarAGuardados {dni:dni, id_publicacion:cloned_id};
+            request_post("/api/guardar_publicacion",query,move |_respuesta:ResponseAgregarAGuardados|{
+
+            });
+        }
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
+    });
+
+
+    let cloned_dni = dni.clone();
+    let remove_saved_pub = Callback::from(move|_|{
+        if let Some(dni) = cloned_dni {
+            let query = QueryEliminarGuardados {dni:dni, id_publicacion:cloned_id};
+            request_post("/api/eliminar_publicacion_guardados",query,move |_respuesta:ResponseEliminarGuardados|{
+
+            });
+        }
+        if let Some(window) = window() {
+            window.location().reload().unwrap();
+        }
+    });
+
+  
+
+
+
 
     let cloned_id = id.clone();
     let cloned_datos_publicacion = datos_publicacion.clone();
@@ -391,6 +426,9 @@ pub fn publication_molecule(props : &Props) -> Html {
             window.location().reload().unwrap();
         }
     });
+
+
+
 
     html!{
         <div class="publication-box">
@@ -542,9 +580,20 @@ pub fn publication_molecule(props : &Props) -> Html {
 
                 }
 
-                if (&*activate_assign_price_state).clone(){
-                    <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
+                //guardar publicacion
+                if publicacion.dni_usuario != dni.unwrap(){
+                    if !*is_in_saved_state{
+                        //entonces agregar publicacion a guardados  
+                        <GenericButton text="Agregar publicacion a guardados" onclick_event={add_pub_to_saved}/>
+                    } else{
+                        <GenericButton text="Eliminar publicacion de guardados" onclick_event={remove_saved_pub}/>
+                    }
+    
+                    if (&*activate_assign_price_state).clone(){
+                        <ConfirmPromptButtonMolecule text="¿Confirma la tasación?" confirm_func={assign_price} reject_func={reject_assign_price_confirmation} />
+                    }
                 }
+                //si la publicacion NO esta guardada
             } else {
                 {"Cargando..."}
             }

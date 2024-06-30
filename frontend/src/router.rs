@@ -26,6 +26,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     privileged_actions_page::PrivilegedActionsPage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
+    saved_publications_page::SavedPublicationsPage,
     //publication_trade_offers_page::PublicationTradeOffersPage,
 };
 #[derive(Clone, Routable, PartialEq)]
@@ -40,8 +41,6 @@ pub enum Route {
     CreatePublication,
     #[at("/perfil")]
     Profile,
-    #[at("/perfil/publicaciones-guardadas")]
-    SavedPublications,
     #[at("/perfil/visto-recientemente")]
     RecentlySeenPublications,
     #[at("/perfil/ofertas-de-trueques")]
@@ -82,6 +81,8 @@ pub enum Route {
     SearchTrueques,
     #[at("/notificaciones")]
     Notifications,
+    #[at("/publicaciones-guardadas")]
+    SavedPublications,
     //#[at("/ofertas-recibidas")]
     //PublicationTradeOffers,
     #[not_found]
@@ -104,7 +105,6 @@ pub fn switch(routes: Route) -> Html {
                 Route::CreatePublication => html! { <CreatePublicationPage/> },
                 Route::DeleteOffice => html! {<DeleteOffice/>},
                 Route::NotFound => html! { <h1>{"Error 404 página no existente!"}</h1>},
-                Route::SavedPublications => html! {"Publicaciones guardadas"},
                 Route::RecentlySeenPublications => html! {"Publicaciones vistas recientemente"},
                 Route::MyTradesOffers => html! {<MyTradesOffersPage/>},
                 Route::MyPendingTrades => html! {<MyPendingTradesPage/>},
@@ -120,7 +120,8 @@ pub fn switch(routes: Route) -> Html {
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
                 Route::SearchTrueques => html!(<SearchTruequesPage/>),
                 Route::FinishTrade => html!{<FinishTradePage/>},
-                Route::DefinedTrades => html!{<DefinedTradesPage/>}
+                Route::DefinedTrades => html!{<DefinedTradesPage/>},
+                Route::SavedPublications => html!{<SavedPublicationsPage/>},
             }}
     </>}
 }
@@ -144,7 +145,6 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyPublications => [false, true, true, true],
         Route::CreatePublication => [false, true, true, true],
         Route::Profile => [false, true, true, true],
-        Route::SavedPublications => [false, true, true, true],
         Route::RecentlySeenPublications => [false, true, true, true],
         Route::MyTradesOffers => [false, true, true, true],
         Route::MyPendingTrades => [false, true, true, true],
@@ -170,6 +170,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::Trueque { id : _ } => [false, true, true, true],
         Route::FinishTrade => [false, false, true, true],
         Route::DefinedTrades => [false, false, false, true],
+        Route::SavedPublications => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

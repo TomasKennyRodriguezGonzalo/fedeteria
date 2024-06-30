@@ -116,6 +116,7 @@ pub fn profile_page() -> Html {
                     <li><Link<Route> to={Route::MyDefinedTrades}>{"Trueques Definidos"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyCompletedTrades}>{"Trueques Concretados"}</Link<Route>></li>
                     <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::SavedPublications}>{"Publicaciones Guardadas"}</Link<Route>></li>
                 }
             </ul>
         </div>
