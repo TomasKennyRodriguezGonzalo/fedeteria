@@ -14,6 +14,6 @@ pub struct QueryEstadisticas {
 pub struct ResponseEstadisticas {
     pub cantidad_trueques: usize,
     pub cantidad_ventas: usize,
-    pub pesos_trueques: usize,
-    pub pesos_ventas: usize,
+    pub pesos_trueques: u64,
+    pub pesos_ventas: u64,
 }

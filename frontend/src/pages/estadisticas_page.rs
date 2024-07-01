@@ -2,6 +2,7 @@ use chrono::{Local, NaiveDate, TimeZone};
 use datos_comunes::{QueryEstadisticas, ResponseEstadisticas};
 use log::Log;
 use web_sys::HtmlInputElement;
+use yew_hooks::use_effect_once;
 use yew_router::prelude::Link;
 use yew::prelude::*;
 use yewdux::use_store;
@@ -59,10 +60,16 @@ pub fn log_in_page()-> Html{
 
         estadisticas_mostradas.set(None);
         request_post("/api/get_estadisticas", query, move |response: ResponseEstadisticas| {
+            log::info!("Respuesta de estadisticas: {response:?}");
             estadisticas_mostradas.set(Some(response));
         });
     };
-    calcular_estadisticas();
+
+    let calcular_estadisticas_c = calcular_estadisticas.clone();
+    use_effect_once(move || {
+        calcular_estadisticas_c();
+        || {}
+    });
 
     let fecha_minima_state_c = fecha_minima_state.clone();
     let calcular_estadisticas_c = calcular_estadisticas.clone();
@@ -72,6 +79,7 @@ pub fn log_in_page()-> Html{
         let input_value = input.value();
         log::info!("fecha minima: {input_value}");
         fecha_minima_state_c.set(input_value);
+        log::info!("Query de estadisticas desde on_cambiada_fecha_minima");
         calcular_estadisticas_c();
     });
 
@@ -84,6 +92,7 @@ pub fn log_in_page()-> Html{
         let input_value = input.value();
         log::info!("fecha maxima: {input_value}");
         fecha_maxima_state_c.set(input_value);
+        log::info!("Query de estadisticas desde on_cambiada_fecha_maxima");
         calcular_estadisticas_c();
     });
 
@@ -94,6 +103,7 @@ pub fn log_in_page()-> Html{
         let cliqueado = input.checked();
         log::info!("Click trueques!!! {cliqueado}");
         ver_trueques_state.set(cliqueado);
+        log::info!("Query de estadisticas desde ver_trueques_cliqueado");
         calcular_estadisticas_c();
     });
 
@@ -104,6 +114,7 @@ pub fn log_in_page()-> Html{
         let cliqueado = input.checked();
         log::info!("Click ventas!!! {cliqueado}");
         ver_ventas_state.set(cliqueado);
+        log::info!("Query de estadisticas desde ver_ventas_cliqueado");
         calcular_estadisticas_c();
     });
 

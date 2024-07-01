@@ -110,6 +110,7 @@ async fn main() {
         .route("/api/preguntar",post(preguntar))
         .route("/api/obtener_string_sucursal", post(obtener_string_sucursal))
         .route("/api/responder",post(responder))
+        .route("/api/get_estadisticas", post(get_estadisticas))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -714,6 +715,14 @@ Json(query): Json<QueryAnswerQuestion>
     let mut state = state.write().await;
     state.db.responder(query);
     Json(ResponseAnswerQuestion{ok:true})
+}
+
+async fn get_estadisticas(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryEstadisticas>,
+) -> Json<ResponseEstadisticas> {
+    let state = state.read().await;
+    Json(state.db.get_estadisticas(query))
 }
 
 async fn obtener_string_sucursal (
