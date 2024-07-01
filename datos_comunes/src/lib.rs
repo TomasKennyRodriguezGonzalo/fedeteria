@@ -10,6 +10,8 @@ mod trueque;
 pub use trueque::*;
 mod sucursal;
 pub use sucursal::*;
+mod estadisticas;
+pub use estadisticas::*;
 
 
 
