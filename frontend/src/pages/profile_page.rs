@@ -113,6 +113,7 @@ pub fn profile_page() -> Html {
                 if informacion_propia {
                     <li><Link<Route> to={Route::MyTrades}>{"Mis Ofertas y Trueques"}</Link<Route>></li>
                     <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::SavedPublications}>{"Publicaciones Guardadas"}</Link<Route>></li>
                 }
             </ul>
         </div>

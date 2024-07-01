@@ -3,6 +3,7 @@ use std::{collections::HashMap, fs, path::Path};
 use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
+use log::info;
 use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
@@ -824,6 +825,53 @@ impl Database {
             }
         }
         self.guardar();
+    }
+
+
+    pub fn guardar_publicacion(&mut self, query:QueryAgregarAGuardados){
+        let index = self.encontrar_dni(query.dni).unwrap();
+        let usuario = self.usuarios.get_mut(index).unwrap();
+        let publicacion = self.publicaciones.get(&query.id_publicacion);
+        //si la publicacion existe entonces guardo el id en el vec de guardados
+        if let Some(publicacion) = publicacion{
+            usuario.publicaciones_guardadas.push(query.id_publicacion);
+        } else{
+            log::error!("hubo un error encontrando a la publicacion");
+        }
+        self.guardar();
+    }
+
+    pub fn eliminar_publicacion_guardadas(&mut self, query:QueryEliminarGuardados){
+        let index = self.encontrar_dni(query.dni).unwrap();
+        let usuario = self.usuarios.get_mut(index).unwrap();
+        let publicacion = self.publicaciones.iter_mut().find(|p| p.0 == &query.id_publicacion);
+        if let Some(publicacion) = publicacion{
+            //retain retiene en el vector todos los elementos que cumplan con la clausula
+            usuario.publicaciones_guardadas.retain(|p| p != publicacion.0);
+        }
+        else{
+            log::error!("hubo un error encontrando a la publicacion");
+        }
+        self.guardar();
+    }
+
+    pub fn publicacion_guardada(&self, query:QueryPublicacionGuardada)-> bool{
+        let index = self.encontrar_dni(query.dni).unwrap();
+        let usuario = self.usuarios.get(index).unwrap();
+        let publicacion_buscada = self.publicaciones.get(&query.id_publicacion);
+        if let Some(publicacion_buscada) = publicacion_buscada{
+            if usuario.publicaciones_guardadas.contains(&query.id_publicacion){
+                return true
+            }
+        }
+
+        false
+    }
+
+    pub fn obtener_publicaciones_guardadas(&self, query:QueryObtenerGuardadas)->Vec<usize>{
+        let index = self.encontrar_dni(query.dni).unwrap();
+        let usuario = self.usuarios.get(index).unwrap().clone();
+        usuario.publicaciones_guardadas
     }
 
 }

@@ -415,3 +415,42 @@ pub struct QueryAnswerQuestion{
 pub struct ResponseAnswerQuestion{
     pub ok:bool,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAgregarAGuardados{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAgregarAGuardados{
+    pub ok:bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryPublicacionGuardada{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponsePublicacionGuardada{
+    pub guardada:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarGuardados{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarGuardados{
+    pub ok:bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerGuardadas{
+    pub dni:u64,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerGuardadas{
+    pub publicaciones_guardadas:Vec<usize>,
+}

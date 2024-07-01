@@ -24,3 +24,4 @@ pub mod my_trades_offers_page;
 pub mod finish_trade_page;
 pub mod defined_trades_page;
 pub mod my_trades_page;
+pub mod saved_publications_page;
