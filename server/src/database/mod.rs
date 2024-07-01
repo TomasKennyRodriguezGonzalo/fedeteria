@@ -468,6 +468,45 @@ impl Database {
         self.trueques.get(&id)
     }
 
+    pub fn get_estadisticas(&self, query: QueryEstadisticas) -> ResponseEstadisticas {
+        let mut cantidad_trueques = 0;
+        let mut cantidad_ventas = 0;
+        let mut pesos_trueques = 0;
+        let mut pesos_ventas = 0;
+
+        let fecha_entre = |fecha| {
+            if let Some(fecha_min) = query.fecha_inicial {
+                if fecha < fecha_min {
+                    return false;
+                }
+            }
+            if let Some(fecha_max) = query.fecha_final {
+                if fecha > fecha_max {
+                    return false;
+                }
+            }
+            true
+        };
+
+        for trueque in self.trueques.values() {
+            if let Some(fecha_trueque) = trueque.fecha_trueque {
+                if !fecha_entre(fecha_trueque) {continue;}
+                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas
+                if trueque.estado == EstadoTrueque::Finalizado {
+                    cantidad_trueques += 1;
+                    pesos_trueques += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                }
+            }
+        }
+
+        ResponseEstadisticas {
+            cantidad_trueques,
+            cantidad_ventas,
+            pesos_trueques,
+            pesos_ventas,
+        }
+    }
+
     pub fn aceptar_oferta(&mut self, id:usize) -> bool {
         let trueque = self.trueques.get_mut(&id);
         if let Some(trueque) = trueque {

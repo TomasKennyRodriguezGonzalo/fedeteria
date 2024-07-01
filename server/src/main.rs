@@ -114,6 +114,7 @@ async fn main() {
         .route("/api/eliminar_publicacion_guardados", post(eliminar_publicacion_guardadas))
         .route("/api/publicacion_guardada", post(publicacion_guardada))
         .route("/api/obtener_guardadas", post(obtener_publicaciones_guardadas))
+        .route("/api/get_estadisticas", post(get_estadisticas))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -720,6 +721,14 @@ Json(query): Json<QueryAnswerQuestion>
     Json(ResponseAnswerQuestion{ok:true})
 }
 
+async fn get_estadisticas(
+    State(state): State<SharedState>,
+    Json(query): Json<QueryEstadisticas>,
+) -> Json<ResponseEstadisticas> {
+    let state = state.read().await;
+    Json(state.db.get_estadisticas(query))
+}
+
 async fn obtener_string_sucursal (
     State(state): State<SharedState>,
     Json(query): Json<QueryGetOffice>
@@ -729,7 +738,9 @@ async fn obtener_string_sucursal (
     //let rol = state.db.obtener_rol_usuario(indice_usuario);
     let sucursal_empleado = state.db.obtener_sucursal(query.index);
     Json(ResponseGetOffice {sucursal: sucursal_empleado})  
-}async fn guardar_publicacion( State(state): State<SharedState>,
+}
+
+async fn guardar_publicacion( State(state): State<SharedState>,
 Json(query): Json<QueryAgregarAGuardados>
 ) -> Json<ResponseAgregarAGuardados>{
     let mut state = state.write().await;
@@ -751,7 +762,6 @@ Json(query): Json<QueryPublicacionGuardada>
     let mut state = state.write().await;
     Json(ResponsePublicacionGuardada{guardada : state.db.publicacion_guardada(query)})
 }
-
 
 async fn obtener_publicaciones_guardadas( State(state): State<SharedState>,
 Json(query): Json<QueryObtenerGuardadas>
