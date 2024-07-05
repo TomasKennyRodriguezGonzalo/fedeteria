@@ -2,6 +2,8 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
+mod peticion_cambio_contrasenia;
+pub use peticion_cambio_contrasenia::*;
 mod publicacion;
 pub use publicacion::*;
 mod notificacion;
@@ -475,3 +477,11 @@ pub struct QueryActualizarPreferencias{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseActualizarPreferencias{}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QuerySendChangePasswordCode{
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseSendChangePasswordCode{}

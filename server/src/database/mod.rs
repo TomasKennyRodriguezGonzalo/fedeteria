@@ -26,6 +26,8 @@ pub struct Database {
 
     trueques_auto_incremental: usize,
     trueques: HashMap<usize, Trueque>,
+
+    peticiones_cambio_contraseña: Vec<PeticionCambioContrasenia>,
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -947,6 +949,53 @@ impl Database {
         usuario.publicaciones_guardadas
     }
 
+    pub fn generar_mail_recuperacion_contrasenia(&mut self, query: QuerySendChangePasswordCode) -> Vec<String> {
+        //busco la posicion del usuario en el vector de existir
+        let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
+        if let Some(id_usuario) = option_usuario {
+            //bloqueo al usuario por una cuestion de seguridad
+            self.usuarios[id_usuario].estado = EstadoCuenta::Bloqueada;
+            //lo obtengo para obtener sus datos
+            let usuario = self.usuarios.get(id_usuario).unwrap();
+            let codigo_seguridad = Database::generar_codigo_cambio_contraseña(query.email.clone(), &self.peticiones_cambio_contraseña);
+            let peticion = PeticionCambioContrasenia {codigo_seguridad, email: query.email.clone(), usada: false};
+            self.peticiones_cambio_contraseña.push(peticion);
+            self.guardar();
+            //Creo un vec para pasarlo al main y enviarlo
+            /* Contenido del Vec:
+            0 --> Nombre 
+            1 --> Mail 
+            2 --> Mensaje 
+            */
+            let mensaje = format!("Hola {}!\nUsted ha solicitado un cambio de contraseña en la pagina Fedeteria. Su cuenta con este mail ha sido bloqueada hasta que cambie su contraseña. El código de seguridad para realizar el cambio de contraseña es {}. Dirijase a la sección de Inicio de Sesión, y presione 'Recuperar Cuenta'. Allí encontrará la guía para cambiar su contraseña. \n Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, codigo_seguridad);
+            let mut vec_mensajes = Vec::new();
+            vec_mensajes.push(usuario.nombre_y_apellido.clone());
+            vec_mensajes.push(query.email.clone());
+            vec_mensajes.push(mensaje);
+            return vec_mensajes;
+        }
+        return Vec::new();
+    }
+
+    fn generar_codigo_cambio_contraseña(email: String, peticiones: &Vec<PeticionCambioContrasenia>) -> u64 {
+        let mut codigo: u64 = 0;
+
+        let mut existe_combinacion = true;
+        while existe_combinacion {
+            //genero el codigo
+            let mut rng = rand::thread_rng();
+            codigo = rng.gen_range(1..1001);
+    
+            //verifico que no exista la combinacion
+            existe_combinacion = peticiones.iter().filter(|peticion| !peticion.usada).any(|peticion| (peticion.codigo_seguridad == codigo) && (peticion.email == email));
+        }
+    
+        codigo
+    }
+
+    fn obtener_usuario_por_email (email: String, usuarios: &Vec<Usuario>) -> Option<&Usuario> {
+        usuarios.iter().find(|usuario| usuario.email == email)
+    }
 }
 
 fn get_database_por_defecto() -> Database {
