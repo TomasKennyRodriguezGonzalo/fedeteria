@@ -119,6 +119,8 @@ async fn main() {
         .route("/api/obtener_preferencias", post(obtener_preferencias))
         .route("/api/actualizar_preferencias", post(actualizar_preferencias))
         .route("/api/enviar_codigo_de_recuperacion_contrasenia", post(enviar_codigo_de_recuperacion_contrasenia))
+        .route("/api/validar_cambio_contrasenia", post(validar_cambio_contrasenia))
+        .route("/api/cambiar_contrasenia_login", post(cambiar_contrasenia_login))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -815,4 +817,20 @@ async fn enviar_codigo_de_recuperacion_contrasenia (
             }
         });
     return Json(ResponseSendChangePasswordCode{});
+}
+
+async fn validar_cambio_contrasenia (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryValidarCambioContrasenia>
+) -> Json<ResponseValidarCambioContrasenia> {
+    let state = state.write().await;
+    Json(ResponseValidarCambioContrasenia{datos_validos: state.db.validar_cambio_contrasenia(query)})
+}
+
+async fn cambiar_contrasenia_login (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryCambioContraseniaLogIn>
+) -> Json<ResponseCambioContraseniaLogIn> {
+    let mut state = state.write().await;
+    Json(ResponseCambioContraseniaLogIn{cambio: state.db.cambiar_contrasenia_login(query)})
 }

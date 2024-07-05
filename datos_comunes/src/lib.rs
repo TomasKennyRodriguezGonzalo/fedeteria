@@ -485,3 +485,26 @@ pub struct QuerySendChangePasswordCode{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseSendChangePasswordCode{}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryValidarCambioContrasenia{
+    pub email: String,
+    pub codigo: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseValidarCambioContrasenia{
+    pub datos_validos: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCambioContraseniaLogIn{
+    pub email: String,
+    pub codigo: u64,
+    pub nueva_contrasenia: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCambioContraseniaLogIn{
+    pub cambio: bool,
+}

@@ -10,7 +10,8 @@ pub fn log_in_page()-> Html{
             <LogInMolecule />
             <div>
                 <span> {"¿No tienes usuario? "} </span> <Link<Route> to={Route::Register}>{"Registrate"}</Link<Route>>
-                <span> {"¿Olvidaste tu contraseña? "} </span> <Link<Route> to={Route::ChangePasswordFromLogIn}>{"Recuperar Contraseña"}</Link<Route>>
+                <span> {"¿Olvidaste tu contraseña? "} </span> <Link<Route> to={Route::SendCodeToChangePassword}>{"Recuperar Contraseña"}</Link<Route>>
+                <span> {"¿Ya tienes el código para recuperar tu contraseña? "} </span> <Link<Route> to={Route::ChangePasswordFromLogIn}>{"Cambiar Contraseña"}</Link<Route>>
             </div>
         </>
     }

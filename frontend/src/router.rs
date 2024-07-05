@@ -1,3 +1,4 @@
+use crate::pages::change_password_from_login_page::ChangePasswordFromLogInPage;
 use crate::pages::edit_preferences_page::EditPreferencesPage;
 use crate::pages::defined_trades_page::DefinedTradesPage;
 use crate::pages::finish_trade_page::FinishTradePage;
@@ -30,7 +31,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     awaiting_price_publication::AwaitingPricePublicationPage,
     saved_publications_page::SavedPublicationsPage,
     estadisticas_page::EstadisticasPage,
-    change_password_from_log_in_page::ChangePasswordFromLogInPage,
+    send_code_to_change_password_page::SendCodeToChangePasswordPage,
     //publication_trade_offers_page::PublicationTradeOffersPage,
 };
 #[derive(Clone, Routable, PartialEq)]
@@ -39,6 +40,8 @@ pub enum Route {
     Home,
     #[at("/login")]
     LogInPage,
+    #[at("/enviar-codigo-recuperacion-contrasenia")]
+    SendCodeToChangePassword,
     #[at("/cambiar-contrasenia-login")]
     ChangePasswordFromLogIn,
     #[at("/mis-publicaciones")]
@@ -136,8 +139,9 @@ pub fn switch(routes: Route) -> Html {
                 Route::MyTrades => html!{<MyTradesPage/>},
                 Route::SavedPublications => html!{<SavedPublicationsPage/>},
                 Route::Estadisticas => html!{<EstadisticasPage/>},
-                Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
+                Route::SendCodeToChangePassword => html!{<SendCodeToChangePasswordPage/>},
                 Route::MyPreferences => html!{<EditPreferencesPage/>},
+                Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
             }}
     </>}
 }
@@ -189,8 +193,9 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyTrades => [false, true, true, true],
         Route::SavedPublications => [false, true, true, true],
         Route::Estadisticas => [false, false, true, true],
-        Route::ChangePasswordFromLogIn => [true, false, false, false],
+        Route::SendCodeToChangePassword => [true, false, false, false],
         Route::MyPreferences => [false, true, true, true],
+        Route::ChangePasswordFromLogIn => [true, false, false, false],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

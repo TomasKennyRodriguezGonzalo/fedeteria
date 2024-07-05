@@ -4,8 +4,8 @@ use yewdux::use_store;
 use web_sys::window;
 use crate::{components::{checked_input_field::CheckedInputField, generic_button::GenericButton}, information_store::InformationStore, molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule, request_post};
 
-#[function_component(ChangePasswordFromLogInMolecule)]
-pub fn change_password_from_log_in_molecule () -> Html {
+#[function_component(SendCodeToChangePasswordMolecule)]
+pub fn send_code_to_change_password_molecule () -> Html {
 
     let (_information_store, information_dispatch) = use_store::<InformationStore>();
     let information_dispatch_cloned = information_dispatch.clone();

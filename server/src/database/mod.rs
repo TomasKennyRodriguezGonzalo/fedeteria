@@ -7,7 +7,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
-use crate::mail::send_email;
+use crate::{hash_str, mail::send_email};
 
 use self::usuario::{EstadoCuenta, Usuario};
 
@@ -991,8 +991,34 @@ impl Database {
         codigo
     }
 
-    fn obtener_usuario_por_email (email: String, usuarios: &Vec<Usuario>) -> Option<&Usuario> {
-        usuarios.iter().find(|usuario| usuario.email == email)
+    pub fn validar_cambio_contrasenia (&self, query: QueryValidarCambioContrasenia) -> bool {
+        self.peticiones_cambio_contraseña.iter()
+                        .filter(|peticion| !peticion.usada)
+                        .any(|peticion| (peticion.codigo_seguridad == query.codigo) && (peticion.email == query.email))
+    }
+
+    pub fn cambiar_contrasenia_login (&mut self, query: QueryCambioContraseniaLogIn) -> bool {
+        //obtengo al usuario
+        let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
+        if let Some(id_usuario) = option_usuario {
+
+            //hasheo la nueva contraseña para compararla y cambiarla si no es la misma
+            let nueva_contrasenia_hash = hash_str(&query.nueva_contrasenia);
+            if self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash {
+
+                //cambio la contraseña
+                self.usuarios[id_usuario].contraseña = nueva_contrasenia_hash;
+
+                //obtengo la peticion y la marco como usada
+                let posicion_peticion = self.peticiones_cambio_contraseña.iter().position(|peticion| (peticion.email == query.email) && (peticion.codigo_seguridad == query.codigo));
+                log::info!("POSICION PETICION: {:?}", posicion_peticion);
+                self.peticiones_cambio_contraseña[posicion_peticion.unwrap()].usada = true;
+
+                self.guardar();
+                return true;
+            }
+        }
+        false
     }
 }
 

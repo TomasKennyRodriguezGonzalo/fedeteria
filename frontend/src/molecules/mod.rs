@@ -14,5 +14,6 @@ pub mod publication_selector_molecule;
 pub mod trueque_molecule;
 pub mod trade_grid_molecule;
 pub mod finish_trade_molecule;
-pub mod change_password_from_log_in_molecule;
+pub mod send_code_to_change_password_molecule;
 pub mod edit_preferences_molecule;
+pub mod change_password_from_login_molecule;
