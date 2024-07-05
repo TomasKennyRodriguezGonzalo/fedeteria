@@ -17,6 +17,7 @@ pub struct Usuario {
     pub notificaciones: Vec<Notificacion>,
     pub puntos: i64,
     pub publicaciones_guardadas:Vec<usize>,
+    pub preferencias: (Option<String>, Option<String>),
 }
 
 
@@ -76,6 +77,7 @@ impl Usuario {
             notificaciones : Vec::new(),
             puntos : 0,
             publicaciones_guardadas:Vec::new(),
+            preferencias: (None, None),
         }
     }
 }

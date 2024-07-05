@@ -27,3 +27,4 @@ pub mod my_trades_page;
 pub mod saved_publications_page;
 pub mod estadisticas_page;
 pub mod change_password_from_log_in_page;
+pub mod edit_preferences_page;

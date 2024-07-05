@@ -373,20 +373,49 @@
             color: beige;
         }
 
+        .home-page .publication-list > * {
+            margin: 5px;
+        }
+
         /* --- Publication Grid --- */
+        .publication-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .publication-grid *{
+            margin: 5px 0px;
+        }
+
         .publication-grid ul{
             list-style: none;
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         .publication-grid ul li{
             margin: 1% 10px 0px 0px;
         }
+
         .publication-grid ul li a{
             all: initial;
             cursor: pointer;
+        }
+
+        .publication-grid .index-buttons {
+            padding: 5px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .publication-grid .index-buttons * {
+            margin: 0px 4px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         /* --- Profile Page --- */
@@ -1144,32 +1173,84 @@
 
         /* --- question-answer --- */
 
-        .question-input, .answer-input {
+        .question-answer-box .question-input, .answer-input {
             display: flex;
             flex-direction: row;
             align-items: center;
         }
 
-        .question-input *, .answer-input * {
+        .question-answer-box .question-input *, .answer-input * {
             margin-right: 5px;
         }
 
-        .question {
+        .question-answer-box .question {
             padding: 0px 5px;
         }
 
-        .unanswered {
+        .question-answer-box .unanswered {
             padding: 0px 10px;
         }
 
-        .answer-input {
+        .question-answer-box .answer-input {
             padding: 0px 15px;
         }
 
-        .answer {
+        .question-answer-box .answer {
             padding: 0px 15px;
             color: lightgrey;
         }
+
+        /* --- preferences ---*/
+        .preferences-box {
+            background-color: #114232;
+            display: grid;
+            color: white;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding: 10px;
+        }
+
+        .preferences-box .info {
+            padding: 5px;
+            background-color: #0a271d;
+            border-radius: 10px;
+        }
+
+        .preferences-box .info * {
+            margin : 3px 0px;
+        }
+
+        .preferences-box .info li {
+            margin : 0px 2px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .preferences-box .info .preference-value {
+            margin : 0px 5px;
+        }
+
+        .preferences-box .edit-prompts {
+            margin: 5px 0px;
+            display: flex;
+            flex-direction: column;
+            background-color: #0a271d;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .preferences-box .edit-prompts * {
+            margin: 3px 0px;
+        }
+
+        .preferences-box .edit-prompts .edit-inputs * {
+            margin: 5px 2px;
+        }
+
     </style>
   </head>
   <body>loading...</body>

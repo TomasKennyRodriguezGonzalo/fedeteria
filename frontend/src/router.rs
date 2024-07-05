@@ -1,3 +1,4 @@
+use crate::pages::edit_preferences_page::EditPreferencesPage;
 use crate::pages::defined_trades_page::DefinedTradesPage;
 use crate::pages::finish_trade_page::FinishTradePage;
 use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
@@ -60,6 +61,8 @@ pub enum Route {
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
+    #[at("/perfil/mis-preferencias")]
+    MyPreferences,
     #[at("/publicacion/:id")]
     Publication {id: usize},
     #[at("/trueque/:id")]
@@ -134,6 +137,7 @@ pub fn switch(routes: Route) -> Html {
                 Route::SavedPublications => html!{<SavedPublicationsPage/>},
                 Route::Estadisticas => html!{<EstadisticasPage/>},
                 Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
+                Route::MyPreferences => html!{<EditPreferencesPage/>},
             }}
     </>}
 }
@@ -186,6 +190,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::SavedPublications => [false, true, true, true],
         Route::Estadisticas => [false, false, true, true],
         Route::ChangePasswordFromLogIn => [true, false, false, false],
+        Route::MyPreferences => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

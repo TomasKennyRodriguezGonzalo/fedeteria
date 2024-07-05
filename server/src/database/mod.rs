@@ -864,6 +864,40 @@ impl Database {
             }
         }
         self.guardar();
+    
+    }
+    pub fn obtener_preferencias(&self, dni: u64) -> (Option<String>, Option<String>){
+        self.usuarios.iter()
+        .find(|u| u.dni == dni)
+        .unwrap()
+        .preferencias
+        .clone()
+    }
+
+    pub fn actualizar_preferencias(&mut self, dni: u64, preferencias: (Option<String>, Option<String>)) {
+        let mut nuevas_preferencias = (None, None);
+        let usuario = self.usuarios.iter_mut()
+        .find(|u| u.dni == dni)
+        .unwrap();
+
+        if let Some(preferencia_a) = preferencias.0 {
+            if preferencia_a.is_empty() {
+                nuevas_preferencias.0 = usuario.preferencias.0.clone();
+            } else {
+                nuevas_preferencias.0 = Some(preferencia_a)
+            }
+        } 
+
+        if let Some(preferencia_b) = preferencias.1 {
+            if preferencia_b.is_empty() {
+                nuevas_preferencias.1 = usuario.preferencias.1.clone();
+            } else {
+                nuevas_preferencias.1 = Some(preferencia_b)
+            }
+        } 
+
+        usuario.preferencias = nuevas_preferencias;
+        self.guardar()
     }
 
 

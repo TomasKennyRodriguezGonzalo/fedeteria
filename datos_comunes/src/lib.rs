@@ -456,3 +456,22 @@ pub struct QueryObtenerGuardadas{
 pub struct ResponseObtenerGuardadas{
     pub publicaciones_guardadas:Vec<usize>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerPreferencias{
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerPreferencias{
+    pub preferencias : (Option<String>, Option<String>)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryActualizarPreferencias{
+    pub dni: u64,
+    pub preferencias : (Option<String>, Option<String>)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseActualizarPreferencias{}

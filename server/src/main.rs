@@ -115,6 +115,8 @@ async fn main() {
         .route("/api/publicacion_guardada", post(publicacion_guardada))
         .route("/api/obtener_guardadas", post(obtener_publicaciones_guardadas))
         .route("/api/get_estadisticas", post(get_estadisticas))
+        .route("/api/obtener_preferencias", post(obtener_preferencias))
+        .route("/api/actualizar_preferencias", post(actualizar_preferencias))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -768,4 +770,22 @@ Json(query): Json<QueryObtenerGuardadas>
 ) -> Json<ResponseObtenerGuardadas>{
     let mut state = state.write().await;
     Json(ResponseObtenerGuardadas{publicaciones_guardadas : state.db.obtener_publicaciones_guardadas(query)})
+}
+
+async fn obtener_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerPreferencias>
+) -> Json<ResponseObtenerPreferencias> {
+    let state = state.read().await;
+    let preferencias = state.db.obtener_preferencias(query.dni);
+    Json(ResponseObtenerPreferencias{preferencias})  
+}
+
+async fn actualizar_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryActualizarPreferencias>
+) -> Json<ResponseActualizarPreferencias> {
+    let mut state = state.write().await;
+    state.db.actualizar_preferencias(query.dni, query.preferencias);
+    Json(ResponseActualizarPreferencias{})  
 }
