@@ -1025,9 +1025,10 @@ impl Database {
         //obtengo el id del usuario
         let option_usuario = self.encontrar_dni(query.dni);
         if let Some(id_usuario) = option_usuario {
-            //hasheo la nueva contraseña para compararla y cambiarla si no es la misma
+            //hasheo las contraseñas para compararlas y cambiarlas si se cumplen las condiciones
             let nueva_contrasenia_hash = hash_str(&query.nueva_contrasenia);
-            if self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash {
+            let vieja_contrasenia_hash = hash_str(&query.vieja_contrasenia);
+            if (self.usuarios[id_usuario].contraseña == vieja_contrasenia_hash) && (self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash) {
                 //cambio la contraseña
                 self.usuarios[id_usuario].contraseña = nueva_contrasenia_hash;
                 self.guardar();

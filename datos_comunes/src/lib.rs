@@ -507,6 +507,7 @@ pub struct QueryCambioContraseniaLogIn{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryCambioContraseniaPerfil{
     pub nueva_contrasenia: String,
+    pub vieja_contrasenia: String,
     pub dni: u64,
 }
 
