@@ -1,4 +1,4 @@
-use datos_comunes::{QueryCambioContraseniaLogIn, QueryValidarCambioContrasenia, ResponseCambioContraseniaLogIn, ResponseValidarCambioContrasenia};
+use datos_comunes::{QueryCambioContraseniaLogIn, QueryValidarCambioContrasenia, ResponseCambioContrasenia, ResponseValidarCambioContrasenia};
 use yew::prelude::*;
 use yewdux::use_store;
 use web_sys::window;
@@ -69,7 +69,7 @@ pub fn change_password_from_login_molecule () -> Html {
     let change_password = Callback::from(move |_e| {
         let information_dispatch_cloned = information_dispatch_cloned.clone();
         let query = QueryCambioContraseniaLogIn {email: (&*user_mail_state_cloned).clone(), codigo: (&*code_state_cloned).clone(), nueva_contrasenia: (&*new_password_state_cloned).clone()};
-        request_post("/api/cambiar_contrasenia_login", query, move |respuesta: ResponseCambioContraseniaLogIn| {
+        request_post("/api/cambiar_contrasenia_login", query, move |respuesta: ResponseCambioContrasenia| {
             if respuesta.cambio {
                 information_dispatch_cloned.reduce_mut( |store| store.messages.push(format!("La contraseña ha sido cambiada exitosamente")));
                 if let Some(window) = window() {
@@ -105,7 +105,7 @@ pub fn change_password_from_login_molecule () -> Html {
                     <li>{"4 - Si los datos son correctos, le aparecerán los campos para ingresar y confirmar su nueva contraseña"}</li>
                     <li>{"5 - Presiona 'Cambiar Contraseña' para efectivamente establecer la nueva contraseña. El Botón se habilitará de ser ambos campos coincidentes"}</li>
                 </ul>
-                <div class="edit-inputs">
+                <div class="edit-personal-info-box">
                     <h2>{"Ingrese la dirección de email"}</h2>
                     <CheckedInputField name="Mail" placeholder="direccion@email" tipo="text" on_change={user_mail_onchange}/>
                     <br/>
@@ -116,9 +116,9 @@ pub fn change_password_from_login_molecule () -> Html {
                 </div>
             </div>
                 if (&*valid_inputs_state).clone() {
-                    <div class="text"> //cambio de contraseña efectivo
+                    <div class="edit-personal-info-box"> //cambio de contraseña efectivo
                         <h2>{"Ingrese la nueva contraseña"}</h2>
-                        <CheckedInputField name = "password" label="Nueva Contraseña" tipo = "password" on_change={new_password_onchange}/>
+                        <CheckedInputField name = "password" placeholder="Nueva Contraseña" tipo = "password" on_change={new_password_onchange}/>
                         <br/>
                         <h2>{"Ingrese la nueva contraseña"}</h2>
                         <CheckedInputField name="password" placeholder="Confirmación Nueva Contraseña" tipo="password" on_change={confirm_new_password_onchange}/>

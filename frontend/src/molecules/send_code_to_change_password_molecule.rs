@@ -41,7 +41,7 @@ pub fn send_code_to_change_password_molecule () -> Html {
     });
 
     html!(
-        <div class="text">
+        <div class="edit-personal-info-box">
             <div class="edit-inputs">
                 <h2>{"Ingrese su dirección de email en la página para pedir un código de recuperación de contraseña"}</h2>
                 <CheckedInputField name="Mail de recuperacion de contraseña" placeholder="direccion@email" tipo="text" on_change={user_mail_onchange}/>

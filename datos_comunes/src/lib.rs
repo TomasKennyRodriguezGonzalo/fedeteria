@@ -505,6 +505,12 @@ pub struct QueryCambioContraseniaLogIn{
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ResponseCambioContraseniaLogIn{
+pub struct QueryCambioContraseniaPerfil{
+    pub nueva_contrasenia: String,
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCambioContrasenia{
     pub cambio: bool,
 }

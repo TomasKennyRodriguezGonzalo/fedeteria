@@ -29,3 +29,4 @@ pub mod estadisticas_page;
 pub mod send_code_to_change_password_page;
 pub mod edit_preferences_page;
 pub mod change_password_from_login_page;
+pub mod change_password_from_profile_page;

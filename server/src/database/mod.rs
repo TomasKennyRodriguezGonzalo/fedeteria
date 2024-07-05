@@ -1020,6 +1020,22 @@ impl Database {
         }
         false
     }
+
+    pub fn cambiar_contrasenia_perfil (&mut self, query: QueryCambioContraseniaPerfil) -> bool {
+        //obtengo el id del usuario
+        let option_usuario = self.encontrar_dni(query.dni);
+        if let Some(id_usuario) = option_usuario {
+            //hasheo la nueva contraseña para compararla y cambiarla si no es la misma
+            let nueva_contrasenia_hash = hash_str(&query.nueva_contrasenia);
+            if self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash {
+                //cambio la contraseña
+                self.usuarios[id_usuario].contraseña = nueva_contrasenia_hash;
+                self.guardar();
+                return true;
+            }
+        }
+        false
+    }
 }
 
 fn get_database_por_defecto() -> Database {

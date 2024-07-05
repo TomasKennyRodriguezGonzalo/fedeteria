@@ -1,4 +1,5 @@
 use crate::pages::change_password_from_login_page::ChangePasswordFromLogInPage;
+use crate::pages::change_password_from_profile_page::ChangePasswordFromProfilePage;
 use crate::pages::edit_preferences_page::EditPreferencesPage;
 use crate::pages::defined_trades_page::DefinedTradesPage;
 use crate::pages::finish_trade_page::FinishTradePage;
@@ -64,6 +65,8 @@ pub enum Route {
     MyCompletedTrades,
     #[at("/perfil/editar-informacion-personal")]
     EditPersonalInfo,
+    #[at("/perfil/editar-informacion-personal/cambiar-contrasenia")]
+    ChangePasswordFromProfile,
     #[at("/perfil/mis-preferencias")]
     MyPreferences,
     #[at("/publicacion/:id")]
@@ -142,6 +145,7 @@ pub fn switch(routes: Route) -> Html {
                 Route::SendCodeToChangePassword => html!{<SendCodeToChangePasswordPage/>},
                 Route::MyPreferences => html!{<EditPreferencesPage/>},
                 Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
+                Route::ChangePasswordFromProfile => html!{<ChangePasswordFromProfilePage/>},
             }}
     </>}
 }
@@ -196,6 +200,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::SendCodeToChangePassword => [true, false, false, false],
         Route::MyPreferences => [false, true, true, true],
         Route::ChangePasswordFromLogIn => [true, false, false, false],
+        Route::ChangePasswordFromProfile => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

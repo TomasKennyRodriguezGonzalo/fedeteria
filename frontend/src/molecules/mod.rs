@@ -17,3 +17,4 @@ pub mod finish_trade_molecule;
 pub mod send_code_to_change_password_molecule;
 pub mod edit_preferences_molecule;
 pub mod change_password_from_login_molecule;
+pub mod change_password_from_profile_molecule;
