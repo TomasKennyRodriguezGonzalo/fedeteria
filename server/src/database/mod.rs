@@ -953,8 +953,6 @@ impl Database {
         //busco la posicion del usuario en el vector de existir
         let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
         if let Some(id_usuario) = option_usuario {
-            //bloqueo al usuario por una cuestion de seguridad
-            self.usuarios[id_usuario].estado = EstadoCuenta::Bloqueada;
             //lo obtengo para obtener sus datos
             let usuario = self.usuarios.get(id_usuario).unwrap();
             let codigo_seguridad = Database::generar_codigo_cambio_contraseña(query.email.clone(), &self.peticiones_cambio_contraseña);
@@ -967,7 +965,7 @@ impl Database {
             1 --> Mail 
             2 --> Mensaje 
             */
-            let mensaje = format!("Hola {}!\nUsted ha solicitado un cambio de contraseña en la pagina Fedeteria. Su cuenta con este mail ha sido bloqueada hasta que cambie su contraseña. El código de seguridad para realizar el cambio de contraseña es {}. Dirijase a la sección de Inicio de Sesión, y presione 'Recuperar Cuenta'. Allí encontrará la guía para cambiar su contraseña. \n Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, codigo_seguridad);
+            let mensaje = format!("Hola {}!\nUsted ha solicitado un cambio de contraseña en la pagina Fedeteria. El código de seguridad para realizar el cambio de contraseña es {}. Dirijase a la sección de Inicio de Sesión, y presione 'Cambiar Contraseña'. Allí encontrará la guía para cambiar su contraseña. \n Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, codigo_seguridad);
             let mut vec_mensajes = Vec::new();
             vec_mensajes.push(usuario.nombre_y_apellido.clone());
             vec_mensajes.push(query.email.clone());
