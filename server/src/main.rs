@@ -110,6 +110,8 @@ async fn main() {
         .route("/api/preguntar",post(preguntar))
         .route("/api/responder",post(responder))
         .route("/api/obtener_string_sucursal", post(obtener_string_sucursal))
+        .route("/api/obtener_preferencias", post(obtener_preferencias))
+        .route("/api/actualizar_preferencias", post(actualizar_preferencias))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -725,4 +727,22 @@ async fn obtener_string_sucursal (
     //let rol = state.db.obtener_rol_usuario(indice_usuario);
     let sucursal_empleado = state.db.obtener_sucursal(query.index);
     Json(ResponseGetOffice {sucursal: sucursal_empleado})  
+}
+
+async fn obtener_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerPreferencias>
+) -> Json<ResponseObtenerPreferencias> {
+    let state = state.read().await;
+    let preferencias = state.db.obtener_preferencias(query.dni);
+    Json(ResponseObtenerPreferencias{preferencias})  
+}
+
+async fn actualizar_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryActualizarPreferencias>
+) -> Json<ResponseActualizarPreferencias> {
+    let mut state = state.write().await;
+    state.db.actualizar_preferencias(query.dni, query.preferencias);
+    Json(ResponseActualizarPreferencias{})  
 }

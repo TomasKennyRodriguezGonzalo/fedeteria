@@ -16,6 +16,7 @@ pub struct Usuario {
     pub estado: EstadoCuenta,
     pub notificaciones: Vec<Notificacion>,
     pub puntos: i64,
+    pub preferencias: (Option<String>, Option<String>),
 }
 
 
@@ -74,6 +75,7 @@ impl Usuario {
             estado: EstadoCuenta::Activa { intentos: 3 },
             notificaciones : Vec::new(),
             puntos : 0,
+            preferencias: (None, None),
         }
     }
 }
