@@ -812,10 +812,6 @@ impl Database {
         
         let ofertante = self.usuarios.get((trueque.codigo_ofertante.unwrap()).clone() as usize).unwrap();
         
-        trueque.fecha_trueque = Some(Local::now());
-        
-        //lo obtengo de vuelta por una cuestion de borrowing
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         // Lógica que verifica que el usuario pueda aplicar el descuento
         if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_ofertante) {
             if descuento.vigente && descuento.alcanza_nivel(ofertante.puntos) && !descuento.esta_vencido() {
@@ -837,7 +833,6 @@ impl Database {
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
         let receptor = self.usuarios.get((trueque.codigo_receptor.unwrap()).clone() as usize).unwrap();
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_receptor) {
             if descuento.vigente && descuento.alcanza_nivel(receptor.puntos) && !descuento.esta_vencido() {
                 let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_receptor);
@@ -854,10 +849,7 @@ impl Database {
             return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
         }
 
-
         trueque.estado = query.estado.clone();
-        self.usuarios[trueque.codigo_ofertante.unwrap() as usize].puntos += 1;
-        self.usuarios[trueque.codigo_receptor.unwrap() as usize].puntos += 1;
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
 
@@ -867,7 +859,7 @@ impl Database {
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
         //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
         //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
-        if (query.estado == EstadoTrueque::Finalizado) {
+        if query.estado == EstadoTrueque::Finalizado {
             self.usuarios[ofertante].puntos += 1;
             self.usuarios[receptor].puntos += 1;
         }
@@ -1174,7 +1166,6 @@ impl Database {
     
 }
 */
-
 }
 
 fn get_database_por_defecto() -> Database {

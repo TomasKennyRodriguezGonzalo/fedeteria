@@ -36,9 +36,9 @@ use crate::pages::{create_office_page::CreateOfficePage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
     saved_publications_page::SavedPublicationsPage,
+    create_discount_page::CreateDiscountPage,
     estadisticas_page::EstadisticasPage,
     send_code_to_change_password_page::SendCodeToChangePasswordPage,
-    create_discount_page::CreateDiscountPage,
     //publication_trade_offers_page::PublicationTradeOffersPage,
 };
 #[derive(Clone, Routable, PartialEq)]

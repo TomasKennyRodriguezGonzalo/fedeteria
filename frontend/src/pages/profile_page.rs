@@ -114,9 +114,9 @@ pub fn profile_page() -> Html {
                     <li><Link<Route> to={Route::MyTrades}>{"Mis Ofertas y Trueques"}</Link<Route>></li>
                     <li><Link<Route> to={Route::EditPersonalInfo}>{"Editar Información Personal"}</Link<Route>></li>
                     <li><Link<Route> to={Route::SavedPublications}>{"Publicaciones Guardadas"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::AllowedDiscounts}>{"Descuentos Disponibles"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyPreferences}>{"Editar Preferencias"}</Link<Route>></li>
                     //<li><Link<Route> to={Route::PromotePublicationFromProfile}>{"Promocionar Publicaciones"}</Link<Route>></li>
-                    <li><Link<Route> to={Route::AllowedDiscounts}>{"Descuentos Disponibles"}</Link<Route>></li>
                 }
             </ul>
         </div>

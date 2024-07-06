@@ -17,8 +17,8 @@ pub struct Usuario {
     pub notificaciones: Vec<Notificacion>,
     pub puntos: i64,
     pub publicaciones_guardadas:Vec<usize>,
-    pub preferencias: (Option<String>, Option<String>),
     pub descuentos_utilizados: Vec<usize>, 
+    pub preferencias: (Option<String>, Option<String>),
 }
 
 
