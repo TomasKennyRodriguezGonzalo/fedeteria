@@ -112,6 +112,8 @@ pub fn privileged_actions_page() -> Html {
                                 <li><Link<Route> to={Route::AwaitingPricePublication}>{"Ver Publicaciones Esperando Tasación"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::FinishTrade}>{"Concretar Trueque"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::DefinedTrades}>{"Trueques Definidos"}</Link<Route>></li>
+                                <li><Link<Route> to={Route::CreateDiscount}>{"Crear Descuento"}</Link<Route>></li>
+                                <li><Link<Route> to={Route::SeeDiscounts}>{"Ver Descuentos"}</Link<Route>></li>
                             </ul>
                         }},
                         RolDeUsuario::Empleado { sucursal : _ } => {html! {

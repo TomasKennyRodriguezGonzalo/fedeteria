@@ -567,10 +567,23 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                     </>
                                 },
                                 datos_comunes::EstadoTrueque::Finalizado => html! {
-                                    <>
-                                        <h1 class="title">{"Trueque Finalizado"}</h1>
-                                    </>
-                                },
+                                    <>/*
+                                    <h1 class="title">{"Trueque Finalizado"}</h1>
+                                    if trueque.ofertante.0 == dni && trueque.calificacion_ofertante.is_none(){
+                                        <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
+                                        <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_ofertante_changed} />
+                                        <GenericButton text = "crear descuento" onclick_event = {show_calification_button} />
+                                        
+                                    }
+                                    if trueque.receptor.0 == dni && trueque.calificacion_receptor.is_none(){
+                                        
+                                }
+                                if *show_calification_button{
+                                    <ConfirmPromptButtonMolecule text = "Confirmar creacion del descuento" confirm_func = {create_discount} reject_func = {reject_changes}  />
+                                }
+                                */
+                                </>
+                            },
                                 datos_comunes::EstadoTrueque::Rechazado => html! {
                                     <>
                                         <h1 class="title">{"Trueque Rechazado"}</h1>

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{Date, DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
@@ -8,6 +8,8 @@ mod notificacion;
 pub use notificacion::*;
 mod trueque;
 pub use trueque::*;
+mod descuento;
+pub use descuento::*;
 
 
 
@@ -386,7 +388,7 @@ pub struct ResponseTruequePorCodigos{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseFinishTrade {
-    pub respuesta: bool,
+    pub respuesta: Result<bool,ErrorEnConcretacion>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -395,6 +397,8 @@ pub struct QueryFinishTrade{
     pub estado: EstadoTrueque,
     pub ventas_ofertante: u64,
     pub ventas_receptor:u64,
+    pub codigo_descuento_ofertante: String,
+    pub codigo_descuento_receptor: String,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryAskQuestion{
@@ -455,4 +459,70 @@ pub struct QueryObtenerGuardadas{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseObtenerGuardadas{
     pub publicaciones_guardadas:Vec<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ErrorEnConcretacion {
+    DescuentoOfertanteUtilizado,
+    DescuentoOfertanteInvalido,
+    DescuentoReceptorUtilizado,
+    DescuentoReceptorInvalido,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCreateDiscount{
+    pub codigo_descuento : String,
+    pub porcentaje : f64,
+    pub reembolso_max : u64,
+    pub nivel_min : u64,
+    pub fecha_exp : Option<DateTime<Local>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCreateDiscount{
+    pub ok:Result<bool,ErrorCrearDescuento>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ErrorCrearDescuento {
+    FechaInvalida,
+    PorcentajeInvalido,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarDescuento{
+    pub index:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarDescuento{
+    pub ok:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerDescuentos{
+    pub nada:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerDescuentos{
+    pub descuentos:Vec<Descuento>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerDescuento{
+    pub id:usize,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerDescuento{
+    pub descuento:Descuento,
+
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryGetUserDiscounts{
+    pub dni : u64,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseGetUserDiscounts{
+    pub discounts : Vec<Descuento>,
 }
