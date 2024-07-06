@@ -2,6 +2,8 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
+mod peticion_cambio_contrasenia;
+pub use peticion_cambio_contrasenia::*;
 mod publicacion;
 pub use publicacion::*;
 mod notificacion;
@@ -416,4 +418,100 @@ pub struct QueryAnswerQuestion{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseAnswerQuestion{
     pub ok:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryAgregarAGuardados{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseAgregarAGuardados{
+    pub ok:bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryPublicacionGuardada{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponsePublicacionGuardada{
+    pub guardada:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryEliminarGuardados{
+    pub dni:u64,
+    pub id_publicacion:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseEliminarGuardados{
+    pub ok:bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerGuardadas{
+    pub dni:u64,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerGuardadas{
+    pub publicaciones_guardadas:Vec<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryObtenerPreferencias{
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseObtenerPreferencias{
+    pub preferencias : (Option<String>, Option<String>)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryActualizarPreferencias{
+    pub dni: u64,
+    pub preferencias : (Option<String>, Option<String>)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseActualizarPreferencias{}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QuerySendChangePasswordCode{
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseSendChangePasswordCode{}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryValidarCambioContrasenia{
+    pub email: String,
+    pub codigo: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseValidarCambioContrasenia{
+    pub datos_validos: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCambioContraseniaLogIn{
+    pub email: String,
+    pub codigo: u64,
+    pub nueva_contrasenia: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCambioContraseniaPerfil{
+    pub nueva_contrasenia: String,
+    pub vieja_contrasenia: String,
+    pub dni: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCambioContrasenia{
+    pub cambio: bool,
 }
