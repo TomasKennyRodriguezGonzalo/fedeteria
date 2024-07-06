@@ -9,7 +9,7 @@ use yew_hooks::use_effect_once;
 pub struct Props {
     #[prop_or_default]
     pub query: Option<QueryPublicacionesFiltradas>,
-    #[prop_or(15)]
+    #[prop_or(14)]
     pub quantity: u8,
 }
 
