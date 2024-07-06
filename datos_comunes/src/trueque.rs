@@ -43,6 +43,8 @@ pub struct Trueque {
     pub valido: bool,
     pub ventas_ofertante:Option<u64>,
     pub ventas_receptor:Option<u64>,
+    pub calificacion_ofertante:Option<u64>,
+    pub calificacion_receptor:Option<u64>,
 }
 
 impl Trueque {

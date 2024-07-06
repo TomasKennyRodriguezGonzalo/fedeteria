@@ -28,3 +28,6 @@ pub mod saved_publications_page;
 pub mod estadisticas_page;
 pub mod change_password_from_log_in_page;
 pub mod edit_preferences_page;
+pub mod create_discount_page;
+pub mod discounts_page;
+pub mod allowed_discounts_page;

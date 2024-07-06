@@ -1,5 +1,7 @@
+use crate::pages::allowed_discounts_page::AllowedDiscountsPage;
 use crate::pages::edit_preferences_page::EditPreferencesPage;
 use crate::pages::defined_trades_page::DefinedTradesPage;
+use crate::pages::discounts_page::DiscountsPage;
 use crate::pages::finish_trade_page::FinishTradePage;
 use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
 use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
@@ -29,6 +31,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
     saved_publications_page::SavedPublicationsPage,
+    create_discount_page::CreateDiscountPage,
     estadisticas_page::EstadisticasPage,
     change_password_from_log_in_page::ChangePasswordFromLogInPage,
     //publication_trade_offers_page::PublicationTradeOffersPage,
@@ -85,10 +88,16 @@ pub enum Route {
     FinishTrade,
     #[at("/acciones-privilegiadas/trueques-definidos")]
     DefinedTrades,
+    #[at("/acciones-privilegiadas/crear-descuento")]
+    CreateDiscount,
+    #[at("/acciones-privilegiadas/ver-descuentos")]
+    SeeDiscounts,
     #[at("/resultados-busqueda")]
     SearchResults,
     #[at("/resultados-trueque")]
     SearchTrueques,
+    #[at("/ver-descuentos-usuario")]
+    AllowedDiscounts,
     #[at("/notificaciones")]
     Notifications,
     #[at("/publicaciones-guardadas")]
@@ -121,12 +130,15 @@ pub fn switch(routes: Route) -> Html {
                 Route::MyTradesOffers => html! {<MyTradesOffersPage/>},
                 Route::MyPendingTrades => html! {<MyPendingTradesPage/>},
                 Route::MyDefinedTrades => html! {<MyDefinedTradesPage/>},
+                Route::CreateDiscount => html! {<CreateDiscountPage/>},
                 Route::MyCompletedTrades => html! {<MyCompletedTradesPage/>},
                 Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
                 Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
                 Route::UnlockAccount => html!(<UnlockAccountPage/>), 
+                Route::SeeDiscounts => html!(<DiscountsPage/>), 
                 Route::SearchResults => html!(<SearchResultsPage/>),
                 Route::Notifications => html!(<NotificationsPage/>),
+                Route::AllowedDiscounts => html!(<AllowedDiscountsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
                 //Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
@@ -165,6 +177,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyTradesOffers => [false, true, true, true],
         Route::MyPendingTrades => [false, true, true, true],
         Route::MyDefinedTrades => [false, true, true, true],
+        Route::CreateDiscount => [false, false, false, true],
         Route::MyCompletedTrades => [false, true, true, true],
         Route::EditPersonalInfo => [false, true, true, true],
         // No registrado "puede acceder" pero la propia página lo redirige a la página de login con un mensaje especial
@@ -175,9 +188,11 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::PrivilegedActions => [false, false, true, true],
         Route::CreateOffice => [false, false, false, true],
         Route::DeleteOffice => [false, false, false, true],
+        Route::SeeDiscounts => [false, false, false, true],
         Route::UnlockAccount => [false, false, false, true],
         Route::ChangeUserRole => [false, false, false, true],
         Route::SearchResults => [true, true, true, true],
+        Route::AllowedDiscounts => [false, true, true, true],
         Route::SearchTrueques => [false, true, true, true],
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],

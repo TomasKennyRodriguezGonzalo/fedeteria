@@ -6,12 +6,18 @@ use axum::routing::post;
 use axum::Json;
 use axum::{body::Bytes, BoxError};
 use axum::{response::IntoResponse, routing::get, Router};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use futures::{Stream, TryStreamExt};
 use clap::Parser;
 use axum::debug_handler;
 use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
+use mpago::client::MercadoPagoClientBuilder;
+use mpago::payments::types::PaymentCreateOptions;
+use mpago::payments::PaymentCreateBuilder;
+use mpago::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio::net::TcpListener;
@@ -115,6 +121,10 @@ async fn main() {
         .route("/api/eliminar_publicacion_guardados", post(eliminar_publicacion_guardadas))
         .route("/api/publicacion_guardada", post(publicacion_guardada))
         .route("/api/obtener_guardadas", post(obtener_publicaciones_guardadas))
+        .route("/api/crear_descuento", post(crear_descuento))
+        .route("/api/obtener_descuentos", post(obtener_descuentos))
+        .route("/api/eliminar_descuento", post(eliminar_descuento))
+        .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .route("/api/get_estadisticas", post(get_estadisticas))
         .route("/api/obtener_preferencias", post(obtener_preferencias))
         .route("/api/actualizar_preferencias", post(actualizar_preferencias))
@@ -675,38 +685,54 @@ async fn finalizar_trueque (
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
     let mensajes = state.db.finalizar_trueque(query);
-    if mensajes.is_empty() {    
-        return Json(ResponseFinishTrade {respuesta: false});
+    match mensajes{
+        Ok(mensajes) =>{
+            if mensajes.is_empty() {    
+                return Json(ResponseFinishTrade {respuesta: Ok(false)});
+            }
+            /* Contenido del Vec:
+            0 --> Nombre Receptor
+            1 --> Mail Receptor
+            2 --> Mensaje Receptor
+            3 --> Nombre Ofertante
+            4 --> Mail Ofertante
+            5 --> Mensaje Ofertante
+            */
+            let mensajes_c = mensajes.clone();
+            spawn_local(async move {
+                let mensajes = mensajes_c;
+                match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                        "Finalizacion de Trueque en Fedeteria".to_string(),
+                        mensajes.get(2).unwrap().clone()) {
+                        Ok(_) => log::info!("Mail enviado al receptor."),
+                        Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
+        
+            //envio mail al ofertante
+            spawn_local(async move {
+            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+                    "Finalizacion de Trueque en Fedeteria".to_string(),
+                    mensajes.get(5).unwrap().clone()) {
+                    Ok(_) => log::info!("Mail enviado al receptor."),
+                    Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
+            Json(ResponseFinishTrade {respuesta: Ok(true)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorInvalido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorInvalido)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorUtilizado) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteInvalido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)})
+        }
     }
-    /* Contenido del Vec:
-    0 --> Nombre Receptor
-    1 --> Mail Receptor
-    2 --> Mensaje Receptor
-    3 --> Nombre Ofertante
-    4 --> Mail Ofertante
-    5 --> Mensaje Ofertante
-    */
-    let mensajes_c = mensajes.clone();
-    spawn_local(async move {
-        let mensajes = mensajes_c;
-        match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-                "Finalizacion de Trueque en Fedeteria".to_string(),
-                mensajes.get(2).unwrap().clone()) {
-                Ok(_) => log::info!("Mail enviado al receptor."),
-                Err(_) => log::error!("Error al enviar mail al receptor."),
-        }
-    });
-
-    //envio mail al ofertante
-    spawn_local(async move {
-    match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
-            "Finalizacion de Trueque en Fedeteria".to_string(),
-            mensajes.get(5).unwrap().clone()) {
-            Ok(_) => log::info!("Mail enviado al receptor."),
-            Err(_) => log::error!("Error al enviar mail al receptor."),
-        }
-    });
-    Json(ResponseFinishTrade {respuesta: true})
 }
 
 async fn preguntar( State(state): State<SharedState>,
@@ -773,6 +799,73 @@ Json(query): Json<QueryObtenerGuardadas>
     let mut state = state.write().await;
     Json(ResponseObtenerGuardadas{publicaciones_guardadas : state.db.obtener_publicaciones_guardadas(query)})
 }
+
+
+async fn crear_descuento( State(state): State<SharedState>,
+Json(query): Json<QueryCreateDiscount>
+) -> Json<ResponseCreateDiscount>{
+    let mut state = state.write().await;
+    Json(ResponseCreateDiscount{ok : state.db.crear_descuento(query)})
+}
+
+async fn obtener_descuentos( State(state): State<SharedState>,
+Json(query): Json<QueryObtenerDescuentos>
+) -> Json<ResponseObtenerDescuentos>{
+    let mut state = state.write().await;
+    Json(ResponseObtenerDescuentos{descuentos : state.db.obtener_descuentos()})
+}
+
+async fn eliminar_descuento( State(state): State<SharedState>,
+Json(query): Json<QueryEliminarDescuento>
+) -> Json<ResponseEliminarDescuento>{
+    let mut state = state.write().await;
+    Json(ResponseEliminarDescuento{ok : state.db.eliminar_descuento(query)})
+}
+
+async fn obtener_descuentos_usuario( State(state): State<SharedState>,
+Json(query): Json<QueryGetUserDiscounts>
+) -> Json<ResponseGetUserDiscounts>{
+    let mut state = state.write().await;
+    Json(ResponseGetUserDiscounts{discounts : state.db.obtener_descuentos_usuario(query)})
+}
+
+
+
+/*
+async fn crear_pago( State(state): State<SharedState>,
+Json(query): Json<QueryGetUserDiscounts>
+) -> Json<Result<(), Box<dyn std::error::Error>>> {
+    // Suponiendo que tienes la cantidad en f64 y necesitas convertirla a Decimal
+    let amount_in_brl: Decimal = Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+    
+    // Crear una fecha de expiración (por ejemplo, 7 días a partir de ahora)
+    let naive_datetime = NaiveDateTime::parse_from_str("2024-07-13 12:00:00", "%Y-%m-%d %H:%M:%S");
+    match naive_datetime{
+        Ok(naive_datetime) =>{
+            let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+            
+            // Crear el cliente de MercadoPago (asegúrate de haber configurado correctamente tu access token)
+            let access_token = std::env::var("MERCADOPAGO_ACCESS_TOKEN").expect("MERCADOPAGO_ACCESS_TOKEN debe estar configurado");
+            let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+            
+            // Crear la solicitud de pago
+            let pago = mpago::payments::PaymentCreateBuilder(PaymentCreateOptions {
+                transaction_amount: amount_in_brl,
+                date_of_expiration: Some(date_of_expiration),
+                ..Default::default()
+            })
+            .send(&mp_client)
+            .await;
+        
+        Json(Ok(_))
+    }
+    Err(e)=>{   let error = io::Error::new(io::ErrorKind::Other, "Algo salió mal");
+    Json(Err(Box::new(error)))
+    
+                        }
+                    }
+                }
+                */
 
 async fn obtener_preferencias (
     State(state): State<SharedState>,
