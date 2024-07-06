@@ -468,10 +468,12 @@ impl Database {
     }
 
     pub fn get_estadisticas(&self, query: QueryEstadisticas) -> ResponseEstadisticas {
-        let mut cantidad_trueques = 0;
-        let mut cantidad_ventas = 0;
-        let mut pesos_trueques = 0;
-        let mut pesos_ventas = 0;
+        let mut cantidad_trueques_rechazados = 0;
+        let mut cantidad_trueques_finalizados = 0;
+        let mut cantidad_trueques_rechazados_con_ventas = 0;
+        let mut pesos_trueques_rechazados = 0;
+        let mut cantidad_trueques_finalizados_con_ventas = 0;
+        let mut pesos_trueques_finalizados = 0;
 
         let fecha_entre = |fecha| {
             if let Some(fecha_min) = query.fecha_inicial {
@@ -490,19 +492,34 @@ impl Database {
         for trueque in self.trueques.values() {
             if let Some(fecha_trueque) = trueque.fecha_trueque {
                 if !fecha_entre(fecha_trueque) {continue;}
-                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas
+                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
                 if trueque.estado == EstadoTrueque::Finalizado {
-                    cantidad_trueques += 1;
-                    pesos_trueques += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                    cantidad_trueques_finalizados += 1;
+                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                        cantidad_trueques_finalizados_con_ventas += 1;
+                    }
+                    pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                }
+                if trueque.estado == EstadoTrueque::Rechazado {
+                    cantidad_trueques_rechazados += 1;
+                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                        cantidad_trueques_rechazados_con_ventas += 1;
+                    }
+                    pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                 }
             }
         }
 
         ResponseEstadisticas {
-            cantidad_trueques,
-            cantidad_ventas,
-            pesos_trueques,
-            pesos_ventas,
+            cantidad_trueques_rechazados,
+            cantidad_trueques_finalizados,
+            cantidad_trueques_rechazados_o_finalizados: cantidad_trueques_rechazados + cantidad_trueques_finalizados,
+            cantidad_trueques_finalizados_con_ventas,
+            cantidad_trueques_rechazados_con_ventas,
+            cantidad_trueques_con_ventas: cantidad_trueques_rechazados_con_ventas + cantidad_trueques_finalizados_con_ventas,
+            pesos_trueques_rechazados,
+            pesos_trueques_finalizados,
+            pesos_trueques: pesos_trueques_rechazados + pesos_trueques_finalizados,
         }
     }
 
