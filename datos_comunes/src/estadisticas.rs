@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct QueryEstadisticas {
     pub fecha_inicial: Option<DateTime<Local>>,
     pub fecha_final: Option<DateTime<Local>>,
