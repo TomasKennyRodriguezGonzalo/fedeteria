@@ -19,21 +19,14 @@ pub fn log_in_page()-> Html{
     let fecha_minima_state = use_state(|| {"".to_string()});
     let fecha_maxima_state = use_state(|| {"".to_string()});
 
-    let ver_trueques_state = use_state(|| {false});
-    let ver_ventas_state = use_state(|| {false});
-
     let estadisticas_mostradas = use_state(|| {None});
 
     let fecha_minima_state_c = fecha_minima_state.clone();
     let fecha_maxima_state_c = fecha_maxima_state.clone();
 
     
-    let ver_trueques_state_c = ver_trueques_state.clone();
-    let ver_ventas_state_c = ver_ventas_state.clone();
     let estadisticas_mostradas_c = estadisticas_mostradas.clone();
     let calcular_estadisticas = move || {
-        let ver_trueques_state = ver_trueques_state_c.clone();
-        let ver_ventas_state = ver_ventas_state_c.clone();
         let estadisticas_mostradas = estadisticas_mostradas_c.clone();
         let fecha_minima = (*fecha_minima_state_c).clone();
         let fecha_maxima = (*fecha_maxima_state_c).clone();
@@ -52,8 +45,6 @@ pub fn log_in_page()-> Html{
         let query = QueryEstadisticas { 
             fecha_inicial: fecha_minima, 
             fecha_final: fecha_maxima, 
-            ver_trueques: *ver_trueques_state, 
-            ver_ventas: *ver_ventas_state, 
             id_sucursal: None,
         };
         log::info!("Query de estadisticas: {query:?}");
@@ -96,34 +87,12 @@ pub fn log_in_page()-> Html{
         calcular_estadisticas_c();
     });
 
-    let calcular_estadisticas_c = calcular_estadisticas.clone();
-    let ver_trueques_cliqueado = Callback::from(move |event: MouseEvent| {
-        let target = event.target().unwrap();
-        let input: HtmlInputElement = target.unchecked_into();
-        let cliqueado = input.checked();
-        log::info!("Click trueques!!! {cliqueado}");
-        ver_trueques_state.set(cliqueado);
-        log::info!("Query de estadisticas desde ver_trueques_cliqueado");
-        calcular_estadisticas_c();
-    });
-
-    let calcular_estadisticas_c = calcular_estadisticas.clone();
-    let ver_ventas_cliqueado = Callback::from(move |event: MouseEvent| {
-        let target = event.target().unwrap();
-        let input: HtmlInputElement = target.unchecked_into();
-        let cliqueado = input.checked();
-        log::info!("Click ventas!!! {cliqueado}");
-        ver_ventas_state.set(cliqueado);
-        log::info!("Query de estadisticas desde ver_ventas_cliqueado");
-        calcular_estadisticas_c();
-    });
-
 
     html!{
         <>
-            <p>
-            {format!("Hola!!!!, {dni:?}")}
-            </p>
+            // <p>
+            // {format!("Hola!!!!, {dni:?}")}
+            // </p>
             <div>
                 <label> {"Desde esta fecha:"} </label>
             </div>
@@ -132,23 +101,96 @@ pub fn log_in_page()-> Html{
                 <label> {"Hasta esta fecha:"} </label>
             </div>
             <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_maxima}/>
-            <br/>
-            <input type="checkbox" id="trueques" onclick={ver_trueques_cliqueado}/>
-            <label for="trueques"> {"Ver Trueques"} </label>
-            <br/>
-            <input type="checkbox" id="ventas" onclick={ver_ventas_cliqueado}/>
-            <label for="ventas"> {"Ver Ventas"} </label>
+
+            <div>
+                <label> {"En esta sucursal:"} </label>
+            </div>
 
             <br/>
             if let Some(est) = (*estadisticas_mostradas).clone() {
-                <p> {format!("Cantidad de trueques total: {}", est.cantidad_trueques_rechazados_o_finalizados)} </p>
+                <p> {crear_string_para_resp(&est)} </p>
                 <p> {format!("Cantidad de trueques finalizados: {}", est.cantidad_trueques_finalizados)} </p>
                 <p> {format!("Cantidad de trueques rechazados: {}", est.cantidad_trueques_rechazados)} </p>
+                <p> {format!("Cantidad de trueques total: {}", est.cantidad_trueques_rechazados_o_finalizados)} </p>
                 <p> {format!("Cantidad de trueques con ventas: {}", est.cantidad_trueques_con_ventas)} </p>
+                <p> {format!("Cantidad de trueques finalizados con ventas: {}", est.cantidad_trueques_finalizados_con_ventas)} </p>
+                <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est.pesos_trueques_finalizados)} </p>
+                <p> {format!("Cantidad de trueques rechazados con ventas: {}", est.cantidad_trueques_rechazados_con_ventas)} </p>
+                <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est.pesos_trueques_rechazados)} </p>
                 <p> {format!("Total recaudado por ventas: {}", est.pesos_trueques)} </p>
             } else {
                 <p> {"Calculando..."} </p>
             }
         </>
+    }
+}
+
+fn crear_string_para_resp(resp: &ResponseEstadisticas) -> String {
+    let fecha_inicial = resp.query_fecha_inicial;
+    let fecha_final = resp.query_fecha_final;
+    let nombre_sucursal = resp.query_nombre_sucursal.clone();
+    let mut s = String::new();
+    s += "Mostrando estadísticas";
+    let mut alguna_fecha = false;
+    s += &match (fecha_inicial, fecha_final) {
+        (None, None) => "".to_string(),
+        (Some(fecha_inicial), None) => {
+            alguna_fecha = true;
+            format!(" desde {}", fecha_inicial.format("%Y-%m-%d"))
+        },
+        (None, Some(fecha_final)) => {
+            alguna_fecha = true;
+            format!(" hasta {}", fecha_final.format("%Y-%m-%d"))
+        },
+        (Some(fecha_inicial), Some(fecha_final)) => {
+            alguna_fecha = true;
+            format!(" entre {} y {}", fecha_inicial.format("%Y-%m-%d"), fecha_final.format("%Y-%m-%d"))
+        },
+    };
+    if let Some(sucursal) = nombre_sucursal {
+        if alguna_fecha {
+            s += ",";
+        }
+        s += &format!(" para la sucursal {}", sucursal);
+    } else {
+        if !alguna_fecha {
+            s += " totales"
+        }
+    }
+    s += ".";
+    return s;
+}
+
+// test para probar que queden bien todas las variantes
+#[test]
+fn test_crear_string_para_resp() {
+    let fecha = NaiveDate::parse_from_str("2024-07-07", "%Y-%m-%d").unwrap();
+    let fecha_inicial = Local.from_local_datetime(&fecha.into()).unwrap();
+    let fecha = NaiveDate::parse_from_str("2024-07-17", "%Y-%m-%d").unwrap();
+    let fecha_final = Local.from_local_datetime(&fecha.into()).unwrap();
+    let nombre_sucursal = "La Plata";
+
+    let fecha_inicial = Some(fecha_inicial);
+    let fecha_final = Some(fecha_final);
+    let nombre_sucursal = Some(&nombre_sucursal);
+
+    let casos_posibles = [
+        (fecha_inicial, fecha_final, nombre_sucursal),
+        (None, fecha_final, nombre_sucursal),
+        (fecha_inicial, None, nombre_sucursal),
+        (fecha_inicial, fecha_final, None),
+        (None, None, nombre_sucursal),
+        (fecha_inicial, None, None),
+        (None, fecha_final, None),
+        (None, None, None),
+    ];
+    for caso in casos_posibles {
+        let resp = ResponseEstadisticas {
+            query_fecha_inicial: caso.0,
+            query_fecha_final: caso.1,
+            query_nombre_sucursal: caso.2.map(|s| s.to_string()),
+            ..Default::default()
+        };
+        println!("Caso: {caso:?}. Texto: {}", crear_string_para_resp(&resp));
     }
 }

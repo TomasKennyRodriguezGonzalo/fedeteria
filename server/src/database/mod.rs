@@ -512,7 +512,9 @@ impl Database {
                 }
             }
         }
-
+        let query_nombre_sucursal = query.id_sucursal.map(|id| {
+            self.obtener_sucursal(id)
+        });
         ResponseEstadisticas {
             cantidad_trueques_rechazados,
             cantidad_trueques_finalizados,
@@ -523,6 +525,9 @@ impl Database {
             pesos_trueques_rechazados,
             pesos_trueques_finalizados,
             pesos_trueques: pesos_trueques_rechazados + pesos_trueques_finalizados,
+            query_fecha_inicial: query.fecha_inicial,
+            query_fecha_final: query.fecha_final,
+            query_nombre_sucursal,
         }
     }
 
