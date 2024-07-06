@@ -375,6 +375,7 @@ impl Database {
 
         if let Some(publicacion) = publicacion {
             publicacion.precio = query.precio;
+            publicacion.pausada = false;
             self.guardar();  
             true
         } else {
