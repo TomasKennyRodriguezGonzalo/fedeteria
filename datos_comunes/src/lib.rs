@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{Date, DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 // Con esto podemos separar los structs en distintos archivos pero que para importar siga siendo fácil
@@ -514,4 +514,11 @@ pub struct QueryCambioContraseniaPerfil{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseCambioContrasenia{
     pub cambio: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize ,PartialEq)]
+pub struct QueryPagarPromocionPublicaciones {
+    pub publicaciones: Vec<usize>,
+    pub fecha_fin_promocion: DateTime<Local>,
+    pub cant_dias: i64,
 }

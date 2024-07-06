@@ -18,3 +18,6 @@ pub mod send_code_to_change_password_molecule;
 pub mod edit_preferences_molecule;
 pub mod change_password_from_login_molecule;
 pub mod change_password_from_profile_molecule;
+pub mod promote_publication_from_office_molecule;
+pub mod promote_publication_from_profile_molecule;
+pub mod pay_publication_promotion_molecule;

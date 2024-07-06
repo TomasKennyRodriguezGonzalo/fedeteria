@@ -30,3 +30,6 @@ pub mod send_code_to_change_password_page;
 pub mod edit_preferences_page;
 pub mod change_password_from_login_page;
 pub mod change_password_from_profile_page;
+pub mod promote_publication_from_office_page;
+pub mod promote_publication_from_profile_page;
+pub mod pay_publication_promotion_page;

@@ -1130,6 +1130,7 @@ fn get_database_por_defecto() -> Database {
             eliminada: false,
             ofertas: vec![],
             preguntas: vec![],
+            promocionada_hasta: None,
         });
     }
 

@@ -8,6 +8,9 @@ use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
 use crate::pages::my_pending_trades_page::MyPendingTradesPage;
 use crate::pages::my_trades_offers_page::MyTradesOffersPage;
 use crate::pages::my_trades_page::MyTradesPage;
+use crate::pages::pay_publication_promotion_page::PayPublicationPromotionPage;
+use crate::pages::promote_publication_from_profile_page::PromotePublicationFromProfilePage;
+//use crate::pages::promote_publication_from_office_page::PromotePublicationFromOfficePage;
 use crate::pages::search_trueques_page::SearchTruequesPage;
 use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequePage};
 use crate::pages::search_results_page::SearchResultsPage;
@@ -69,6 +72,8 @@ pub enum Route {
     ChangePasswordFromProfile,
     #[at("/perfil/mis-preferencias")]
     MyPreferences,
+    #[at("/perfil/promocionar-publicacion-perfil")]
+    PromotePublicationFromProfile,
     #[at("/publicacion/:id")]
     Publication {id: usize},
     #[at("/trueque/:id")]
@@ -91,6 +96,8 @@ pub enum Route {
     FinishTrade,
     #[at("/acciones-privilegiadas/trueques-definidos")]
     DefinedTrades,
+    //#[at("/acciones-privilegiadas/promocionar-publicacion-sucursal")]
+    //PromotePublicationFromOffice,
     #[at("/resultados-busqueda")]
     SearchResults,
     #[at("/resultados-trueque")]
@@ -99,6 +106,8 @@ pub enum Route {
     Notifications,
     #[at("/publicaciones-guardadas")]
     SavedPublications,
+    #[at("/pagar-promocion-publicaciones")]
+    PayPublicationPromotion,
     //#[at("/ofertas-recibidas")]
     //PublicationTradeOffers,
     #[at("/estadisticas")]
@@ -146,6 +155,9 @@ pub fn switch(routes: Route) -> Html {
                 Route::MyPreferences => html!{<EditPreferencesPage/>},
                 Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
                 Route::ChangePasswordFromProfile => html!{<ChangePasswordFromProfilePage/>},
+                //Route::PromotePublicationFromOffice => html!{<PromotePublicationFromOfficePage/>},
+                Route::PromotePublicationFromProfile => html!{<PromotePublicationFromProfilePage/>},
+                Route::PayPublicationPromotion => html!{<PayPublicationPromotionPage/>},
             }}
     </>}
 }
@@ -201,6 +213,9 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyPreferences => [false, true, true, true],
         Route::ChangePasswordFromLogIn => [true, false, false, false],
         Route::ChangePasswordFromProfile => [false, true, true, true],
+        //Route::PromotePublicationFromOffice => [false, false, true, true],
+        Route::PromotePublicationFromProfile => [false, true, true, true],
+        Route::PayPublicationPromotion => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {
