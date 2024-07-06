@@ -33,3 +33,6 @@ pub mod change_password_from_profile_page;
 pub mod promote_publication_from_office_page;
 pub mod promote_publication_from_profile_page;
 pub mod pay_publication_promotion_page;
+pub mod create_discount_page;
+pub mod discounts_page;
+pub mod allowed_discounts_page;

@@ -18,6 +18,7 @@ pub struct Usuario {
     pub puntos: i64,
     pub publicaciones_guardadas:Vec<usize>,
     pub preferencias: (Option<String>, Option<String>),
+    pub descuentos_utilizados: Vec<usize>, 
 }
 
 
@@ -78,6 +79,7 @@ impl Usuario {
             puntos : 0,
             publicaciones_guardadas:Vec::new(),
             preferencias: (None, None),
+            descuentos_utilizados:Vec::new(),
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
-use datos_comunes::{EstadoTrueque, QueryFinishTrade, /*QueryGetOffice,*/ QueryGetUserRole, /*QueryObtenerTrueque,*/ QueryTruequesFiltrados, ResponseFinishTrade, /*ResponseGetOffice,*/ ResponseGetUserRole, /*ResponseObtenerTrueque,*/ ResponseTruequePorCodigos, RolDeUsuario};
+use datos_comunes::{ErrorEnConcretacion, EstadoTrueque, QueryFinishTrade, /*QueryGetOffice,*/ QueryGetUserRole, /*QueryObtenerTrueque,*/ QueryTruequesFiltrados, ResponseFinishTrade, /*ResponseGetOffice,*/ ResponseGetUserRole, /*ResponseObtenerTrueque,*/ ResponseTruequePorCodigos, RolDeUsuario};
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
@@ -11,8 +11,13 @@ pub fn finish_trade_molecule () -> Html {
     let (user_store, _user_dispatch) = use_store::<UserStore>();
     let dni = user_store.dni.unwrap();
     let cloned_dni = dni.clone();
+    
     let ventas_ofertante_state:UseStateHandle<u64> = use_state(|| 0);
     let ventas_receptor_state:UseStateHandle<u64> = use_state(|| 0);
+    let descuento_ofertante_state = use_state(|| "".to_string());
+    let descuento_receptor_state = use_state(|| "".to_string());
+
+    let error_text_state = use_state(|| "".to_string());
 
     let (_information_store, information_dispatch) = use_store::<InformationStore>();
 
@@ -112,17 +117,55 @@ pub fn finish_trade_molecule () -> Html {
         });
     });
 
-    //concreto el trueque (hay que ver como agregar la logica de las compras)
     let cloned_information_dispatch = information_dispatch.clone();
     let cloned_finish_confirmation_state = finish_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
     let ventas_receptor_state_cloned = ventas_receptor_state.clone();
+    let descuento_ofertante_state_cloned = descuento_ofertante_state.clone();
+    let descuento_receptor_state_cloned = descuento_receptor_state.clone();
+    let cloned_error_text_state = error_text_state.clone();
 
     let finish_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Finalizado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(),ventas_ofertante:(*ventas_ofertante_state_cloned),ventas_receptor:(*ventas_receptor_state_cloned)};
-        request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
+        let cloned_error_text_state = cloned_error_text_state.clone();
+        cloned_error_text_state.set("".to_string());
+
+        let ventas_ofertante = *ventas_ofertante_state_cloned;
+        let ventas_receptor = *ventas_receptor_state_cloned;
+        let query = QueryFinishTrade {
+            estado: EstadoTrueque::Finalizado, 
+            id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
+            ventas_ofertante,
+            ventas_receptor,
+            codigo_descuento_ofertante: (*descuento_ofertante_state_cloned).clone(),
+            codigo_descuento_receptor: (*descuento_receptor_state_cloned).clone(),
+        };
+        request_post("/api/finalizar_trueque", query, move |respuesta: ResponseFinishTrade| {
+            match respuesta.respuesta {
+                Ok(estado) => {
+                    if estado {
+                        // Resultado exitoso del concretar trueque
+                        // - Informar por pantalla (feedback)
+                    }
+                },
+                Err(e) => {
+                    match e {
+                        ErrorEnConcretacion::DescuentoOfertanteInvalido => {
+                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el ofertante no existe o ha vencido. ", (*cloned_error_text_state).clone()));
+                        },
+                        ErrorEnConcretacion::DescuentoOfertanteUtilizado => {
+                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el ofertante ya fue utilizado. ", (*cloned_error_text_state).clone()));
+                        }
+                        ErrorEnConcretacion::DescuentoReceptorInvalido => {
+                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el receptor no existe o ha vencido. ", (*cloned_error_text_state).clone()));
+                        },
+                        ErrorEnConcretacion::DescuentoReceptorUtilizado => {
+                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el receptor ya fue utilizado. ", (*cloned_error_text_state).clone()));
+                        }
+                    }
+                }
+            }
         });
         cloned_show_trade_search_state.set(false);
         cloned_finish_confirmation_state.set(false);
@@ -135,8 +178,16 @@ pub fn finish_trade_molecule () -> Html {
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let abort_trade = Callback::from(move |_e| {
-        let query = QueryFinishTrade {estado: EstadoTrueque::Rechazado, id_trueque: (&*cloned_trade_index_state).unwrap().clone(),ventas_ofertante:0,ventas_receptor:0};
+        let query = QueryFinishTrade {
+            estado: EstadoTrueque::Rechazado, 
+            id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
+            ventas_ofertante:0,
+            ventas_receptor:0,
+            codigo_descuento_ofertante: "".to_string(),
+            codigo_descuento_receptor: "".to_string(),
+        };
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
+            // No hago nada porque se que me va a retornar vacio, esta implementacion del mismo metodo para dos cosas diferentes es medio extraña
         });
         
         cloned_show_trade_search_state.set(false);
@@ -181,16 +232,29 @@ pub fn finish_trade_molecule () -> Html {
     let ventas_receptor_state_changed = Callback::from(move |ventas_receptor:String|{
         ventas_receptor_state_cloned.set(ventas_receptor.parse::<u64>().unwrap())
     });
-    
+
+    let descuento_ofertante_state_cloned = descuento_ofertante_state.clone();
+    let descuento_ofertante_state_changed = Callback::from(move |descuento_ofertante:String|{
+        descuento_ofertante_state_cloned.set(descuento_ofertante)
+        // Consigo el dni del ofertante
+
+        // Pregunto al backend si el descuento aplica al usuario
+        // en caso de aplicar, me retorna el porcentaje (numero entre 0 y 1)
+    });
+
+    let descuento_receptor_state_cloned = descuento_receptor_state.clone();
+    let descuento_receptor_state_changed = Callback::from(move |descuento_receptor:String|{
+        descuento_receptor_state_cloned.set(descuento_receptor)
+    });
     
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     html! {
         <div class="finish-trade">
             <div class="codes-input">  
-                <h2>{"Ingrese Codigo de Trueque del Usuario Receptor de la oferta"}</h2>
+                <h2>{"Ingrese Código de Trueque del Usuario Receptor de la oferta"}</h2>
                 <DniInputField dni = "Codigo Receptor" tipo = "number" handle_on_change = {receptor_code_onchange} />
-                <h2>{"Ingrese Codigo de Trueque del Usuario Ofertante de la oferta"}</h2>
+                <h2>{"Ingrese Código de Trueque del Usuario Ofertante de la oferta"}</h2>
                 <DniInputField dni = "Codigo Ofertante" tipo = "number" handle_on_change = {offer_code_onchange} />
                 <GenericButton text = "Buscar Trueque" onclick_event = {search_trade} />
             </div>
@@ -198,11 +262,11 @@ pub fn finish_trade_molecule () -> Html {
                 if let Some(id) = &*cloned_trade_index_state {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
-                        <h2>{"Ingrese Ganancias Totales del Trueque"}</h2>
-                        //<li><DniInputField dni = "Ingrese Ganancias Totales del Trueque" tipo = "number" handle_on_change = {gains_onchange}/></li>
                         <ul>
-                            <CheckedInputField name = "ventas-ofertante" label="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
-                            <CheckedInputField name = "ventas-receptor" label="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
+                            <CheckedInputField name = "ventas-ofertante" placeholder="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
+                            <CheckedInputField name = "ventas-receptor" placeholder="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
+                            <CheckedInputField name = "descuento-ofertante" placeholder="Descuento Ofertante" tipo = "text" on_change = {descuento_ofertante_state_changed}/>
+                            <CheckedInputField name = "descuento-receptor" placeholder="Descuento Receptor" tipo = "text" on_change = {descuento_receptor_state_changed}/>
                             <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>                          
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>
                             <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/></li>
@@ -219,6 +283,9 @@ pub fn finish_trade_molecule () -> Html {
             }
             if *abort_confirmation_state{
                 <ConfirmPromptButtonMolecule text = "¿Confirma el rechazo a este trueque?" confirm_func = {abort_trade} reject_func = {hide_abort_trade_confirmation}/>
+            }
+            if !(*error_text_state).clone().is_empty() {
+                <h1 class="error-text">{(*error_text_state).clone()}</h1>
             }
         </div>
     }
