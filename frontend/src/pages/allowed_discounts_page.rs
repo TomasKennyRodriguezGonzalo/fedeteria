@@ -27,21 +27,21 @@ pub fn allowed_discounts_page() -> Html {
 
 
     html!(
-        <>
+        <ul class="discount-list">
         {
-            (&*discounts).iter().enumerate().map(|(index, descuento)| {
+            (&*discounts).iter().map(|descuento| {
                 html! {
-                    <>
-                    if descuento.vigente{
-                        <div> {"codigo: "}{(descuento.codigo).clone()}</div>
-                        <div> {"porcentaje: "}{(descuento.porcentaje * 100.0).clone()}{"%"}</div>
-                        <div> {"reintegro maximo: "}{(descuento.reintegro_maximo).clone()}</div>
-                        <div> {"fecha de caducidad: "}{(descuento.fecha_vencimiento).clone()}</div>
-                        }
-                    </>
+                    <li class="discount-item">
+                        if descuento.vigente{
+                            <h1> {"Codigo: "}{(descuento.codigo).clone()}</h1>
+                            <h1> {"Porcentaje: "}{(descuento.porcentaje * 100.0).clone()}{"%"}</h1>
+                            <h1> {"Reintegro maximo: "}{(descuento.reintegro_maximo).clone()}</h1>
+                            <h1> {"Fecha de caducidad: "}{(descuento.fecha_vencimiento).clone()}</h1>
+                            }
+                    </li>
                 }
             }).collect::<Html>()
         }
-        </>
+        </ul>
     )
 }

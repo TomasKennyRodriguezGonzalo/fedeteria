@@ -14,6 +14,8 @@ pub fn finish_trade_molecule () -> Html {
     
     let ventas_ofertante_state:UseStateHandle<u64> = use_state(|| 0);
     let ventas_receptor_state:UseStateHandle<u64> = use_state(|| 0);
+    let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
+    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
     let descuento_ofertante_state = use_state(|| "".to_string());
     let descuento_receptor_state = use_state(|| "".to_string());
 
@@ -262,15 +264,28 @@ pub fn finish_trade_molecule () -> Html {
                 if let Some(id) = &*cloned_trade_index_state {
                     <div class="show-trade">
                         <TruequeMolecule id={id.clone()}/>
-                        <ul>
-                            <CheckedInputField name = "ventas-ofertante" placeholder="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
-                            <CheckedInputField name = "ventas-receptor" placeholder="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
-                            <CheckedInputField name = "descuento-ofertante" placeholder="Código Descuento Ofertante" tipo = "text" on_change = {descuento_ofertante_state_changed}/>
-                            <CheckedInputField name = "descuento-receptor" placeholder="Código Descuento Receptor" tipo = "text" on_change = {descuento_receptor_state_changed}/>
-                            <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>                          
-                            <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>
-                            <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/></li>
-                        </ul>
+                            <div class="sales-discounts">
+                                <div class="sales-inputs">
+                                    <CheckedInputField name = "ventas-ofertante" placeholder="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
+                                    <CheckedInputField name = "ventas-receptor" placeholder="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
+                                </div>
+                                <div class="discounts-inputs">
+                                    if (*ventas_ofertante_state.clone()) != 0 {
+                                        <CheckedInputField name = "descuento-ofertante" placeholder="Descuento Ofertante" tipo = "text" on_change = {descuento_ofertante_state_changed}/>
+                                    }
+                                    if (*ventas_receptor_state.clone()) != 0 {
+                                        <CheckedInputField name = "descuento-receptor" placeholder="Descuento Receptor" tipo = "text" on_change = {descuento_receptor_state_changed}/>
+                                    }
+                                </div>
+                            </div>
+                            <div class="operation-buttons">
+                                <GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/>                          
+                                <GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/>
+                                <GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/>
+                            </div>
+                            if !(*error_text_state).is_empty() {
+                                <h2 class="error-text">{(*error_text_state).clone()}</h2>
+                            }
                     </div>
                 }
                 else {
