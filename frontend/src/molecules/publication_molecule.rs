@@ -489,11 +489,14 @@ pub fn publication_molecule(props : &Props) -> Html {
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
-                            if publicacion.pausada {
+                            if publicacion.pausada && !publicacion.intercambiada {
                                 "Publicación Pausada".to_string()
                             } 
                             else if publicacion.eliminada {
                                 "Publicación Eliminada".to_string()
+                            }
+                            else if publicacion.intercambiada {
+                                "Publicación Intercambiada".to_string()
                             }
                             else {
                                 let mut incluir = false;
@@ -523,7 +526,9 @@ pub fn publication_molecule(props : &Props) -> Html {
                     // Seccion de propuesta de oferta
                     <div class="publication-selector-container">
                         if publicacion.dni_usuario != dni.clone().unwrap() {
-                            <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                            if publicacion.precio.is_some() && !publicacion.intercambiada {
+                                <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                            }
                             if *show_selector_state { 
                                 <GenericButton text="X" onclick_event={hide_selector.clone()}/>
                                 <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
@@ -533,7 +538,7 @@ pub fn publication_molecule(props : &Props) -> Html {
                     // Seccion de moderacion de publicacion propia
                     if publicacion.dni_usuario == dni.clone().unwrap(){
                     <div class="moderation-buttons">
-                        if !publicacion.en_trueque {
+                        if !publicacion.en_trueque || publicacion.intercambiada {
                             <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
                         }
                         if (publicacion.precio.is_some()) && (!publicacion.en_trueque) {

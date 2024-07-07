@@ -800,7 +800,8 @@ impl Database {
     }
     //puede concretarse o rechazarse
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Result<Vec<String>, ErrorEnConcretacion>{
-        //cambio el estado del trueque, guardo, y lo obtengo
+        //LO COMENTADO GENERA PROBLEMAS DE BORROWING
+        /*//cambio el estado del trueque, guardo, y lo obtengo
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         if trueque.estado != EstadoTrueque::Definido {
             return Ok(vec![]);
@@ -810,46 +811,69 @@ impl Database {
         trueque.fecha_trueque = Some(Local::now());
         let mut ventas_ofertante = Some(query.ventas_ofertante);
         let mut ventas_receptor = Some(query.ventas_receptor);
-        
-        let ofertante = self.usuarios.get((trueque.codigo_ofertante.unwrap()).clone() as usize).unwrap();
-        
+
+        let id_ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
+        let usuarios = &self.usuarios;
+        let ofertante = &usuarios[id_ofertante];*/
+        //obtengo los dni de los integrantes
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        let dni_ofertante = trueque.oferta.0;
+        let dni_receptor = trueque.receptor.0;
+
+        if trueque.estado != EstadoTrueque::Definido {
+            return Ok(vec![]);
+        }
+
+        let mut ventas_ofertante = Some(query.ventas_ofertante);
+        let mut ventas_receptor = Some(query.ventas_receptor);
+
+        // obtengo los integrantes
+        let id_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
+        let usuarios = &self.usuarios;
+        let ofertante = &usuarios[id_ofertante];
+        let id_receptor = self.encontrar_dni(dni_receptor).unwrap();
+        let receptor = &usuarios[id_receptor];
         // Lógica que verifica que el usuario pueda aplicar el descuento
-        if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_ofertante) {
-            if descuento.vigente && descuento.alcanza_nivel(ofertante.puntos) && !descuento.esta_vencido() {
-                let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_ofertante);
-                if !(ofertante.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                    ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
-                    log::info!("OFERTANTE ENTRE A TODOS LOS IF");
+        if query.codigo_descuento_ofertante != "".to_string() {
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_ofertante) {
+                if descuento.vigente && descuento.alcanza_nivel(ofertante.puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_ofertante);
+                    if !(ofertante.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
+                        log::info!("OFERTANTE ENTRE A TODOS LOS IF");
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                    }
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
             }
-        } else {
-            return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
         }
-
 
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
-        let receptor = self.usuarios.get((trueque.codigo_receptor.unwrap()).clone() as usize).unwrap();
-        if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_receptor) {
-            if descuento.vigente && descuento.alcanza_nivel(receptor.puntos) && !descuento.esta_vencido() {
-                let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_receptor);
-                if !(receptor.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                    ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
-                    log::info!("RECEPTOR ENTRE A TODOS LOS IF");
+        if query.codigo_descuento_receptor != "".to_string() {
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_receptor) {
+                if descuento.vigente && descuento.alcanza_nivel(receptor.puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_receptor);
+                    if !(receptor.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
+                        log::info!("RECEPTOR ENTRE A TODOS LOS IF");
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                    }
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
             }
-        } else {
-            return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
         }
 
+        //actualizo datos del trueque
+        trueque.fecha_trueque = Some(Local::now());
         trueque.estado = query.estado.clone();
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
@@ -858,16 +882,21 @@ impl Database {
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
-        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
+        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios y cambio el
+        //el booleano "intercambiada" a true para habilitar la "eliminacion" de la publicacion,
         //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
         if query.estado == EstadoTrueque::Finalizado {
             self.usuarios[ofertante].puntos += 1;
             self.usuarios[receptor].puntos += 1;
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().intercambiada = true;
+            }
         }
         else {
-            //cambio el booleano "en_trueque" de cada publicacion
+            //cambio el booleano "en_trueque" y "pausada" de cada publicacion
             for id_publicacion in trueque.get_publicaciones() {
                 self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+                self.publicaciones.get_mut(&id_publicacion).unwrap().pausada= false;
             }
         }
         self.guardar();
@@ -1241,6 +1270,7 @@ fn get_database_por_defecto() -> Database {
             pausada: precio.is_none(),
             en_trueque:false,
             eliminada: false,
+            intercambiada: false,
             ofertas: vec![],
             preguntas: vec![],
             promocionada_hasta: None,

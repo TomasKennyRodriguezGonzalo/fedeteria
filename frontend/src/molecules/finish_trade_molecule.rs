@@ -265,8 +265,8 @@ pub fn finish_trade_molecule () -> Html {
                         <ul>
                             <CheckedInputField name = "ventas-ofertante" placeholder="Ventas Ofertante" tipo = "number" on_change = {ventas_ofertante_state_changed}/>
                             <CheckedInputField name = "ventas-receptor" placeholder="Ventas Receptor" tipo = "number" on_change = {ventas_receptor_state_changed}/>
-                            <CheckedInputField name = "descuento-ofertante" placeholder="Descuento Ofertante" tipo = "text" on_change = {descuento_ofertante_state_changed}/>
-                            <CheckedInputField name = "descuento-receptor" placeholder="Descuento Receptor" tipo = "text" on_change = {descuento_receptor_state_changed}/>
+                            <CheckedInputField name = "descuento-ofertante" placeholder="Código Descuento Ofertante" tipo = "text" on_change = {descuento_ofertante_state_changed}/>
+                            <CheckedInputField name = "descuento-receptor" placeholder="Código Descuento Receptor" tipo = "text" on_change = {descuento_receptor_state_changed}/>
                             <li><GenericButton text = "Concretar Trueque" onclick_event = {show_finish_trade_confirmation}/></li>                          
                             <li><GenericButton text = "Rechazar Trueque" onclick_event = {show_abort_trade_confirmation}/></li>
                             <li><GenericButton text = "Cancelar Operacion" onclick_event = {cancel_operation}/></li>
