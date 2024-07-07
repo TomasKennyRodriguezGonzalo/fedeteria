@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::{HashMap, HashSet}, fs, path::Path};
 
 use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
@@ -142,15 +142,45 @@ impl Database {
 
     pub fn editar_publicacion(&mut self, id: usize, titulo: String, descripcion: String, imagenes: Vec<String>) {
         let publicacion = self.publicaciones.get_mut(&id).unwrap();
-        if !titulo.is_empty() {
+        let mut cambios = vec![];
+        if !titulo.is_empty() && publicacion.titulo != titulo {
             publicacion.titulo = titulo;
+            cambios.push("título");
         }
-        if !descripcion.is_empty() {
+        if !descripcion.is_empty() && publicacion.descripcion != descripcion {
             publicacion.descripcion = descripcion;
+            cambios.push("descripción");
         }
-        if !imagenes.is_empty() {
+        if !imagenes.is_empty() && publicacion.imagenes != imagenes {
             publicacion.imagenes = imagenes;
+            cambios.push("imágenes");
         }
+        if !cambios.is_empty() {
+            let mut str_cambios = "Una publicación a la que hiciste una oferta tuvo los siguientes cambios: ".to_string();
+            let agregar = match cambios.len() {
+                1 => {cambios[0].to_string()},
+                2 => {format!("{} y {}", cambios[0], cambios[1])},
+                _ => {format!("{}, {} e {}", cambios[0], cambios[1], cambios[2])},
+            };
+            str_cambios += &agregar;
+            str_cambios += ".";
+            let url = format!("/publicacion/{id}");
+            let titulo = "Cambios en publicación ofertada.";
+            
+            let ofertas = publicacion.ofertas.clone();
+            let mut usuarios = HashSet::new();
+            for id_oferta in ofertas {
+                if let Some(oferta) = self.get_trueque(id_oferta) {
+                    let dni_ofertante = oferta.oferta.0;
+                    usuarios.insert(dni_ofertante);
+                }
+            }
+            for usuario in usuarios {
+                let indice = self.encontrar_dni(usuario).unwrap();
+                self.enviar_notificacion(indice, titulo.to_string(), str_cambios.clone(), url.clone());
+            }
+        }
+        self.guardar();
     }
 
     pub fn agregar_trueque(&mut self, trueque: Trueque) -> usize {
