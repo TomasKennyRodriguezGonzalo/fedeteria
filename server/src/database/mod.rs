@@ -919,11 +919,11 @@ impl Database {
 
         log::info!("llegue hasta aca abajo");
         let mut contenidos_mensajes = Vec::new();
-        contenidos_mensajes.push(self.usuarios[receptor].nombre_y_apellido.clone());
-        contenidos_mensajes.push(self.usuarios[receptor].email.clone());
+        contenidos_mensajes.push(self.usuarios[index_receptor].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[index_receptor].email.clone());
         contenidos_mensajes.push(mail_receptor.clone());
-        contenidos_mensajes.push(self.usuarios[ofertante].nombre_y_apellido.clone());
-        contenidos_mensajes.push(self.usuarios[ofertante].email.clone());
+        contenidos_mensajes.push(self.usuarios[index_ofertante].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[index_ofertante].email.clone());
         contenidos_mensajes.push(mail_ofertante.clone());
         self.guardar();
         Ok(contenidos_mensajes)
