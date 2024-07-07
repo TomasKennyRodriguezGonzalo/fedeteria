@@ -444,8 +444,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
     });
 
-    let sucursal = (&*sucursal_state).clone();
-
     fn parse_u64(s: String) -> Result<u64, std::num::ParseIntError> {
         s.parse::<u64>()
     }
@@ -547,6 +545,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
     });
 
 
+
+    let sucursal = (&*sucursal_state).clone();
 
     html! {
         <div class="trueque-box">

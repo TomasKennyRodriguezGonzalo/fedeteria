@@ -113,9 +113,6 @@ pub fn estadisticas_page() -> Html {
 
     html!{
         <>
-            // <p>
-            // {format!("Hola!!!!, {dni:?}")}
-            // </p>
             <div>
                 <label> {"Desde esta fecha:"} </label>
             </div>

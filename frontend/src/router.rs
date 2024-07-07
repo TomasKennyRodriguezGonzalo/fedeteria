@@ -232,10 +232,10 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyPreferences => [false, true, true, true],
         Route::ChangePasswordFromLogIn => [true, false, false, false],
         Route::ChangePasswordFromProfile => [false, true, true, true],
+        Route::EditarPublicacion { id: _ } => [false, true, true, true],
         //Route::PromotePublicationFromOffice => [false, false, true, true],
         Route::PromotePublicationFromProfile => [false, true, true, true],
         Route::PayPublicationPromotion => [false, true, true, true],
-        Route::EditarPublicacion { id: _ } => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {
