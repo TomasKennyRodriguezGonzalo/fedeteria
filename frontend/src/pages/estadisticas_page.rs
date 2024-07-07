@@ -118,12 +118,8 @@ pub fn log_in_page()-> Html{
         calcular_estadisticas_c();
     });
 
-
     html!{
         <>
-            <p>
-            {format!("Hola!!!!, {dni:?}")}
-            </p>
             <div>
                 <label> {"Desde esta fecha:"} </label>
             </div>

@@ -98,8 +98,6 @@ pub fn profile_page() -> Html {
         <div class="profile-actions-box">
             <h1 class="title">{"Acciones"}</h1>
             <ul>
-                // <li><Link<Route> to={Route::SavedPublications}>{"Articulos Guardados"}</Link<Route>></li>
-                //  <li><Link<Route> to={Route::RecentlySeenPublications}>{"Vistos Recientemente"}</Link<Route>></li>
                 if informacion_propia {
                     <li><Link<Route> to={Route::MyPublications}>{"Tus Publicaciones"}</Link<Route>></li>
                 } else {

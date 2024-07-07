@@ -16,7 +16,9 @@ pub fn trueque_page() -> Html {
             nada : true,
         };
         request_post("/api/obtener_descuentos", query, move |respuesta:ResponseObtenerDescuentos|{
-            cloned_discounts.set(respuesta.descuentos);
+            let mut aux = respuesta.descuentos;
+            aux.sort_by(|d1, d2| d1.vigente.cmp(&d2.vigente));
+            cloned_discounts.set(aux);
         });
 
         || {}
@@ -52,29 +54,29 @@ pub fn trueque_page() -> Html {
     });
 
     html!(
-        <>
+        <ul class="discount-list">
         {
             (&*discounts).iter().enumerate().map(|(index, descuento)| {
                 html! {
-                    <>
-                        <div> {"codigo: "}{(descuento.codigo).clone()}</div>
-                        <div> {"porcentaje: "}{(descuento.porcentaje).clone()}</div>
-                        <div> {"reintegro maximo: "}{(descuento.reintegro_maximo).clone()}</div>
-                        <div> {"nivel minimo: "}{(descuento.nivel_minimo).clone()}</div>
-                        <div> {"fecha de caducidad: "}{(descuento.fecha_vencimiento).clone()}</div>
+                    <li class="discount-item">
+                        <h1> {"Codigo: "}{(descuento.codigo).clone()}</h1>
+                        <h1> {"Porcentaje: "}{(descuento.porcentaje * 100.0).clone()}{"%"}</h1>
+                        <h1> {"Reintegro maximo: "}{(descuento.reintegro_maximo).clone()}</h1>
+                        <h1> {"Fecha de caducidad: "}{(descuento.fecha_vencimiento).clone()}</h1>
+                        <h1> {"Nivel minimo: "}{(descuento.nivel_minimo).clone()}</h1>
                         if descuento.vigente{
-                            <div> {"estado: Vigente"}</div>
+                            <h1> {"Estado: Vigente"}</h1>
                             <IndexedButton text="Eliminar descuento" index={index} onclick_event={(show_confirm_button).clone()}/>
                         } else{
-                            <div> {"estado: No Vigente"}</div>
+                            <h1> {"Estado: No Vigente"}</h1>
                         }
                         if *confirm_button{
                             <ConfirmPromptButtonMolecule text="¿Seguro que quiere eliminar el descuento?" confirm_func={(eliminar_descuento).clone()} reject_func={(hide_confirm_button).clone()} />
-                        }
-                    </>
+                        }                               
+                    </li>
                 }
             }).collect::<Html>()
         }
-        </>
+        </ul>
     )
 }
