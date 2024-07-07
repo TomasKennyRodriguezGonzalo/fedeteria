@@ -1,3 +1,7 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
 use crate::pages::profile_page::DniURLQuery;
@@ -66,6 +70,28 @@ pub fn publication_molecule(real_props : &Props) -> Html {
 
     let datos_publicacion: UseStateHandle<Option<Publicacion>> = use_state(|| None);
     let datos_publicacion_setter = datos_publicacion.setter();
+
+    let nombres_personas: UseStateHandle<Rc<RefCell<HashMap<u64, Option<String>>>>> = use_state(|| Rc::new(RefCell::new(HashMap::new())));
+    let nombres_personas_c = nombres_personas.clone();
+    let get_nombre_persona = |dni: u64| -> String {
+        let nombres_personas = nombres_personas_c.clone();
+        let mut b_nombres_personas = (*nombres_personas).borrow();
+        if let Some(talvez_nombre) = b_nombres_personas.get(&dni) {
+            if let Some(nombre) = talvez_nombre {
+                return nombre.clone();
+            }
+        } else {
+            drop(b_nombres_personas);
+            (*nombres_personas).borrow_mut().insert(dni, None);
+            let query = QueryGetUserInfo {dni};
+            let nombres_personas = nombres_personas_c.clone();
+            request_post("/api/get_user_info", query, move |response: ResponseGetUserInfo| {
+                (*nombres_personas).borrow_mut().insert(dni, Some(response.nombre_y_ap));
+                nombres_personas.set((*nombres_personas).clone());
+            });
+        }
+        "Alguien".to_string()
+    };
 
     let current_image_state = use_state(|| 0);
 
@@ -546,7 +572,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                             <div class="question-answer-box">
                             <h1 class="title">{"Preguntas y respuestas"}</h1>
                             <div class="question-input">
-                                    if (publicacion.dni_usuario != dni.clone().unwrap()) && (!publicacion.eliminada) {
+                                    if (publicacion.dni_usuario != dni.unwrap()) && (!publicacion.eliminada) {
                                         <CheckedInputField name = "question-field" placeholder="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
                                         <GenericButton text="Enviar pregunta" onclick_event={show_question_prompt}/>
                                     }
@@ -559,8 +585,8 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                                         publicacion.preguntas.iter().enumerate().map(|(index,pregunta)|{
                                             html!{
                                                 <li class="question-answer-item">
-                                                    <h2 class="question">{""}{(pregunta.pregunta).clone()}</h2>
-                                                    if publicacion.dni_usuario == dni.clone().unwrap() && pregunta.respuesta.is_none() && !publicacion.eliminada {
+                                                    <h2 class="question">{""}{format!("{} pregunta: {}", get_nombre_persona(pregunta.dni_preguntante), (pregunta.pregunta).clone())}</h2>
+                                                    if publicacion.dni_usuario == dni.unwrap() && pregunta.respuesta.is_none() && !publicacion.eliminada {
                                                     <div class="answer-input">
                                                             <CheckedInputField name = "answer-field" placeholder="Escriba su Respuesta" tipo = "text" on_change={(answer_text_changed).clone()}/>
                                                             <IndexedButton text="Enviar" index={index} onclick_event={(answer_question).clone()}/>
@@ -568,9 +594,9 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                                                     }
                                                     
                                                     if let Some(respuesta) = (pregunta.respuesta).clone(){
-                                                        <h4 class="answer">{""}{(respuesta).clone()}</h4>
+                                                        <h4 class="answer">{"Respuesta: "}{(respuesta).clone()}</h4>
                                                     } else {
-                                                    if publicacion.dni_usuario != dni.clone().unwrap(){
+                                                    if publicacion.dni_usuario != dni.unwrap(){
                                                             <h4 class="unanswered">{"el dueño de la publicación aún no ha respondido esta pregunta."}</h4>
                                                         }
                                                     }
