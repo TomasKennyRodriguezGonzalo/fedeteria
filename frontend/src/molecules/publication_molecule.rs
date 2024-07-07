@@ -3,6 +3,7 @@ use crate::components::{generic_button::GenericButton, indexed_button::IndexedBu
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
+use yew_router::prelude::Link;
 use yewdux::use_store;
 use datos_comunes::*;
 use reqwasm::http::Request;
@@ -20,7 +21,7 @@ pub struct Props {
 }
 
 #[function_component(PublicationMolecule)]
-pub fn publication_molecule(props : &Props) -> Html {
+pub fn publication_molecule(real_props : &Props) -> Html {
 
     let navigator = use_navigator().unwrap();
 
@@ -43,7 +44,7 @@ pub fn publication_molecule(props : &Props) -> Html {
         answer_text_state_cloned.set(answer);
     });
     
-    let id = props.id.clone();
+    let id = real_props.id.clone();
     let cloned_id = id.clone();
     let is_in_saved_state = use_state(||false);
     let cloned_is_in_saved_state = is_in_saved_state.clone();
@@ -536,10 +537,13 @@ pub fn publication_molecule(props : &Props) -> Html {
                         }
                     </div>
                     // Seccion de moderacion de publicacion propia
-                    if publicacion.dni_usuario == dni.clone().unwrap(){
+                    if publicacion.dni_usuario == dni.clone().unwrap() {
                     <div class="moderation-buttons">
                         if !publicacion.en_trueque || publicacion.intercambiada {
                             <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                            <Link<Route> to={Route::EditarPublicacion{id: real_props.id}}>
+                                {"Editar Publicación"}
+                            </Link<Route>>
                         }
                         if (publicacion.precio.is_some()) && (!publicacion.en_trueque) {
                             if publicacion.pausada {
