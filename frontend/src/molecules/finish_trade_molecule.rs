@@ -1,5 +1,6 @@
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
 use datos_comunes::{ErrorEnConcretacion, EstadoTrueque, QueryFinishTrade, QueryGetOffice, QueryObtenerTrueque, QueryTruequesFiltrados, ResponseFinishTrade, ResponseGetOffice, ResponseObtenerTrueque, ResponseTruequePorCodigos};
+use web_sys::window;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 use yewdux::use_store;
@@ -14,8 +15,8 @@ pub fn finish_trade_molecule () -> Html {
     
     let ventas_ofertante_state:UseStateHandle<u64> = use_state(|| 0);
     let ventas_receptor_state:UseStateHandle<u64> = use_state(|| 0);
-    let descuento_ofertante_state = use_state(|| "".to_string());
-    let descuento_receptor_state = use_state(|| "".to_string());
+    let descuento_ofertante_state:UseStateHandle<Option<String>> = use_state(|| None);
+    let descuento_receptor_state:UseStateHandle<Option<String>> = use_state(|| None);
 
     let error_text_state = use_state(|| "".to_string());
 
@@ -119,10 +120,21 @@ pub fn finish_trade_molecule () -> Html {
 
     let finish_trade = Callback::from(move |_e| {
         let cloned_error_text_state = cloned_error_text_state.clone();
-        cloned_error_text_state.set("".to_string());
-
+        let cloned_information_dispatch = cloned_information_dispatch.clone();
+        let cloned_finish_confirmation_state = cloned_finish_confirmation_state.clone();
+        let cloned_show_trade_search_state = cloned_show_trade_search_state.clone();
         let ventas_ofertante = *ventas_ofertante_state_cloned;
         let ventas_receptor = *ventas_receptor_state_cloned;
+        if let Some(descuento_ofertante) = (*descuento_ofertante_state_cloned).clone() {
+            if descuento_ofertante.is_empty(){
+                descuento_ofertante_state_cloned.set(None);
+            }
+        }
+        if let Some(descuento_receptor) = (*descuento_receptor_state_cloned).clone() {
+            if descuento_receptor.is_empty(){
+                descuento_receptor_state_cloned.set(None);
+            }
+        }
         let query = QueryFinishTrade {
             estado: EstadoTrueque::Finalizado, 
             id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
@@ -132,34 +144,47 @@ pub fn finish_trade_molecule () -> Html {
             codigo_descuento_receptor: (*descuento_receptor_state_cloned).clone(),
         };
         request_post("/api/finalizar_trueque", query, move |respuesta: ResponseFinishTrade| {
+            log::info!("respuesta: {:?}", respuesta);
+            let cloned_finish_confirmation_state = cloned_finish_confirmation_state.clone();
+            let cloned_show_trade_search_state = cloned_show_trade_search_state.clone();
+            let cloned_information_dispatch = cloned_information_dispatch.clone();
             match respuesta.respuesta {
                 Ok(estado) => {
                     if estado {
+                        log::info!("entre al if del estado en true");
                         // Resultado exitoso del concretar trueque
                         // - Informar por pantalla (feedback)
+                        cloned_show_trade_search_state.set(false);
+                        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque concretado!")));
+                        if let Some(window) = window() {
+                            window.location().reload().unwrap();
+                        }
                     }
                 },
                 Err(e) => {
                     match e {
                         ErrorEnConcretacion::DescuentoOfertanteInvalido => {
-                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el ofertante no existe o ha vencido. ", (*cloned_error_text_state).clone()));
+                            log::error!("descuento ofertante invalido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe o ha vencido. "));
                         },
                         ErrorEnConcretacion::DescuentoOfertanteUtilizado => {
-                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el ofertante ya fue utilizado. ", (*cloned_error_text_state).clone()));
+                            log::error!("descuento ofertante utilizado");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante ya fue utilizado. "));
                         }
                         ErrorEnConcretacion::DescuentoReceptorInvalido => {
-                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el receptor no existe o ha vencido. ", (*cloned_error_text_state).clone()));
+                            log::error!("descuento receptor invalido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe o ha vencido. "));
                         },
                         ErrorEnConcretacion::DescuentoReceptorUtilizado => {
-                            cloned_error_text_state.set(format!("{}.El descuento ingresado para el receptor ya fue utilizado. ", (*cloned_error_text_state).clone()));
+                            log::error!("descuento receptor utilizado");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor ya fue utilizado. "));
                         }
                     }
-                }
+                } 
             }
-        });
-        cloned_show_trade_search_state.set(false);
-        cloned_finish_confirmation_state.set(false);
-        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque concretado!")));
+            log::info!("termine el callback!!");
+            cloned_finish_confirmation_state.set(false);
+        });   
     });
 
     //rechazo el trueque
@@ -173,8 +198,8 @@ pub fn finish_trade_molecule () -> Html {
             id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
             ventas_ofertante:0,
             ventas_receptor:0,
-            codigo_descuento_ofertante: "".to_string(),
-            codigo_descuento_receptor: "".to_string(),
+            codigo_descuento_ofertante: None,
+            codigo_descuento_receptor: None,
         };
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
             // No hago nada porque se que me va a retornar vacio, esta implementacion del mismo metodo para dos cosas diferentes es medio extraña
@@ -225,16 +250,20 @@ pub fn finish_trade_molecule () -> Html {
 
     let descuento_ofertante_state_cloned = descuento_ofertante_state.clone();
     let descuento_ofertante_state_changed = Callback::from(move |descuento_ofertante:String|{
-        descuento_ofertante_state_cloned.set(descuento_ofertante)
-        // Consigo el dni del ofertante
-
-        // Pregunto al backend si el descuento aplica al usuario
-        // en caso de aplicar, me retorna el porcentaje (numero entre 0 y 1)
+        if descuento_ofertante.is_empty() {
+            descuento_ofertante_state_cloned.set(None)
+        } else {
+            descuento_ofertante_state_cloned.set(Some(descuento_ofertante))
+        }
     });
 
     let descuento_receptor_state_cloned = descuento_receptor_state.clone();
     let descuento_receptor_state_changed = Callback::from(move |descuento_receptor:String|{
-        descuento_receptor_state_cloned.set(descuento_receptor)
+        if descuento_receptor.is_empty() {
+            descuento_receptor_state_cloned.set(None)
+        } else {
+            descuento_receptor_state_cloned.set(Some(descuento_receptor))
+        }
     });
     
     let cloned_trade_index_state = trade_index_state.clone();

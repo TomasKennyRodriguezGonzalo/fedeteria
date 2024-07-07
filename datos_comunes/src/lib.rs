@@ -397,8 +397,8 @@ pub struct QueryFinishTrade{
     pub estado: EstadoTrueque,
     pub ventas_ofertante: u64,
     pub ventas_receptor:u64,
-    pub codigo_descuento_ofertante: String,
-    pub codigo_descuento_receptor: String,
+    pub codigo_descuento_ofertante: Option<String>,
+    pub codigo_descuento_receptor: Option<String>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryAskQuestion{
@@ -525,4 +525,28 @@ pub struct QueryGetUserDiscounts{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseGetUserDiscounts{
     pub discounts : Vec<Descuento>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCalificarOfertante{
+    pub dni:u64,
+    pub calificacion:Option<u64>,
+    pub id_trueque:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCalificarOfertante{
+    pub ok:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryCalificarReceptor{
+    pub dni:u64,
+    pub calificacion:Option<u64>,
+    pub id_trueque:usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponseCalificarReceptor{
+    pub ok:bool,
 }

@@ -80,6 +80,9 @@ impl Usuario {
             descuentos_utilizados:Vec::new(),
         }
     }
+    pub fn sumar_punto(&mut self){
+        self.puntos+=1;
+    }
 }
 
 
