@@ -1,5 +1,6 @@
 use web_sys::window;
 use crate::components::{generic_button::GenericButton, indexed_button::IndexedButton, checked_input_field::CheckedInputField};
+use crate::pages::profile_page::DniURLQuery;
 use crate::request_post;
 use crate::{router::Route, store::UserStore};
 use yew_router::hooks::use_navigator;
@@ -486,7 +487,14 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
                     <div class="text">
-                    <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
+                    if publicacion.dni_usuario != dni.unwrap() {
+                        <Link<Route, DniURLQuery> to={Route::Profile} query={
+                            DniURLQuery {
+                                dni: publicacion.dni_usuario
+                            }
+                        }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>
+                    }
+                    // <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
                         if let Some(precio) = publicacion.precio {
