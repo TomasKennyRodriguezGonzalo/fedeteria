@@ -83,6 +83,7 @@ async fn main() {
         .route("/api/obtener_sucursales", get(obtener_sucursales))
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
+        .route("/api/editar_publicacion", post(editar_publicacion))
         .route("/api/get_user_info", post(get_user_info))
         .route("/api/obtener_cuentas_bloqueadas", get(obtener_cuentas_bloqueadas))
         .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
@@ -350,7 +351,63 @@ async fn crear_publicacion (
     }
     let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
     let mut state = state.write().await;
-    state.db.agregar_publicacion(publicacion);
+    let id = state.db.agregar_publicacion(publicacion);
+    Ok(id.to_string())
+}
+
+async fn editar_publicacion(
+    State(state): State<SharedState>,
+    mut multipart: Multipart,
+) -> Result<String, ()> {
+    
+    let mut titulo = None;
+    let mut descripcion = None;
+    let mut id: Option<usize> = None;
+    let mut dni_str = None;
+    let mut imagenes = vec![];
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        match field.name().unwrap() {
+            "Titulo" => {
+                titulo = Some(field.text().await.unwrap());
+            },
+            "Descripción" => {
+                descripcion = Some(field.text().await.unwrap());
+            },
+            "id" => {
+                let id_str = field.text().await.unwrap();
+                id = Some(id_str.parse().unwrap());
+            }
+            "dni" => {
+                dni_str = Some(field.text().await.unwrap());
+            }
+            "url_original" => {
+                imagenes.push(field.text().await.unwrap());
+            },
+            "blob" => {
+                let file_name = if let Some(file_name) = field.file_name() {
+                    file_name.to_owned()
+                } else {
+                    continue;
+                };
+                let dni_str = dni_str.as_ref().unwrap();
+                log::info!("Recibido archivo: {file_name}");
+                let path = Path::new(database::IMGS_DIR).join(dni_str);
+                std::fs::create_dir_all(&path).unwrap();
+                let path = path.join(&file_name);
+                let relative_path = Path::new(dni_str).join(&file_name);
+                imagenes.push(relative_path.to_str().unwrap().to_string());
+                stream_to_file(path, field).await.unwrap();
+            }
+            _ => {},
+        }
+    }
+
+    let titulo = titulo.unwrap();
+    let descripcion = descripcion.unwrap();
+    let id = id.unwrap();
+    let mut state = state.write().await;
+    state.db.editar_publicacion(id, titulo, descripcion, imagenes);
     Ok("OK".to_string())
 }
 

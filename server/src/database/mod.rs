@@ -133,10 +133,24 @@ impl Database {
         self.guardar();
     }
 
-    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
+    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) -> usize {
         self.publicaciones.insert(self.publicaciones_auto_incremental, publicacion);
         self.publicaciones_auto_incremental += 1;
         self.guardar();
+        self.publicaciones_auto_incremental - 1
+    }
+
+    pub fn editar_publicacion(&mut self, id: usize, titulo: String, descripcion: String, imagenes: Vec<String>) {
+        let publicacion = self.publicaciones.get_mut(&id).unwrap();
+        if !titulo.is_empty() {
+            publicacion.titulo = titulo;
+        }
+        if !descripcion.is_empty() {
+            publicacion.descripcion = descripcion;
+        }
+        if !imagenes.is_empty() {
+            publicacion.imagenes = imagenes;
+        }
     }
 
     pub fn agregar_trueque(&mut self, trueque: Trueque) -> usize {

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{components::checked_input_field::CheckedInputField, information_store::InformationStore, router::Route};
+use crate::{components::checked_input_field::CheckedInputField, information_store::InformationStore, request_post, router::Route};
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
 use reqwasm::http::Request;
@@ -85,7 +85,6 @@ pub fn create_publication_molecule() -> Html {
             log::info!("enviando publicacion!!!");
             event.prevent_default();
             let navigator = navigator.clone();
-            let information_dispatch = information_dispatch.clone();
 
             let form = form_ref.cast::<HtmlFormElement>().unwrap();
 
@@ -97,16 +96,14 @@ pub fn create_publication_molecule() -> Html {
             }
 
             spawn_local(async move {
-            
                 let res = Request::post("/api/crear_publicacion")
                     .body(form_data)
                     .send().await;
                 let res = res.unwrap();
                 let res = res.text().await.unwrap();
-                if res == "OK" {
-
-                    navigator.push(&Route::Home);
-                    information_dispatch.reduce_mut(|store| store.messages.push("Publicación creada con éxito.".to_string()))
+                if res != "ERR" {
+                    let id = res.parse().unwrap();
+                    navigator.push(&Route::Publication { id });
                 }
             });
         })
