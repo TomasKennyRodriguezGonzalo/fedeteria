@@ -1147,6 +1147,31 @@ fn get_database_por_defecto() -> Database {
         (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
         (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
+
+    // Ofertas para agregar
+    // (id_oferta, nombre_publicaciones_ofertadas, nombre_publicacion_pedida)
+    // el id se pone para que sea más fácil entender los siguientes datos y asegurarse que están bien
+    let ofertas = [
+        (0, vec!["Sierra Grande"], "Casa"),
+        (1, vec!["Reloj", "Papel"], "Martillo"),
+        (2, vec!["Hamaca"], "Martillo"),
+        (3, vec!["Destornillador", "Esponja"], "Curita"),
+        (4, vec!["Tenedor"], "Mancha"),
+    ];
+
+    // (nombre publicacion, dni_preguntante, pregunta, Option<respuesta>)
+    let preguntas_y_respuestas = [
+        ("Sierra Grande", 2, "Está medio cara no?", Some("Es el precio de mercado.")),
+        ("Heladera", 3, "Qué le pasó?", Some("se quemó, ahí dice")),
+        ("Heladera", 4, "Pero cómo se quemó?", None),
+        ("Heladera", 3, "Por lo menos funciona???", Some("no amigo no")),
+        ("Curita", 4, "Me lastimé me la prestas? :(", Some("hablame al mail")),
+    ];
+
+    // let ofertas_aceptadas = [
+    //     0
+    // ];
+
     
     for sucursal in sucursales {
         db.agregar_sucursal(QueryAddOffice { office_to_add: sucursal.to_string() });
@@ -1167,7 +1192,6 @@ fn get_database_por_defecto() -> Database {
     for (dni_usuario, titulo, descripcion, precio, fotos) in publicaciones {
         let imagenes = fotos.iter().map(|nombre| {
             let from = format!("fotos_database_default/{}", nombre);
-            // TODO: Que realmente se guarde en carpetas xd
             let relativo = format!("{}", nombre);
             let to = format!("db/imgs/{}", relativo);
             println!("from {from} to {to}");
@@ -1186,6 +1210,44 @@ fn get_database_por_defecto() -> Database {
             ofertas: vec![],
             preguntas: vec![],
         });
+    }
+
+    impl Database {
+        pub fn encontrar_publicacion(&self, nombre: &str) -> usize {
+            let query = QueryPublicacionesFiltradas {
+                filtro_nombre: Some(nombre.to_string()), 
+                ..Default::default()
+            };
+            let pubs = self.obtener_publicaciones(query);
+            assert_eq!(pubs.len(), 1);
+            pubs[0]
+        }
+    }
+
+    for (nombre_publicacion, dni_preguntante, pregunta, respuesta) in preguntas_y_respuestas {
+        let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
+        let pregunta = pregunta.to_string();
+        let query = QueryAskQuestion { dni_preguntante, pregunta , id_publicacion };
+        db.preguntar(query);
+        if let Some(respuesta) = respuesta {
+            let respuesta = respuesta.to_string();
+            let indice_pregunta = db.get_publicacion(id_publicacion).unwrap().preguntas.len() - 1;
+            let query = QueryAnswerQuestion { indice_pregunta, id_publicacion, respuesta };
+            db.responder(query);
+        }
+    }
+
+    for (id, ofertadas, pedida) in ofertas {
+        let publicaciones_ofertadas: Vec<usize> = ofertadas.into_iter().map(|n| db.encontrar_publicacion(n)).collect();
+        let publicacion_receptora = db.encontrar_publicacion(pedida);
+        let dni_ofertante = db.get_publicacion(publicaciones_ofertadas[0]).unwrap().dni_usuario;
+        for id in publicaciones_ofertadas.iter() {
+            assert_eq!(db.get_publicacion(*id).unwrap().dni_usuario, dni_ofertante);
+        }
+        let dni_receptor = db.get_publicacion(publicacion_receptora).unwrap().dni_usuario;
+        let query = QueryCrearOferta { 
+            dni_ofertante, publicaciones_ofertadas, dni_receptor, publicacion_receptora };
+        assert_eq!(db.crear_oferta(query), Some(id));
     }
 
     db
