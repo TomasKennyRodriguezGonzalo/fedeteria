@@ -14,7 +14,8 @@ use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
 use mpago::client::MercadoPagoClientBuilder;
-use mpago::payments::types::PaymentCreateOptions;
+use mpago::payer::Payer;
+use mpago::payments::types::AdditionalInfo;
 use mpago::payments::PaymentCreateBuilder;
 use mpago::Decimal;
 use rust_decimal::prelude::FromPrimitive;
@@ -35,6 +36,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
+use mpago::payments::types::PaymentMethodId;
 
 use crate::mail::send_email;
 use crate::state::ServerState;
@@ -131,6 +133,8 @@ async fn main() {
         .route("/api/crear_descuento", post(crear_descuento))
         .route("/api/obtener_descuentos", post(obtener_descuentos))
         .route("/api/eliminar_descuento", post(eliminar_descuento))
+        .route("/api/calificar_receptor", post(calificar_receptor))
+        .route("/api/calificar_ofertante", post(calificar_ofertante))
         .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
@@ -899,9 +903,189 @@ Json(query): Json<QueryGetUserDiscounts>
     Json(ResponseGetUserDiscounts{discounts : state.db.obtener_descuentos_usuario(query)})
 }
 
+async fn calificar_receptor( State(state): State<SharedState>,
+Json(query): Json<QueryCalificarReceptor>
+) -> Json<ResponseCalificarReceptor>{
+    let mut state = state.write().await;
+    Json(ResponseCalificarReceptor{ok : state.db.calificar_receptor(query)})
+}
+
+async fn calificar_ofertante( State(state): State<SharedState>,
+Json(query): Json<QueryCalificarOfertante>
+) -> Json<ResponseCalificarOfertante>{
+    let mut state = state.write().await;
+    Json(ResponseCalificarOfertante{ok : state.db.calificar_ofertante(query)})
+}
+
+
+
+
+
+async fn crear_pago(
+    State(state): State<Arc<SharedState>>,
+    Json(query): Json<QueryGetUserDiscounts>,
+) -> Json<Result<(), Box<dyn std::error::Error>>>{
+
+
+    let access_token = "TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+    let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+
+    let amount_in_ars: Decimal =
+        Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+
+    let naive_datetime =
+        NaiveDateTime::parse_from_str("2024-07-13 12:00:00", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+    let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+    let pago_result = PaymentCreateBuilder::create(
+        "Descripción del producto",
+        Payer {
+            email: "nico@mail.com".to_string(),
+            ..Default::default()
+        },
+        PaymentMethodId::Visa,
+        amount_in_ars,
+        Some(date_of_expiration),
+    )
+    .send(&mp_client)
+    .await;
+
+    match pago_result {
+        Ok(response) => {
+            println!("{:?}", response);
+            return Json(Ok(()));
+        }
+        Err(err) => {
+            panic!("Error al crear el pago: {:?}", err);
+        }
+    }
+
+}
 
 
 /*
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDateTime;
+    use chrono::Utc;
+    use rust_decimal::Decimal;
+    use mpago::payments::types::PaymentCreateOptions;
+    use mpago::client::MercadoPagoClientBuilder;
+    use mpago::payer::Payer;
+    use mpago::payments::types::PaymentMethodId;
+    use mpago::payments::PaymentCreateBuilder;
+
+    #[tokio::test]
+    async fn test_crear_pago() {
+        let access_token ="TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+        let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+
+        let amount_in_ars: Decimal =
+            Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+
+        let naive_datetime =
+            NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+                .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+        let pago_result = PaymentCreateBuilder::create(
+            "Descripción del producto",
+            Payer {
+                email: "nico@mail.com".to_string(),
+                ..Default::default()
+            },
+            PaymentMethodId::Visa,
+            amount_in_ars,
+            Some(date_of_expiration),
+        )
+        .send(&mp_client)
+        .await;
+
+        match pago_result {
+            Ok(response) => {
+                println!("{:?}", response)
+            }
+            Err(err) => {
+                panic!("Error al crear el pago: {:?}", err);
+            }
+        }
+    }
+
+
+    #[tokio::test]
+    async fn test_credenciales() {
+        let access_token ="TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+        let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+        assert!(mp_client.check_credentials().await.is_ok());
+
+    }
+
+    #[cfg(test)]
+    pub fn get_test_payment_options() -> PaymentCreateOptions {
+
+        PaymentCreateOptions {
+            description: Some("Test".to_string()),
+            payer: Payer {
+                email: "nicolas@gmail.com".to_string(),
+                ..Default::default()
+            },
+            transaction_amount: Decimal::new(10, 0),
+            payment_method_id: PaymentMethodId::Pix,
+            token: Some("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948".to_string()),
+            installments: 1,
+            ..Default::default()
+        }
+    }
+
+    use mpago::client::MercadoPagoClient;
+    #[cfg(test)]
+    pub fn create_test_client() -> MercadoPagoClient {
+        dotenvy::dotenv().ok();
+
+        MercadoPagoClientBuilder::builder("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948").build()
+    }
+
+    #[tokio::test]
+    async fn payment_create() {
+        let mp_client = create_test_client();
+        let naive_datetime =
+        NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+
+        let mp_client = create_test_client();
+        let naive_datetime = NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+    
+        let res = PaymentCreateBuilder::create(
+            "Descripción del producto",
+            get_test_payment_options().payer,
+            PaymentMethodId::Visa,
+            get_test_payment_options().transaction_amount,
+            Some(date_of_expiration),
+        )
+        .send(&mp_client)
+        .await;
+
+        println!("{res:?}");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 async fn crear_pago( State(state): State<SharedState>,
 Json(query): Json<QueryGetUserDiscounts>
 ) -> Json<Result<(), Box<dyn std::error::Error>>> {
@@ -935,5 +1119,4 @@ Json(query): Json<QueryGetUserDiscounts>
                         }
                     }
                 }
-                */
-
+*/

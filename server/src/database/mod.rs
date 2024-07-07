@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, fs, ops::Deref, path::Path};
 
 use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
@@ -15,6 +15,12 @@ use rust_decimal::prelude::FromPrimitive;
 use self::usuario::{EstadoCuenta, Usuario};
 
 pub mod usuario;
+
+
+
+
+
+
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Database {
@@ -799,6 +805,16 @@ impl Database {
     }
     //puede concretarse o rechazarse
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Result<Vec<String>, ErrorEnConcretacion>{
+        log::info!("Query: {:?}", query);
+
+        
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        let dni_receptor = trueque.receptor.0;
+        let dni_ofertante = trueque.oferta.0;
+        
+        let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
+        let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
+
         //cambio el estado del trueque, guardo, y lo obtengo
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         if trueque.estado != EstadoTrueque::Definido {
@@ -809,59 +825,56 @@ impl Database {
         trueque.fecha_trueque = Some(Local::now());
         let mut ventas_ofertante = Some(query.ventas_ofertante);
         let mut ventas_receptor = Some(query.ventas_receptor);
-        
-        let ofertante = self.usuarios.get((trueque.codigo_ofertante.unwrap()).clone() as usize).unwrap();
-        
+     
         // Lógica que verifica que el usuario pueda aplicar el descuento
-        if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_ofertante) {
-            if descuento.vigente && descuento.alcanza_nivel(ofertante.puntos) && !descuento.esta_vencido() {
-                let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_ofertante);
-                if !(ofertante.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                    ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
-                    log::info!("OFERTANTE ENTRE A TODOS LOS IF");
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        
+        
+        if let Some(codigo_descuento) = query.codigo_descuento_ofertante{
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
+                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                    if !(self.usuarios[index_ofertante].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                    }
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
             }
-        } else {
-            return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
         }
-
-
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
-        let receptor = self.usuarios.get((trueque.codigo_receptor.unwrap()).clone() as usize).unwrap();
-        if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_receptor) {
-            if descuento.vigente && descuento.alcanza_nivel(receptor.puntos) && !descuento.esta_vencido() {
-                let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_receptor);
-                if !(receptor.descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                    ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
-                    log::info!("RECEPTOR ENTRE A TODOS LOS IF");
+        if let Some(codigo_descuento) = query.codigo_descuento_receptor {
+           
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == codigo_descuento) {
+                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_receptor].puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                    if !(self.usuarios[index_receptor].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                    }
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
             }
-        } else {
-            return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
         }
-
         trueque.estado = query.estado.clone();
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
-
+        
         // Enviar mail (Se piden denuevo los datos...)
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
-        let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
-        let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
         //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
         //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
         if query.estado == EstadoTrueque::Finalizado {
-            self.usuarios[ofertante].puntos += 1;
-            self.usuarios[receptor].puntos += 1;
+            self.usuarios[index_ofertante].puntos += 1;
+            self.usuarios[index_receptor].puntos += 1;
         }
         else {
             //cambio el booleano "en_trueque" de cada publicacion
@@ -870,26 +883,26 @@ impl Database {
             }
         }
         self.guardar();
-        let ofertante = &self.usuarios[ofertante];
-        let receptor = &self.usuarios[receptor];
+        let ofertante = &self.usuarios[index_ofertante];
+        let receptor = &self.usuarios[index_receptor];
         //creo mail receptor
         let mail_receptor; 
         let mail_ofertante;
         if query.estado == EstadoTrueque::Finalizado {
             mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
             //creo mail ofertante
             mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+            self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_receptor].dni);
         }
         else {
             mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
             //creo mail ofertante
             mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+            self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_receptor].dni);
         }
         
         // - Enviar notificaciones (puede incluir una opcion para calificar al usuario)
@@ -903,12 +916,14 @@ impl Database {
         4 --> Mail Ofertante
         5 --> Mensaje Ofertante
             */
+
+        log::info!("llegue hasta aca abajo");
         let mut contenidos_mensajes = Vec::new();
-        contenidos_mensajes.push(receptor.nombre_y_apellido.clone());
-        contenidos_mensajes.push(receptor.email.clone());
+        contenidos_mensajes.push(self.usuarios[receptor].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[receptor].email.clone());
         contenidos_mensajes.push(mail_receptor.clone());
-        contenidos_mensajes.push(ofertante.nombre_y_apellido.clone());
-        contenidos_mensajes.push(ofertante.email.clone());
+        contenidos_mensajes.push(self.usuarios[ofertante].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[ofertante].email.clone());
         contenidos_mensajes.push(mail_ofertante.clone());
         self.guardar();
         Ok(contenidos_mensajes)
@@ -925,6 +940,8 @@ impl Database {
         }
         self.guardar();
     }
+
+
 
     pub fn responder(&mut self, query:QueryAnswerQuestion){
         let publicacion = self.publicaciones.get_mut(&query.id_publicacion);
@@ -1166,6 +1183,36 @@ impl Database {
     
 }
 */
+
+
+//el ofertante califica al receptor
+pub fn calificar_ofertante(&mut self, query:QueryCalificarOfertante)-> bool{
+    let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+    if let Some(calificacion) = query.calificacion{
+        if calificacion > 10{
+            return false;
+        }
+        trueque.calificacion_receptor = Some(calificacion);
+    }
+    self.guardar();
+    true
+}
+
+//el receptor califica al ofertante
+pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
+    let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+    if let Some(calificacion) = query.calificacion{
+        if calificacion > 10{
+            return false;
+        }
+        trueque.calificacion_ofertante = Some(calificacion);
+    }
+    self.guardar();
+    true
+}
+
+
+
 }
 
 fn get_database_por_defecto() -> Database {
