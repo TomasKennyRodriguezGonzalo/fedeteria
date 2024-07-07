@@ -106,6 +106,7 @@ pub fn privileged_actions_page() -> Html {
                                 <li><Link<Route> to={Route::CreateDiscount}>{"Crear Descuento"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::SeeDiscounts}>{"Ver Descuentos"}</Link<Route>></li>
                                 <li><Link<Route> to={Route::Estadisticas}>{"Ver Estadísticas"}</Link<Route>></li>
+                                //<li><Link<Route> to={Route::PromotePublicationFromOffice}>{"Promocionar Publicación"}</Link<Route>></li>
                             </ul>
                         }},
                         RolDeUsuario::Empleado { sucursal : _ } => {html! {
@@ -114,6 +115,7 @@ pub fn privileged_actions_page() -> Html {
                                 <li><Link<Route> to={Route::FinishTrade}>{"Concretar Trueque"}</Link<Route>></li>
                                 <li><GenericButton text="Trueques Definidos" onclick_event={search_defined_trades_office}/></li>
                                 <li><Link<Route> to={Route::Estadisticas}>{"Ver Estadísticas"}</Link<Route>></li>
+                                //<li><Link<Route> to={Route::PromotePublicationFromOffice}>{"Promocionar Publicación"}</Link<Route>></li>
                             </ul>
                         }},
                     }            

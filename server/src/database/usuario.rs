@@ -78,8 +78,8 @@ impl Usuario {
             notificaciones : Vec::new(),
             puntos : 0,
             publicaciones_guardadas:Vec::new(),
-            descuentos_utilizados:Vec::new(),
             preferencias: (None, None),
+            descuentos_utilizados:Vec::new(),
         }
     }
 }

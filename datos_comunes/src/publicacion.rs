@@ -1,5 +1,6 @@
 use std::ops::RangeInclusive;
 
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 //use crate::Trueque;
@@ -24,6 +25,7 @@ pub struct Publicacion {
     //indice de las ofertas/trueques en el vec de la database
     pub ofertas: Vec<usize>,
     pub preguntas:Vec<PregYRta>,
+    pub promocionada_hasta: Option<DateTime<Local>>,
 }
 
 impl Publicacion {
@@ -39,6 +41,7 @@ impl Publicacion {
             eliminada: false,
             ofertas: Vec::new(),
             preguntas: Vec::new(),
+            promocionada_hasta: None,
         }
     }
 
@@ -71,6 +74,7 @@ pub struct QueryPublicacionesFiltradas {
     pub filtro_fecha_min: Option<()>,
     pub filtro_fecha_max: Option<()>,
     pub filtro_pausadas:bool,
+    pub filtro_promocionadas: bool,
 }
 
 

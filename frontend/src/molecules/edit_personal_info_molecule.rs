@@ -1,6 +1,7 @@
 use web_sys::window;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
+use yew_router::components::Link;
 use yew_router::hooks::use_navigator;
 use yewdux::prelude::*;
 extern crate chrono;
@@ -195,6 +196,7 @@ pub fn edit_personal_info_molecule() -> Html {
                     <CheckedInputField name = "email" label="Ingresa tu nuevo email" tipo = "email" on_change_checked = {email_changed} />
                     <h2 class="information-text">{"Fecha de nacimiento: "} {datos_viejos.2.clone()}</h2>
                     <CheckedInputField name = "full_date_change" label="Ingresa tu nueva fecha" tipo = "date" on_change = {full_born_date_changed} />
+                    <Link<Route> to={Route::ChangePasswordFromProfile}>{"Cambiar Contraseña"}</Link<Route>>
                     <GenericButton text = "cambiar datos" onclick_event = {change_user_button} />
                     if (&*show_button_state).clone(){
                         <ConfirmPromptButtonMolecule text = "¿Confirma los cambios?" confirm_func = {change_user} reject_func = {reject_changes}  />

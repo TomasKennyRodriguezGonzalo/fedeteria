@@ -121,14 +121,17 @@ async fn main() {
         .route("/api/eliminar_publicacion_guardados", post(eliminar_publicacion_guardadas))
         .route("/api/publicacion_guardada", post(publicacion_guardada))
         .route("/api/obtener_guardadas", post(obtener_publicaciones_guardadas))
-        .route("/api/crear_descuento", post(crear_descuento))
-        .route("/api/obtener_descuentos", post(obtener_descuentos))
-        .route("/api/eliminar_descuento", post(eliminar_descuento))
-        .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .route("/api/get_estadisticas", post(get_estadisticas))
         .route("/api/obtener_preferencias", post(obtener_preferencias))
         .route("/api/actualizar_preferencias", post(actualizar_preferencias))
         .route("/api/enviar_codigo_de_recuperacion_contrasenia", post(enviar_codigo_de_recuperacion_contrasenia))
+        .route("/api/validar_cambio_contrasenia", post(validar_cambio_contrasenia))
+        .route("/api/cambiar_contrasenia_login", post(cambiar_contrasenia_login))
+        .route("/api/cambiar_contrasenia_perfil", post(cambiar_contrasenia_perfil))
+        .route("/api/crear_descuento", post(crear_descuento))
+        .route("/api/obtener_descuentos", post(obtener_descuentos))
+        .route("/api/eliminar_descuento", post(eliminar_descuento))
+        .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -800,6 +803,73 @@ Json(query): Json<QueryObtenerGuardadas>
     Json(ResponseObtenerGuardadas{publicaciones_guardadas : state.db.obtener_publicaciones_guardadas(query)})
 }
 
+async fn obtener_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryObtenerPreferencias>
+) -> Json<ResponseObtenerPreferencias> {
+    let state = state.read().await;
+    let preferencias = state.db.obtener_preferencias(query.dni);
+    Json(ResponseObtenerPreferencias{preferencias})  
+}
+
+async fn actualizar_preferencias (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryActualizarPreferencias>
+) -> Json<ResponseActualizarPreferencias> {
+    let mut state = state.write().await;
+    state.db.actualizar_preferencias(query.dni, query.preferencias);
+    Json(ResponseActualizarPreferencias{})  
+}
+
+async fn enviar_codigo_de_recuperacion_contrasenia (
+    State(state): State<SharedState>,
+    Json(query): Json<QuerySendChangePasswordCode>
+) -> Json<ResponseSendChangePasswordCode> {
+    let mut state = state.write().await;
+    let mensajes = state.db.generar_mail_recuperacion_contrasenia(query);
+    if mensajes.is_empty() {
+        return Json(ResponseSendChangePasswordCode{}); 
+    }
+    /* Contenido del Vec:
+    0 --> Nombre 
+    1 --> Mail 
+    2 --> Mensaje 
+    */
+    spawn(async move {
+        match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                "Cambio de Contraseña en Fedeteria".to_string(),
+                mensajes.get(2).unwrap().clone()) {
+                Ok(_) => log::info!("Mail enviado."),
+                Err(_) => log::error!("Error al enviar mail."),
+            }
+        });
+    return Json(ResponseSendChangePasswordCode{});
+}
+
+async fn validar_cambio_contrasenia (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryValidarCambioContrasenia>
+) -> Json<ResponseValidarCambioContrasenia> {
+    let state = state.write().await;
+    Json(ResponseValidarCambioContrasenia{datos_validos: state.db.validar_cambio_contrasenia(query)})
+}
+
+async fn cambiar_contrasenia_login (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryCambioContraseniaLogIn>
+) -> Json<ResponseCambioContrasenia> {
+    let mut state = state.write().await;
+    Json(ResponseCambioContrasenia{cambio: state.db.cambiar_contrasenia_login(query)})
+}
+
+async fn cambiar_contrasenia_perfil (
+    State(state): State<SharedState>,
+    Json(query): Json<QueryCambioContraseniaPerfil>
+) -> Json<ResponseCambioContrasenia> {
+    let mut state = state.write().await;
+    Json(ResponseCambioContrasenia{cambio: state.db.cambiar_contrasenia_perfil(query)})
+}
+
 
 async fn crear_descuento( State(state): State<SharedState>,
 Json(query): Json<QueryCreateDiscount>
@@ -867,45 +937,3 @@ Json(query): Json<QueryGetUserDiscounts>
                 }
                 */
 
-async fn obtener_preferencias (
-    State(state): State<SharedState>,
-    Json(query): Json<QueryObtenerPreferencias>
-) -> Json<ResponseObtenerPreferencias> {
-    let state = state.read().await;
-    let preferencias = state.db.obtener_preferencias(query.dni);
-    Json(ResponseObtenerPreferencias{preferencias})  
-}
-
-async fn actualizar_preferencias (
-    State(state): State<SharedState>,
-    Json(query): Json<QueryActualizarPreferencias>
-) -> Json<ResponseActualizarPreferencias> {
-    let mut state = state.write().await;
-    state.db.actualizar_preferencias(query.dni, query.preferencias);
-    Json(ResponseActualizarPreferencias{})  
-}
-
-async fn enviar_codigo_de_recuperacion_contrasenia (
-    State(state): State<SharedState>,
-    Json(query): Json<QuerySendChangePasswordCode>
-) -> Json<ResponseSendChangePasswordCode> {
-    let mut state = state.write().await;
-    let mensajes = state.db.generar_mail_recuperacion_contrasenia(query);
-    if mensajes.is_empty() {
-        return Json(ResponseSendChangePasswordCode{}); 
-    }
-    /* Contenido del Vec:
-    0 --> Nombre 
-    1 --> Mail 
-    2 --> Mensaje 
-    */
-    spawn(async move {
-        match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-                "Cambio de Contraseña en Fedeteria".to_string(),
-                mensajes.get(2).unwrap().clone()) {
-                Ok(_) => log::info!("Mail enviado."),
-                Err(_) => log::error!("Error al enviar mail."),
-            }
-        });
-    return Json(ResponseSendChangePasswordCode{});
-}

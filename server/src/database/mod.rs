@@ -7,7 +7,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
-use crate::mail::send_email;
+use crate::{hash_str, mail::send_email};
 use mpago::{client::MercadoPagoClientBuilder, payments::types::PaymentCreateOptions,payments::PaymentCreateBuilder};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
@@ -30,9 +30,9 @@ pub struct Database {
     trueques_auto_incremental: usize,
     trueques: HashMap<usize, Trueque>,
 
-    descuentos:Vec<Descuento>,
-
     peticiones_cambio_contraseña: Vec<PeticionCambioContrasenia>,
+
+    descuentos:Vec<Descuento>,
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -478,10 +478,12 @@ impl Database {
     }
 
     pub fn get_estadisticas(&self, query: QueryEstadisticas) -> ResponseEstadisticas {
-        let mut cantidad_trueques = 0;
-        let mut cantidad_ventas = 0;
-        let mut pesos_trueques = 0;
-        let mut pesos_ventas = 0;
+        let mut cantidad_trueques_rechazados = 0;
+        let mut cantidad_trueques_finalizados = 0;
+        let mut cantidad_trueques_rechazados_con_ventas = 0;
+        let mut pesos_trueques_rechazados = 0;
+        let mut cantidad_trueques_finalizados_con_ventas = 0;
+        let mut pesos_trueques_finalizados = 0;
 
         let fecha_entre = |fecha| {
             if let Some(fecha_min) = query.fecha_inicial {
@@ -500,19 +502,34 @@ impl Database {
         for trueque in self.trueques.values() {
             if let Some(fecha_trueque) = trueque.fecha_trueque {
                 if !fecha_entre(fecha_trueque) {continue;}
-                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas
+                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
                 if trueque.estado == EstadoTrueque::Finalizado {
-                    cantidad_trueques += 1;
-                    pesos_trueques += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                    cantidad_trueques_finalizados += 1;
+                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                        cantidad_trueques_finalizados_con_ventas += 1;
+                    }
+                    pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                }
+                if trueque.estado == EstadoTrueque::Rechazado {
+                    cantidad_trueques_rechazados += 1;
+                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                        cantidad_trueques_rechazados_con_ventas += 1;
+                    }
+                    pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                 }
             }
         }
 
         ResponseEstadisticas {
-            cantidad_trueques,
-            cantidad_ventas,
-            pesos_trueques,
-            pesos_ventas,
+            cantidad_trueques_rechazados,
+            cantidad_trueques_finalizados,
+            cantidad_trueques_rechazados_o_finalizados: cantidad_trueques_rechazados + cantidad_trueques_finalizados,
+            cantidad_trueques_finalizados_con_ventas,
+            cantidad_trueques_rechazados_con_ventas,
+            cantidad_trueques_con_ventas: cantidad_trueques_rechazados_con_ventas + cantidad_trueques_finalizados_con_ventas,
+            pesos_trueques_rechazados,
+            pesos_trueques_finalizados,
+            pesos_trueques: pesos_trueques_rechazados + pesos_trueques_finalizados,
         }
     }
 
@@ -788,20 +805,14 @@ impl Database {
             return Ok(vec![]);
         }
         //actualizo la informacion del trueque
-       
-        
+        trueque.estado = query.estado.clone();
+        trueque.fecha_trueque = Some(Local::now());
         let mut ventas_ofertante = Some(query.ventas_ofertante);
         let mut ventas_receptor = Some(query.ventas_receptor);
         
-      
-        
         let ofertante = self.usuarios.get((trueque.codigo_ofertante.unwrap()).clone() as usize).unwrap();
-        // Lógica que verifica que el usuario pueda aplicar el descuento
         
-        trueque.fecha_trueque = Some(Local::now());
-
-        //lo obtengo de vuelta por una cuestion de borrowing
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        // Lógica que verifica que el usuario pueda aplicar el descuento
         if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_ofertante) {
             if descuento.vigente && descuento.alcanza_nivel(ofertante.puntos) && !descuento.esta_vencido() {
                 let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_ofertante);
@@ -822,7 +833,6 @@ impl Database {
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
         let receptor = self.usuarios.get((trueque.codigo_receptor.unwrap()).clone() as usize).unwrap();
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == query.codigo_descuento_receptor) {
             if descuento.vigente && descuento.alcanza_nivel(receptor.puntos) && !descuento.esta_vencido() {
                 let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == query.codigo_descuento_receptor);
@@ -839,10 +849,7 @@ impl Database {
             return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
         }
 
-
         trueque.estado = query.estado.clone();
-        self.usuarios[trueque.codigo_ofertante.unwrap() as usize].puntos += 1;
-        self.usuarios[trueque.codigo_receptor.unwrap() as usize].puntos += 1;
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
 
@@ -850,6 +857,19 @@ impl Database {
         let trueque = self.trueques.get(&query.id_trueque).unwrap();
         let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
         let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
+        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
+        //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
+        if query.estado == EstadoTrueque::Finalizado {
+            self.usuarios[ofertante].puntos += 1;
+            self.usuarios[receptor].puntos += 1;
+        }
+        else {
+            //cambio el booleano "en_trueque" de cada publicacion
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+            }
+        }
+        self.guardar();
         let ofertante = &self.usuarios[ofertante];
         let receptor = &self.usuarios[receptor];
         //creo mail receptor
@@ -915,6 +935,40 @@ impl Database {
         }
         self.guardar();
     }
+    
+    pub fn obtener_preferencias(&self, dni: u64) -> (Option<String>, Option<String>){
+        self.usuarios.iter()
+        .find(|u| u.dni == dni)
+        .unwrap()
+        .preferencias
+        .clone()
+    }
+
+    pub fn actualizar_preferencias(&mut self, dni: u64, preferencias: (Option<String>, Option<String>)) {
+        let mut nuevas_preferencias = (None, None);
+        let usuario = self.usuarios.iter_mut()
+        .find(|u| u.dni == dni)
+        .unwrap();
+
+        if let Some(preferencia_a) = preferencias.0 {
+            if preferencia_a.is_empty() {
+                nuevas_preferencias.0 = usuario.preferencias.0.clone();
+            } else {
+                nuevas_preferencias.0 = Some(preferencia_a)
+            }
+        } 
+
+        if let Some(preferencia_b) = preferencias.1 {
+            if preferencia_b.is_empty() {
+                nuevas_preferencias.1 = usuario.preferencias.1.clone();
+            } else {
+                nuevas_preferencias.1 = Some(preferencia_b)
+            }
+        } 
+
+        usuario.preferencias = nuevas_preferencias;
+        self.guardar()
+    }
 
     pub fn guardar_publicacion(&mut self, query:QueryAgregarAGuardados){
         let index = self.encontrar_dni(query.dni).unwrap();
@@ -961,6 +1015,94 @@ impl Database {
         usuario.publicaciones_guardadas
     }
 
+    pub fn generar_mail_recuperacion_contrasenia(&mut self, query: QuerySendChangePasswordCode) -> Vec<String> {
+        //busco la posicion del usuario en el vector de existir
+        let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
+        if let Some(id_usuario) = option_usuario {
+            //lo obtengo para obtener sus datos
+            let usuario = self.usuarios.get(id_usuario).unwrap();
+            let codigo_seguridad = Database::generar_codigo_cambio_contraseña(query.email.clone(), &self.peticiones_cambio_contraseña);
+            let peticion = PeticionCambioContrasenia {codigo_seguridad, email: query.email.clone(), usada: false};
+            self.peticiones_cambio_contraseña.push(peticion);
+            self.guardar();
+            //Creo un vec para pasarlo al main y enviarlo
+            /* Contenido del Vec:
+            0 --> Nombre 
+            1 --> Mail 
+            2 --> Mensaje 
+            */
+            let mensaje = format!("Hola {}!\nUsted ha solicitado un cambio de contraseña en la pagina Fedeteria. El código de seguridad para realizar el cambio de contraseña es {}. Dirijase a la sección de Inicio de Sesión, y presione 'Cambiar Contraseña'. Allí encontrará la guía para cambiar su contraseña. \n Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, codigo_seguridad);
+            let mut vec_mensajes = Vec::new();
+            vec_mensajes.push(usuario.nombre_y_apellido.clone());
+            vec_mensajes.push(query.email.clone());
+            vec_mensajes.push(mensaje);
+            return vec_mensajes;
+        }
+        return Vec::new();
+    }
+
+    fn generar_codigo_cambio_contraseña(email: String, peticiones: &Vec<PeticionCambioContrasenia>) -> u64 {
+        let mut codigo: u64 = 0;
+
+        let mut existe_combinacion = true;
+        while existe_combinacion {
+            //genero el codigo
+            let mut rng = rand::thread_rng();
+            codigo = rng.gen_range(1..1001);
+    
+            //verifico que no exista la combinacion
+            existe_combinacion = peticiones.iter().filter(|peticion| !peticion.usada).any(|peticion| (peticion.codigo_seguridad == codigo) && (peticion.email == email));
+        }
+    
+        codigo
+    }
+
+    pub fn validar_cambio_contrasenia (&self, query: QueryValidarCambioContrasenia) -> bool {
+        self.peticiones_cambio_contraseña.iter()
+                        .filter(|peticion| !peticion.usada)
+                        .any(|peticion| (peticion.codigo_seguridad == query.codigo) && (peticion.email == query.email))
+    }
+
+    pub fn cambiar_contrasenia_login (&mut self, query: QueryCambioContraseniaLogIn) -> bool {
+        //obtengo al usuario
+        let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
+        if let Some(id_usuario) = option_usuario {
+
+            //hasheo la nueva contraseña para compararla y cambiarla si no es la misma
+            let nueva_contrasenia_hash = hash_str(&query.nueva_contrasenia);
+            if self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash {
+
+                //cambio la contraseña
+                self.usuarios[id_usuario].contraseña = nueva_contrasenia_hash;
+
+                //obtengo la peticion y la marco como usada
+                let posicion_peticion = self.peticiones_cambio_contraseña.iter().position(|peticion| (peticion.email == query.email) && (peticion.codigo_seguridad == query.codigo));
+                log::info!("POSICION PETICION: {:?}", posicion_peticion);
+                self.peticiones_cambio_contraseña[posicion_peticion.unwrap()].usada = true;
+
+                self.guardar();
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn cambiar_contrasenia_perfil (&mut self, query: QueryCambioContraseniaPerfil) -> bool {
+        //obtengo el id del usuario
+        let option_usuario = self.encontrar_dni(query.dni);
+        if let Some(id_usuario) = option_usuario {
+            //hasheo las contraseñas para compararlas y cambiarlas si se cumplen las condiciones
+            let nueva_contrasenia_hash = hash_str(&query.nueva_contrasenia);
+            let vieja_contrasenia_hash = hash_str(&query.vieja_contrasenia);
+            if (self.usuarios[id_usuario].contraseña == vieja_contrasenia_hash) && (self.usuarios[id_usuario].contraseña != nueva_contrasenia_hash) {
+                //cambio la contraseña
+                self.usuarios[id_usuario].contraseña = nueva_contrasenia_hash;
+                self.guardar();
+                return true;
+            }
+        }
+        false
+    }
 
     pub fn crear_descuento(&mut self, query:QueryCreateDiscount)->Result<bool,ErrorCrearDescuento>{
         if let Some (fecha) = query.fecha_exp{
@@ -1008,40 +1150,6 @@ impl Database {
         descuentos
     }
 
-    pub fn obtener_preferencias(&self, dni: u64) -> (Option<String>, Option<String>){
-        self.usuarios.iter()
-        .find(|u| u.dni == dni)
-        .unwrap()
-        .preferencias
-        .clone()
-    }
-
-    pub fn actualizar_preferencias(&mut self, dni: u64, preferencias: (Option<String>, Option<String>)) {
-        let mut nuevas_preferencias = (None, None);
-        let usuario = self.usuarios.iter_mut()
-        .find(|u| u.dni == dni)
-        .unwrap();
-
-        if let Some(preferencia_a) = preferencias.0 {
-            if preferencia_a.is_empty() {
-                nuevas_preferencias.0 = usuario.preferencias.0.clone();
-            } else {
-                nuevas_preferencias.0 = Some(preferencia_a)
-            }
-        } 
-
-        if let Some(preferencia_b) = preferencias.1 {
-            if preferencia_b.is_empty() {
-                nuevas_preferencias.1 = usuario.preferencias.1.clone();
-            } else {
-                nuevas_preferencias.1 = Some(preferencia_b)
-            }
-        } 
-
-        usuario.preferencias = nuevas_preferencias;
-        self.guardar()
-    }
-
     /*
     pub fn enviar_dinero(amount:u64){
         let access_token = std::env::var("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948").expect("MERCADOPAGO_ACCESS_TOKEN debe estar configurado");
@@ -1058,54 +1166,6 @@ impl Database {
     
 }
 */
-
-    pub fn generar_mail_recuperacion_contrasenia(&mut self, query: QuerySendChangePasswordCode) -> Vec<String> {
-        //busco la posicion del usuario en el vector de existir
-        let option_usuario = self.usuarios.iter().position(|usuario| usuario.email == query.email);
-        if let Some(id_usuario) = option_usuario {
-            //bloqueo al usuario por una cuestion de seguridad
-            self.usuarios[id_usuario].estado = EstadoCuenta::Bloqueada;
-            //lo obtengo para obtener sus datos
-            let usuario = self.usuarios.get(id_usuario).unwrap();
-            let codigo_seguridad = Database::generar_codigo_cambio_contraseña(query.email.clone(), &self.peticiones_cambio_contraseña);
-            let peticion = PeticionCambioContrasenia {codigo_seguridad, email: query.email.clone(), usada: false};
-            self.peticiones_cambio_contraseña.push(peticion);
-            self.guardar();
-            //Creo un vec para pasarlo al main y enviarlo
-            /* Contenido del Vec:
-            0 --> Nombre 
-            1 --> Mail 
-            2 --> Mensaje 
-            */
-            let mensaje = format!("Hola {}!\nUsted ha solicitado un cambio de contraseña en la pagina Fedeteria. Su cuenta con este mail ha sido bloqueada hasta que cambie su contraseña. El código de seguridad para realizar el cambio de contraseña es {}. Dirijase a la sección de Inicio de Sesión, y presione 'Recuperar Cuenta'. Allí encontrará la guía para cambiar su contraseña. \n Si cree que esto es un error, por favor contacte a un administrador.", usuario.nombre_y_apellido, codigo_seguridad);
-            let mut vec_mensajes = Vec::new();
-            vec_mensajes.push(usuario.nombre_y_apellido.clone());
-            vec_mensajes.push(query.email.clone());
-            vec_mensajes.push(mensaje);
-            return vec_mensajes;
-        }
-        return Vec::new();
-    }
-
-    fn generar_codigo_cambio_contraseña(email: String, peticiones: &Vec<PeticionCambioContrasenia>) -> u64 {
-        let mut codigo: u64 = 0;
-
-        let mut existe_combinacion = true;
-        while existe_combinacion {
-            //genero el codigo
-            let mut rng = rand::thread_rng();
-            codigo = rng.gen_range(1..1001);
-    
-            //verifico que no exista la combinacion
-            existe_combinacion = peticiones.iter().filter(|peticion| !peticion.usada).any(|peticion| (peticion.codigo_seguridad == codigo) && (peticion.email == email));
-        }
-    
-        codigo
-    }
-
-    fn obtener_usuario_por_email (email: String, usuarios: &Vec<Usuario>) -> Option<&Usuario> {
-        usuarios.iter().find(|usuario| usuario.email == email)
-    }
 }
 
 fn get_database_por_defecto() -> Database {
@@ -1182,6 +1242,7 @@ fn get_database_por_defecto() -> Database {
             eliminada: false,
             ofertas: vec![],
             preguntas: vec![],
+            promocionada_hasta: None,
         });
     }
 

@@ -137,11 +137,11 @@ pub fn log_in_page()-> Html{
 
             <br/>
             if let Some(est) = (*estadisticas_mostradas).clone() {
-                <p> {format!("Cantidad de ventas: {}", est.cantidad_ventas)} </p>
-                <p> {format!("Total recaudado en ventas: {}", est.pesos_ventas)} </p>
-                <p> {format!("Cantidad de trueques: {}", est.cantidad_trueques)} </p>
-                <p> {format!("Total recaudado en trueques: {}", est.pesos_trueques)} </p>
-                <p> {format!("Total recaudado: {}", est.pesos_ventas + est.pesos_trueques)} </p>
+                <p> {format!("Cantidad de trueques total: {}", est.cantidad_trueques_rechazados_o_finalizados)} </p>
+                <p> {format!("Cantidad de trueques finalizados: {}", est.cantidad_trueques_finalizados)} </p>
+                <p> {format!("Cantidad de trueques rechazados: {}", est.cantidad_trueques_rechazados)} </p>
+                <p> {format!("Cantidad de trueques con ventas: {}", est.cantidad_trueques_con_ventas)} </p>
+                <p> {format!("Total recaudado por ventas: {}", est.pesos_trueques)} </p>
             } else {
                 <p> {"Calculando..."} </p>
             }
