@@ -125,6 +125,7 @@ pub struct ResponseGetUserInfo {
     pub email: String,
     pub nacimiento: DateTime<Local>,
     pub puntos: i64,
+    pub promedio_calificaciones: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]

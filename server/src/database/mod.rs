@@ -1231,7 +1231,24 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
     true
 }
 
+    pub fn calcular_promedio_calificaciones (&self, dni: u64) -> f64 {
+        //obtengo las calificaciones del usuario (los trueques en los que no fue calificado, no se tienen en cuenta)
+        let calificaciones: Vec<u64> = self.trueques.iter()
+                            .filter(|(_, trueque)| trueque.usuario_participa(dni) && trueque.usuario_tiene_calificacion(dni))
+                            .map(|(_, trueque)| trueque.get_calificacion(dni).unwrap())
+                            .collect();
 
+        //si no hay calificaciones, salgo
+        if calificaciones.len() == 0 {
+            return 0.0;
+        }
+
+        //sumo las calificaciones y las divido por la cantidad que son
+        let calificiones_sumadas: u64 = calificaciones.iter().sum();
+        let promedio_calificaciones: f64 = (calificiones_sumadas / calificaciones.len() as u64) as f64;
+
+        return promedio_calificaciones;
+    }
 
 }
 

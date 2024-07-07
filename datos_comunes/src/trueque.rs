@@ -93,6 +93,33 @@ impl Trueque {
         pubs.push(self.receptor.1);
         pubs
     }
+
+    pub fn usuario_participa (&self, dni: u64) -> bool {
+        if self.oferta.0 == dni || self.receptor.0 == dni {
+            return true;
+        }
+        false
+    }
+
+    pub fn get_calificacion (&self, dni: u64) -> Option<u64> {
+        if self.oferta.0 == dni {
+            return self.calificacion_ofertante;
+        }
+        else if self.receptor.0 == dni {
+            return self.calificacion_receptor;
+        }
+        None
+    }
+
+    pub fn usuario_tiene_calificacion (&self, dni: u64) -> bool {
+        if self.oferta.0 == dni {
+            return self.calificacion_ofertante.is_some();
+        }
+        else if self.receptor.0 == dni {
+            return self.calificacion_receptor.is_some();
+        }
+        false
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone ,PartialEq)]

@@ -416,7 +416,8 @@ Json(query): Json<QueryGetUserInfo>
             nombre_y_ap: usuario.nombre_y_apellido.clone(),
             email: usuario.email.clone(),
             nacimiento: usuario.nacimiento.clone(),
-            puntos: usuario.puntos
+            puntos: usuario.puntos,
+            promedio_calificaciones: state.db.calcular_promedio_calificaciones(query.dni),
         };
         Json(Some(response))
     } else {
