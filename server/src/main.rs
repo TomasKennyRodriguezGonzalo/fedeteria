@@ -706,7 +706,7 @@ async fn finalizar_trueque (
             5 --> Mensaje Ofertante
             */
             let mensajes_c = mensajes.clone();
-            spawn_local(async move {
+            spawn(async move {
                 let mensajes = mensajes_c;
                 match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
                         "Finalizacion de Trueque en Fedeteria".to_string(),
@@ -717,7 +717,7 @@ async fn finalizar_trueque (
             });
         
             //envio mail al ofertante
-            spawn_local(async move {
+            spawn(async move {
             match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
                     "Finalizacion de Trueque en Fedeteria".to_string(),
                     mensajes.get(5).unwrap().clone()) {

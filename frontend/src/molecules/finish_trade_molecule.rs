@@ -200,6 +200,10 @@ pub fn finish_trade_molecule () -> Html {
     });
 
     //rechazo el trueque
+    /*let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
+    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
+    let descuento_ofertante_state_cloned = descuento_ofertante_state.clone();
+    let descuento_receptor_state_cloned = descuento_receptor_state.clone();*/
     let cloned_information_dispatch = information_dispatch.clone();
     let cloned_abort_confirmation_state = abort_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
@@ -208,10 +212,10 @@ pub fn finish_trade_molecule () -> Html {
         let query = QueryFinishTrade {
             estado: EstadoTrueque::Rechazado, 
             id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
-            ventas_ofertante:0,
-            ventas_receptor:0,
-            codigo_descuento_ofertante: None,
-            codigo_descuento_receptor: None,
+            ventas_ofertante:0,//(&*ventas_ofertante_state_cloned).clone(),
+            ventas_receptor:0,//(&*ventas_receptor_state_cloned).clone(),
+            codigo_descuento_ofertante: None,//(&*descuento_ofertante_state_cloned).clone(),
+            codigo_descuento_receptor: None,//(&*descuento_receptor_state_cloned).clone(),
         };
         request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
             // No hago nada porque se que me va a retornar vacio, esta implementacion del mismo metodo para dos cosas diferentes es medio extraña
