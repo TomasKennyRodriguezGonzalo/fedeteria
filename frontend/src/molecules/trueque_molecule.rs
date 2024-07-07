@@ -1,4 +1,4 @@
-use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCambiarTruequeADefinido, QueryGetOffice, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCambiarTruequeADefinido, ResponseGetOffice, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
+use datos_comunes::{EstadoTrueque, QueryAceptarOferta, QueryCalificarOfertante, QueryCalificarReceptor, QueryCambiarTruequeADefinido, QueryGetOffice, QueryGetUserInfo, QueryObtenerTrueque, QueryRechazarOferta, QueryTruequesFiltrados, ResponseAceptarOferta, ResponseCalificarOfertante, ResponseCalificarReceptor, ResponseCambiarTruequeADefinido, ResponseGetOffice, ResponseGetOffices, ResponseGetUserInfo, ResponseObtenerTrueque, ResponseRechazarOferta, Sucursal, Trueque};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{window, FormData, HtmlFormElement, HtmlInputElement};
 use yew_router::hooks::use_navigator;
@@ -15,6 +15,7 @@ use reqwasm::http::Request;
 use wasm_bindgen::JsCast;
 use chrono::{DateTime, Datelike, Local, NaiveDate, TimeZone, Weekday};
 use crate::molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule;
+use crate::components::dni_input_field::DniInputField;
 
 #[derive(Properties,PartialEq)]
 pub struct Props {
@@ -445,6 +446,108 @@ pub fn trueque_molecule (props : &Props) -> Html {
 
     let sucursal = (&*sucursal_state).clone();
 
+    fn parse_u64(s: String) -> Result<u64, std::num::ParseIntError> {
+        s.parse::<u64>()
+    }
+    let error_state = use_state(||"".to_string());
+    let cloned_error_state = error_state.clone();
+    
+    
+    let calificacion_ofertante:UseStateHandle<Option<u64>> = use_state(||None);
+    let calificacion_ofertante_clone = calificacion_ofertante.clone();
+
+    let calificacion_ofertante_changed = Callback::from(move|calificacion:String|{
+        match parse_u64(calificacion) {
+            Ok(n) => {
+                calificacion_ofertante_clone.set(Some(n));
+
+            }
+            Err(e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
+        }
+    });
+
+    let calificacion_ofertante_clone = calificacion_ofertante.clone();
+    let calificacion_receptor:UseStateHandle<Option<u64>> = use_state(||None);
+    let calificacion_receptor_clone = calificacion_receptor.clone();
+    let cloned_error_state = error_state.clone();
+    let calificacion_receptor_changed = Callback::from(move|calificacion:String|{
+        match parse_u64(calificacion) {
+            Ok(n) => {
+                calificacion_receptor_clone.set(Some(n));
+
+            }
+            Err(e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
+        }
+    });
+
+    let calification_button = use_state(||false);
+    let calification_button_clone = calification_button.clone();
+
+    let show_calification_button = Callback::from(move|_|{
+        calification_button_clone.set(true);
+    });
+
+
+    let calification_button_clone = calification_button.clone();
+    let hide_calification_button = Callback::from(move|_|{
+        calification_button_clone.set(false);
+    });
+
+
+    //EL OFERTANTE CALIFICA AL RECEPTOR
+    let calification_button_clone = calification_button.clone();
+    let cloned_error_state = error_state.clone();
+    let calificacion_receptor_clone = calificacion_receptor.clone();
+    let calificate_receptor = Callback::from(move|_|{
+        let calificacion_receptor_clone = calificacion_receptor_clone.clone();
+        let calification_button_clone = calification_button_clone.clone();
+        let cloned_error_state = cloned_error_state.clone();
+        let query = QueryCalificarReceptor{
+            dni : dni,
+            calificacion : (&*calificacion_receptor_clone).clone(),
+            id_trueque : id_trueque,
+        };
+        request_post("/api/calificar_receptor", query, move|r:ResponseCalificarReceptor|{
+            if r.ok && (&*calificacion_receptor_clone).clone().is_some(){
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
+                }
+            } else {
+                
+                cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())
+            }
+            calification_button_clone.set(false);
+        });
+    });
+
+    let calification_button_clone = calification_button.clone();
+    let cloned_error_state = error_state.clone();
+    let calificacion_ofertante_clone = calificacion_ofertante.clone();
+    let calificate_ofertante = Callback::from(move|_|{
+        let cloned_error_state = cloned_error_state.clone();
+        let calification_button_clone = calification_button_clone.clone();
+        let calificacion_ofertante_clone = calificacion_ofertante_clone.clone();
+        let query = QueryCalificarOfertante{
+            dni : dni,
+            calificacion : (&*calificacion_ofertante_clone).clone(),
+            id_trueque : id_trueque,
+        };
+        request_post("/api/calificar_ofertante", query, move|r:ResponseCalificarOfertante|{
+            if r.ok && (&*calificacion_ofertante_clone).clone().is_some(){
+                if let Some(window) = window() {
+                    window.location().reload().unwrap();
+                }
+            } else { 
+                cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())
+            }
+            calification_button_clone.set(false);
+
+
+        });
+    });
+
+
+
     html! {
         <div class="trueque-box">
             if *loaded {
@@ -579,22 +682,29 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                     </>
                                 },
                                 datos_comunes::EstadoTrueque::Finalizado => html! {
-                                    <>/*
-                                    <h1 class="title">{"Trueque Finalizado"}</h1>
-                                    if trueque.ofertante.0 == dni && trueque.calificacion_ofertante.is_none(){
-                                        <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
-                                        <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_ofertante_changed} />
-                                        <GenericButton text = "crear descuento" onclick_event = {show_calification_button} />
-                                        
-                                    }
-                                    if trueque.receptor.0 == dni && trueque.calificacion_receptor.is_none(){
-                                        
-                                }
-                                if *show_calification_button{
-                                    <ConfirmPromptButtonMolecule text = "Confirmar creacion del descuento" confirm_func = {create_discount} reject_func = {reject_changes}  />
-                                }
-                                */
-                                </>
+                                    <>
+                                        <h1 class="title">{"Trueque Finalizado"}</h1>
+                                        if trueque.oferta.0 == dni && trueque.calificacion_receptor.is_none(){
+                                            <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
+                                            <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_ofertante_changed} />
+                                            <GenericButton text = "Calificar Usuario" onclick_event = {(show_calification_button).clone()} />
+                                            if *calification_button{
+                                                <ConfirmPromptButtonMolecule text = "Confirmar calificacion" confirm_func = {calificate_ofertante} reject_func = {(hide_calification_button).clone()}  />
+                                            }
+                                        } else if trueque.oferta.0 == dni{
+                                            <h2>{format!("puntuaste a {} con {} puntos!", (&*receptor_username), trueque.calificacion_receptor.unwrap())}</h2>
+                                        }
+                                        if trueque.receptor.0 == dni && trueque.calificacion_ofertante.is_none(){
+                                            <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
+                                            <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_receptor_changed} />
+                                            <GenericButton text = "Calificar Usuario" onclick_event = {show_calification_button} />
+                                            if *calification_button{
+                                                <ConfirmPromptButtonMolecule text = "Confirmar calificacion" confirm_func = {calificate_receptor} reject_func = {hide_calification_button}  />
+                                            }
+                                        } else if trueque.receptor.0 == dni {
+                                            <h2>{format!("puntuaste a {} con {} puntos!", (&*ofertante_username), trueque.calificacion_ofertante.unwrap())}</h2>
+                                        }
+                                    </>
                             },
                                 datos_comunes::EstadoTrueque::Rechazado => html! {
                                     <>
@@ -621,6 +731,10 @@ pub fn trueque_molecule (props : &Props) -> Html {
                 if *loading_state {
                     <div class="loading">
                     </div>
+                }
+                if !(&*error_state).clone().is_empty(){
+                    <h1 class="error-text">{&*error_state}</h1>
+
                 }
         } else {
             <div class="loading"></div>
