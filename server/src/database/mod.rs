@@ -512,22 +512,24 @@ impl Database {
         };
 
         for trueque in self.trueques.values() {
-            if let Some(fecha_trueque) = trueque.fecha_trueque {
-                if !fecha_entre(fecha_trueque) {continue;}
-                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
-                if trueque.estado == EstadoTrueque::Finalizado {
-                    cantidad_trueques_finalizados += 1;
-                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
-                        cantidad_trueques_finalizados_con_ventas += 1;
+            if trueque.sucursal == query.id_sucursal || query.id_sucursal.is_none() {
+                if let Some(fecha_trueque) = trueque.fecha_trueque {
+                    if !fecha_entre(fecha_trueque) {continue;}
+                    // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
+                    if trueque.estado == EstadoTrueque::Finalizado {
+                        cantidad_trueques_finalizados += 1;
+                        if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                            cantidad_trueques_finalizados_con_ventas += 1;
+                        }
+                        pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                     }
-                    pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
-                }
-                if trueque.estado == EstadoTrueque::Rechazado {
-                    cantidad_trueques_rechazados += 1;
-                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
-                        cantidad_trueques_rechazados_con_ventas += 1;
+                    if trueque.estado == EstadoTrueque::Rechazado {
+                        cantidad_trueques_rechazados += 1;
+                        if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                            cantidad_trueques_rechazados_con_ventas += 1;
+                        }
+                        pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                     }
-                    pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                 }
             }
         }
