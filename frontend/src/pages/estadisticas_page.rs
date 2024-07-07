@@ -1,24 +1,40 @@
-use std::{cell::RefCell, ops::Deref, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use chrono::{DateTime, Local, NaiveDate, TimeZone};
-use datos_comunes::{QueryEstadisticas, ResponseEstadisticas, ResponseGetOffices};
-use log::Log;
-use web_sys::{HtmlInputElement, StorageEvent};
+use datos_comunes::{QueryEstadisticas, QueryGetUserRole, ResponseEstadisticas, ResponseGetOffices, ResponseGetUserRole, RolDeUsuario};
+use web_sys::HtmlInputElement;
 use yew_hooks::use_effect_once;
-use yew_router::prelude::Link;
 use yew::prelude::*;
 use yewdux::use_store;
-use crate::{convenient_request::request_get, request_post, router::Route, store::UserStore};
+use crate::{convenient_request::request_get, request_post, store::UserStore};
 use wasm_bindgen::JsCast;
 
 #[function_component(EstadisticasPage)]
-pub fn log_in_page()-> Html{
+pub fn estadisticas_page() -> Html {
+
+    let (store, _dispatch) = use_store::<UserStore>();
+    let dni = store.dni;
 
     let estadisticas_mostradas = use_state(|| {None});
     let lista_sucursales = use_state(|| vec![]);
 
+
+    let role_state = use_state(|| None);
+
+    let cloned_role_state = role_state.clone();
+    use_effect_once( move || {
+        if let Some(dni) = dni {
+            let query = QueryGetUserRole { dni };
+            request_post("/api/obtener_rol", query, move |r: ResponseGetUserRole| {
+                cloned_role_state.set(Some(r.rol));
+            });
+        }
+        || {}
+    });
+
     let state_query = use_state(|| Rc::new(RefCell::new(
         QueryEstadisticas {
+            dni,
             ..Default::default()
         }
     )));
@@ -26,29 +42,12 @@ pub fn log_in_page()-> Html{
     let state_query_c = state_query.clone();
     let estadisticas_mostradas_c = estadisticas_mostradas.clone();
     let calcular_estadisticas = move || {
-        let state_query = state_query_c.clone();
         let estadisticas_mostradas = estadisticas_mostradas_c.clone();
-        // let fecha_minima = (*state_query).fecha_minima.clone();
-        // let fecha_maxima = (*state_query).fecha_maxima.clone();
-        // let fecha_minima = if fecha_minima.is_empty() {None} else {Some(fecha_minima)};
-        // let fecha_maxima = if fecha_maxima.is_empty() {None} else {Some(fecha_maxima)};
 
-        // let fecha_minima = fecha_minima.map(|str_fecha| {
-        //     let fecha = NaiveDate::parse_from_str(&str_fecha, "%Y-%m-%d").unwrap();
-        //     Local.from_local_datetime(&fecha.into()).unwrap()
-        // });
-        // let fecha_maxima = fecha_maxima.map(|str_fecha| {
-        //     let fecha = NaiveDate::parse_from_str(&str_fecha, "%Y-%m-%d").unwrap();
-        //     Local.from_local_datetime(&fecha.into()).unwrap()
-        // });
-
-        // let query = (*state_query).clone();
-        // log::info!("Query de estadisticas: {query:?}");
         let query = (*state_query_c).borrow().clone();
         estadisticas_mostradas.set(None);
-        request_post("/api/get_estadisticas", query, move |response: ResponseEstadisticas| {
-            log::info!("Respuesta de estadisticas: {response:?}");
-            estadisticas_mostradas.set(Some(response));
+        request_post("/api/get_estadisticas", query, move |response: Option<ResponseEstadisticas>| {
+            estadisticas_mostradas.set(response);
         });
     };
 
@@ -126,18 +125,20 @@ pub fn log_in_page()-> Html{
             </div>
             <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_maxima}/>
 
-            <div>
-                <label> {"En esta sucursal:"} </label>
+            if *role_state == Some(RolDeUsuario::Dueño) {
+                <div>
+                    <label> {"En esta sucursal:"} </label>
 
-                <select id="sucursales" onchange={on_sucursal_elegida}>
-                <option value="-1">{"Ninguna"}</option>
-                {
-                    (*lista_sucursales).iter().enumerate().map(|(index, sucursal)| html!{
-                        <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
-                    }).collect::<Html>()
-                }
-            </select>
-            </div>
+                    <select id="sucursales" onchange={on_sucursal_elegida}>
+                    <option value="-1">{"Ninguna"}</option>
+                    {
+                        (*lista_sucursales).iter().enumerate().map(|(index, sucursal)| html!{
+                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
+                        }).collect::<Html>()
+                    }
+                </select>
+                </div>
+            }
 
             <br/>
             if let Some(est) = (*estadisticas_mostradas).clone() {

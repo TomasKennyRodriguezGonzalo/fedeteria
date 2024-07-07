@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct QueryEstadisticas {
+    pub dni: Option<u64>,
     pub fecha_inicial: Option<DateTime<Local>>,
     pub fecha_final: Option<DateTime<Local>>,
     pub id_sucursal: Option<usize>,

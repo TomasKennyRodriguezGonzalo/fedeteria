@@ -731,7 +731,7 @@ Json(query): Json<QueryAnswerQuestion>
 async fn get_estadisticas(
     State(state): State<SharedState>,
     Json(query): Json<QueryEstadisticas>,
-) -> Json<ResponseEstadisticas> {
+) -> Json<Option<ResponseEstadisticas>> {
     let state = state.read().await;
     Json(state.db.get_estadisticas(query))
 }
