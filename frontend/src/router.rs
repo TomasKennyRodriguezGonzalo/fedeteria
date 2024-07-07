@@ -13,6 +13,7 @@ use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequeP
 use crate::pages::search_results_page::SearchResultsPage;
 use crate::pages::unlock_account_page::UnlockAccountPage;
 use crate::pages::change_user_rol_page::ChangeUserRolePage;
+use crate::pages::editar_publicacion_page::EditarPublicacionPage;
 use crate::request_post;
 use crate::store::UserStore;
 use datos_comunes::{QueryGetUserRole, ResponseGetUserRole};
@@ -71,6 +72,8 @@ pub enum Route {
     MyPreferences,
     #[at("/publicacion/:id")]
     Publication {id: usize},
+    #[at("/editar_publicacion/:id")]
+    EditarPublicacion {id: usize},
     #[at("/trueque/:id")]
     Trueque {id: usize},
     #[at("/register")]
@@ -116,6 +119,7 @@ pub fn switch(routes: Route) -> Html {
                 Route::LogInPage => html! { <LogInPage /> },
                 Route::MyPublications => html! { < MyPublicationsPage /> },
                 Route::Publication { id } => html! { <PublicationPage id={id}/>},
+                Route::EditarPublicacion { id } => html! { <EditarPublicacionPage id={id}/>},
                 Route::Profile => html! { <ProfilePage/> },
                 Route::EditPersonalInfo => html! {<EditPersonalInfoPage/>},
                 Route::Register => html! {<RegisterPage/>},
@@ -201,6 +205,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyPreferences => [false, true, true, true],
         Route::ChangePasswordFromLogIn => [true, false, false, false],
         Route::ChangePasswordFromProfile => [false, true, true, true],
+        Route::EditarPublicacion { id: _ } => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

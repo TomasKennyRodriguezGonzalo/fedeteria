@@ -65,7 +65,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
         log::info!("Indice recibido {id}");
         if (*cloned_selected_publications_list_state).len() <= 1 {
             let mut new_vec = cloned_selected_publications_list_state.deref().clone();
-            let index = id.clone();
+            let index = id;
             let cloned_selected_publications_price_state = cloned_selected_publications_price_state.clone();
             spawn_local(async move {
                 let respuesta = Request::get(&format!("/api/datos_publicacion?id={index}")).send().await;
@@ -77,7 +77,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                                 match respuesta {
                                     Ok(publicacion) => {
                                         log::info!("Datos de publicacion!: {publicacion:?}");
-                                        let mut act = (&*cloned_selected_publications_price_state).clone();
+                                        let mut act = *cloned_selected_publications_price_state;
                                         act += publicacion.precio.unwrap();
                                         cloned_selected_publications_price_state.set(act);
                                         log::info!("Precio de la oferta in loop: {} y act : {}", &*cloned_selected_publications_price_state, act);
@@ -107,7 +107,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
     let publication_unselected = Callback::from( move|id : usize| {
         log::info!("Indice recibido {id}");
         let mut new_vec = cloned_selected_publications_list_state.deref().clone();
-        let i = id.clone();
+        let i = id;
         if let Some(index) = new_vec.iter().position(|index| *index == id) {
             let cloned_selected_publications_price_state = cloned_selected_publications_price_state.clone();
             spawn_local(async move {
@@ -120,7 +120,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                                 match respuesta {
                                     Ok(publicacion) => {
                                         log::info!("Datos de publicacion!: {publicacion:?}");
-                                        let mut act = (&*cloned_selected_publications_price_state).clone();
+                                        let mut act = *cloned_selected_publications_price_state;
                                         act -= publicacion.precio.unwrap();
                                         cloned_selected_publications_price_state.set(act);
                                         log::info!("Precio de la oferta in loop: {} y act : {}", &*cloned_selected_publications_price_state, act);
@@ -141,8 +141,6 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                 }
             });
             new_vec.remove(index);
-        } else {
-
         }
         cloned_selected_publications_list_state.set(new_vec);
     });
@@ -166,11 +164,11 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
 
     let cloned_selected_publications_list_state = selected_publications_list_state.clone();
 
-    let range = calcular_rango(props.price.clone());
+    let range = calcular_rango(props.price);
 
     html! {
         <div class="publication-selector-box">
-            if &*selected_publications_price_state.clone() != &(0 as u64) {
+            if *selected_publications_price_state != 0 {
                 if range.contains(&*selected_publications_price_state.clone()) {
                     <h1>{format!("Precio de la oferta: ${}", &*selected_publications_price_state.clone())}</h1>
                 } else {
@@ -186,10 +184,10 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
                                     <a class="link-duller">
                                         <PublicationThumbnail id={id} linkless={true}/>
                                     </a>
-                                    if !(&*cloned_selected_publications_list_state.clone()).contains(&id) {
-                                        <IndexedButton text="Seleccionar" index={id.clone()} onclick_event={publication_selected.clone()} disabled={true}/>
+                                    if !cloned_selected_publications_list_state.contains(id) {
+                                        <IndexedButton text="Seleccionar" index={id} onclick_event={publication_selected.clone()} disabled={true}/>
                                     } else {
-                                        <IndexedButton text="Seleccionada" index={id.clone()} onclick_event={publication_unselected.clone()}/>
+                                        <IndexedButton text="Seleccionada" index={id} onclick_event={publication_unselected.clone()}/>
                                     }
                                 </li>
                             }
@@ -204,7 +202,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
             } else {
                 <h1>{"No tenés publicaciones para ofertar!"}</h1>
             }
-            if (&*confirmation_state).clone(){
+            if *confirmation_state {
                 <ConfirmPromptButtonMolecule text={format!("¿Confirma su selección de publicaciones para ofertar?")} confirm_func={confirm_selection} reject_func={reject_func} />
             }
         </div>

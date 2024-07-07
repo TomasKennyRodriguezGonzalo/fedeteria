@@ -10,7 +10,7 @@ pub struct Props {
 pub fn publication_page(props : &Props) -> Html {
     html!(
         <>
-            <PublicationMolecule id={(&props).id.clone()}/>
+            <PublicationMolecule id={props.id}/>
         </>
     )
 }
