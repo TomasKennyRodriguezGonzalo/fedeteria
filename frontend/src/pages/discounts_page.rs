@@ -64,7 +64,7 @@ pub fn trueque_page() -> Html {
                         <div> {"fecha de caducidad: "}{(descuento.fecha_vencimiento).clone()}</div>
                         if descuento.vigente{
                             <div> {"estado: Vigente"}</div>
-                            <IndexedButton text="Eliminar descuento" index={index} onclick_event={(show_confirm_button).clone()}/>
+                            <IndexedButton text="Cancelar Descuento" index={index} onclick_event={(show_confirm_button).clone()}/>
                         } else{
                             <div> {"estado: No Vigente"}</div>
                         }
