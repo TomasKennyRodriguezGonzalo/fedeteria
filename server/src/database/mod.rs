@@ -483,7 +483,13 @@ impl Database {
         self.trueques.get(&id)
     }
 
-    pub fn get_estadisticas(&self, query: QueryEstadisticas) -> ResponseEstadisticas {
+    pub fn get_estadisticas(&self, mut query: QueryEstadisticas) -> Option<ResponseEstadisticas> {
+        let usuario_id = self.encontrar_dni(query.dni?)?;
+        let rol = self.obtener_datos_usuario(usuario_id).rol.clone();
+        if let RolDeUsuario::Empleado { sucursal } = rol {
+            query.id_sucursal = Some(sucursal);
+        }
+
         let mut cantidad_trueques_rechazados = 0;
         let mut cantidad_trueques_finalizados = 0;
         let mut cantidad_trueques_rechazados_con_ventas = 0;
@@ -525,8 +531,10 @@ impl Database {
                 }
             }
         }
-
-        ResponseEstadisticas {
+        let query_nombre_sucursal = query.id_sucursal.map(|id| {
+            self.obtener_sucursal(id)
+        });
+        Some(ResponseEstadisticas {
             cantidad_trueques_rechazados,
             cantidad_trueques_finalizados,
             cantidad_trueques_rechazados_o_finalizados: cantidad_trueques_rechazados + cantidad_trueques_finalizados,
@@ -536,7 +544,10 @@ impl Database {
             pesos_trueques_rechazados,
             pesos_trueques_finalizados,
             pesos_trueques: pesos_trueques_rechazados + pesos_trueques_finalizados,
-        }
+            query_fecha_inicial: query.fecha_inicial,
+            query_fecha_final: query.fecha_final,
+            query_nombre_sucursal,
+        })
     }
 
     pub fn aceptar_oferta(&mut self, id:usize) -> bool {
