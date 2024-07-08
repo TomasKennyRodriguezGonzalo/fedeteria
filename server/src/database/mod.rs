@@ -323,6 +323,14 @@ impl Database {
             else {
                 true
             }
+        })
+        .filter(|(_, publication)| {
+            if query.excluir_en_trueque {
+                !publication.en_trueque
+            }
+            else {
+                true
+            }
         });
 
         /*
@@ -1382,8 +1390,8 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
         //si la encontre, hago las verificaciones necesarias, sino, salgo
         if let Some(id_tarjeta) = hay_coincidencia {
             
-            //si no tiene fondos suficientes, salgo
-            if (self.tarjetas[id_tarjeta].monto - query.precio as i64) >= 0 {
+            //si no tiene fondos suficientes o esta vencida, salgo
+            if (!self.tarjetas[id_tarjeta].esta_vencida()) && ((self.tarjetas[id_tarjeta].monto - query.precio as i64) >= 0) {
 
                 //actualizo el monto
                 self.tarjetas[id_tarjeta].monto -= query.precio as i64;
@@ -1395,7 +1403,8 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
                 self.guardar();
 
                 return true;
-            } 
+            }
+            log::info!("ESTA VENCIDA");
             return false;
         }
         false
@@ -1646,7 +1655,7 @@ fn get_database_por_defecto() -> Database {
         db.cambiar_trueque_a_definido(query);
     }
 
-    for (id_trueque, es_finalizado,
+    /*for (id_trueque, es_finalizado,
         ventas_ofertante, ventas_receptor,
         codigo_descuento_ofertante, codigo_descuento_receptor
     ) in trueques_finalizados_o_rechazados {
@@ -1663,7 +1672,7 @@ fn get_database_por_defecto() -> Database {
             codigo_descuento_receptor
         };
         db.finalizar_trueque(query).unwrap();
-    }
+    }*/
 
     db
 }

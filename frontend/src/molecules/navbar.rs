@@ -183,6 +183,7 @@ pub fn navbar() -> Html{
             filtro_precio_min: cloned_min_price_state.clone(),
             filtro_pausadas : true,
             excluir_promocionadas: false,
+            excluir_en_trueque: false,
         };
         let _ = navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 

@@ -87,6 +87,7 @@ pub struct QueryPublicacionesFiltradas {
     pub filtro_fecha_max: Option<()>,
     pub filtro_pausadas:bool,
     pub excluir_promocionadas: bool,
+    pub excluir_en_trueque: bool,
 }
 
 

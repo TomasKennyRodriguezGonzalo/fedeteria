@@ -119,8 +119,9 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             filtro_precio_max : None,
             filtro_fecha_max : None,
             filtro_fecha_min : None,
-            filtro_pausadas : true,
+            filtro_pausadas : false,
             excluir_promocionadas : true,
+            excluir_en_trueque : true,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
@@ -235,7 +236,7 @@ pub fn promote_publication_from_profile_molecule () -> Html {
                         }
                     </ul>
                 } else {
-                    <h1>{"Aún no tienes publicaciones"}</h1>
+                    <h1>{"No tienes publicaciones para promocionar"}</h1>
                 }
             </div>
             if !(&*cloned_selected_publications_list_state.clone()).is_empty() {
