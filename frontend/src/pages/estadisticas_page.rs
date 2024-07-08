@@ -158,10 +158,12 @@ pub fn estadisticas_page() -> Html {
                         <h1> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </h1>
                         <h1> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </h1>
                         <h1> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </h1>
-                        <h1> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </h1>
+                        <h1> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados_tras_descuento)} </h1>
                         <h1> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </h1>
-                        <h1> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </h1>
-                        <h1> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </h1>
+                        <h1> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados_tras_descuento)} </h1>
+                        <h1> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques_tras_descuento)} </h1>
+                        <h1> {format!("Cantidad de descuentos utilizados: {}", est_v.cantidad_descuentos)} </h1>
+                        <h1> {format!("Pesos descontados en total: {}", est_v.cantidad_ahorrado_en_descuentos)} </h1>
                     } else {
                         <h1>{"No existen trueques ni ventas"}</h1>
                     }
