@@ -327,9 +327,14 @@ impl Database {
             .map(|(i, _)| *i)
             .collect()
         };
-        // publicaciones.sort_by(|&a, &b| {
-        //     let a = self.get_publicacion(a).unwrap().pr
-        // });
+        publicaciones.sort_by(|&a, &b| {
+            let a = self.get_publicacion(a).unwrap().esta_promocionada();
+            let b = self.get_publicacion(b).unwrap().esta_promocionada();
+            // las promocionadas van a ser 0 así que van a quedar primero (porque se sortea de menor a mayor)
+            let a = if a {0} else {1};
+            let b = if b {0} else {1};
+            a.cmp(&b)
+        });
 
         publicaciones
     }

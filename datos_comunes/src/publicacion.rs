@@ -50,6 +50,16 @@ impl Publicacion {
     pub fn alternar_pausa(&mut self){
         self.pausada = !(self.pausada);
     }
+
+    pub fn esta_promocionada(&self) -> bool {
+        if let Some(promocionada_hasta) = self.promocionada_hasta {
+            let ahora = Local::now();
+            if ahora < promocionada_hasta {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
