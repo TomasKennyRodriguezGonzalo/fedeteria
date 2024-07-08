@@ -42,10 +42,10 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
     });
 
     //numero de tarjeta
-    let card_number_state: UseStateHandle<usize> = use_state(|| 0);
+    let card_number_state: UseStateHandle<u64> = use_state(|| 0);
     let card_number_state_cloned = card_number_state.clone();
     let card_number_onchange = Callback::from(move |card_number: String| {
-        card_number_state_cloned.set(card_number.parse::<usize>().unwrap());
+        card_number_state_cloned.set(card_number.parse::<u64>().unwrap());
     });
 
     //codigo de seguridad
@@ -71,7 +71,7 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
         let input:HtmlInputElement = target.unchecked_into();
         let value: i32 = input.value().parse().unwrap();
         select_mes_value_state_cloned.set(value);
-        log::info!("Select hora changed to {}", value)
+        log::info!("Select mes changed to {}", value)
     });
     
     //pago

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Tarjeta {
     pub dni_titular: u64,
     pub nombre_titular: String,
-    pub numero_tarjeta: usize,
+    pub numero_tarjeta: u64,
     pub codigo_seguridad: u64,
     pub anio_caducidad: u64,
     pub mes_caducidad: u64,

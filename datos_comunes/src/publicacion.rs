@@ -50,6 +50,16 @@ impl Publicacion {
     pub fn alternar_pausa(&mut self){
         self.pausada = !(self.pausada);
     }
+
+    pub fn esta_promocionada(&self) -> bool {
+        if let Some(promocionada_hasta) = self.promocionada_hasta {
+            let ahora = Local::now();
+            if ahora < promocionada_hasta {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -76,7 +86,7 @@ pub struct QueryPublicacionesFiltradas {
     pub filtro_fecha_min: Option<()>,
     pub filtro_fecha_max: Option<()>,
     pub filtro_pausadas:bool,
-    pub filtro_promocionadas: bool,
+    pub excluir_promocionadas: bool,
 }
 
 

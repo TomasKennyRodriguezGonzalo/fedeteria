@@ -120,7 +120,7 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             filtro_fecha_max : None,
             filtro_fecha_min : None,
             filtro_pausadas : true,
-            filtro_promocionadas : true,
+            excluir_promocionadas : true,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {

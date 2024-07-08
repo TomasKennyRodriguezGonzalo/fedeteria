@@ -47,7 +47,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
             filtro_fecha_max : None,
             filtro_fecha_min : None,
             filtro_pausadas : true,
-            filtro_promocionadas : false,
+            excluir_promocionadas : false,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
