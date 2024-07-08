@@ -1362,6 +1362,10 @@ fn get_database_por_defecto() -> Database {
         ("Curita", 4, "Me lastimé me la prestas? :(", Some("hablame al mail")),
     ];
 
+    let promocionadas = [
+        "Heladera", "Sierra Grande", "Curita"
+    ];
+
     // let ofertas_aceptadas = [
     //     0
     // ];
@@ -1418,6 +1422,10 @@ fn get_database_por_defecto() -> Database {
             assert_eq!(pubs.len(), 1);
             pubs[0]
         }
+
+        pub fn promocionar_TEMP(&mut self, id: usize, fecha: DateTime<Local>) {
+            self.publicaciones.get_mut(&id).unwrap().promocionada_hasta = Some(fecha);
+        }
     }
 
     for (nombre_publicacion, dni_preguntante, pregunta, respuesta) in preguntas_y_respuestas {
@@ -1431,6 +1439,13 @@ fn get_database_por_defecto() -> Database {
             let query = QueryAnswerQuestion { indice_pregunta, id_publicacion, respuesta };
             db.responder(query);
         }
+    }
+
+    for nombre_publicacion in promocionadas {
+        let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
+        let mut fecha = Local::now();
+        fecha = fecha.checked_add_days(chrono::Days::new(100)).unwrap();
+        db.promocionar_TEMP(id_publicacion, fecha);
     }
 
     for (id, ofertadas, pedida) in ofertas {
