@@ -22,6 +22,7 @@ use rust_decimal::prelude::FromPrimitive;
 use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio::net::TcpListener;
+use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::sync::RwLock;
 use tokio::task::spawn_local;
@@ -37,7 +38,7 @@ use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
 use mpago::payments::types::PaymentMethodId;
-
+use tokio::task;
 use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
@@ -685,13 +686,14 @@ Json(query): Json<QueryTruequesFiltrados>
     }
     Json(ResponseTruequePorCodigos {trueque_encontrado: None})
 }
-
+#[debug_handler]
 async fn finalizar_trueque (
     State(state): State<SharedState>,
     Json(query): Json<QueryFinishTrade>
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
     let mensajes = state.db.finalizar_trueque(query);
+    log::info!("respuesta de finalizar trueque: {:?}",mensajes);
     match mensajes{
         Ok(mensajes) =>{
             if mensajes.is_empty() {    
@@ -705,26 +707,37 @@ async fn finalizar_trueque (
             4 --> Mail Ofertante
             5 --> Mensaje Ofertante
             */
-            let mensajes_c = mensajes.clone();
-            spawn_local(async move {
-                let mensajes = mensajes_c;
-                match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-                        "Finalizacion de Trueque en Fedeteria".to_string(),
-                        mensajes.get(2).unwrap().clone()) {
-                        Ok(_) => log::info!("Mail enviado al receptor."),
-                        Err(_) => log::error!("Error al enviar mail al receptor."),
-                }
-            });
-        
-            //envio mail al ofertante
-            spawn_local(async move {
-            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
-                    "Finalizacion de Trueque en Fedeteria".to_string(),
-                    mensajes.get(5).unwrap().clone()) {
-                    Ok(_) => log::info!("Mail enviado al receptor."),
-                    Err(_) => log::error!("Error al enviar mail al receptor."),
-                }
-            });
+            
+            tokio::task::spawn_blocking(move || {
+                let local = task::LocalSet::new();
+                let rt  = Runtime::new().unwrap();
+                let mensajes_c = mensajes.clone();
+                rt.block_on( async {
+                    local.run_until(async move {
+                        spawn_local(async move {
+                            let mensajes = mensajes_c;
+                            match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                                    "Finalizacion de Trueque en Fedeteria".to_string(),
+                                    mensajes.get(2).unwrap().clone()) {
+                                    Ok(_) => log::info!("Mail enviado al receptor."),
+                                    Err(_) => log::error!("Error al enviar mail al receptor."),
+                            }
+                        });
+                    }).await;
+                    //envio mail al ofertante
+                    local.run_until(async move {
+                        spawn_local(async move {
+                            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+                            "Finalizacion de Trueque en Fedeteria".to_string(),
+                            mensajes.get(5).unwrap().clone()) {
+                                Ok(_) => log::info!("Mail enviado al receptor."),
+                                Err(_) => log::error!("Error al enviar mail al receptor."),
+                            }
+                        });
+                    }).await;
+                });
+            }).await.expect("Task panicked");
+
             Json(ResponseFinishTrade {respuesta: Ok(true)})
         }
         Err(ErrorEnConcretacion::DescuentoReceptorInvalido) =>{
@@ -734,10 +747,23 @@ async fn finalizar_trueque (
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)})
         }
         Err(ErrorEnConcretacion::DescuentoOfertanteInvalido) =>{
+            log::info!("entre al descuento ofertante invalido");
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)})
         }
         Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado) =>{
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteVencido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteVencido)})
+        }
+        Err(ErrorEnConcretacion::OfertanteNivelInsuficiente) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::OfertanteNivelInsuficiente)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorVencido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorVencido)})
+        }
+        Err(ErrorEnConcretacion::ReceptorNivelInsuficiente) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::ReceptorNivelInsuficiente)})
         }
     }
 }

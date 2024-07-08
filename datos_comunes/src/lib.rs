@@ -528,10 +528,14 @@ pub struct QueryPagarPromocionPublicaciones {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ErrorEnConcretacion {
-    DescuentoOfertanteUtilizado,
     DescuentoOfertanteInvalido,
+    DescuentoOfertanteUtilizado,
+    DescuentoOfertanteVencido,
+    OfertanteNivelInsuficiente,
     DescuentoReceptorUtilizado,
+    DescuentoReceptorVencido,
     DescuentoReceptorInvalido,
+    ReceptorNivelInsuficiente,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -545,14 +549,9 @@ pub struct QueryCreateDiscount{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseCreateDiscount{
-    pub ok:Result<bool,ErrorCrearDescuento>,
+    pub ok:bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ErrorCrearDescuento {
-    FechaInvalida,
-    PorcentajeInvalido,
-}
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -572,7 +571,7 @@ pub struct QueryObtenerDescuentos{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseObtenerDescuentos{
-    pub descuentos:Vec<Descuento>,
+    pub descuentos:Vec<(usize, Descuento)>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryObtenerDescuento{

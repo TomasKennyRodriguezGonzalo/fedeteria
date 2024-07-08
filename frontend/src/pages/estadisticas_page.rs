@@ -150,16 +150,20 @@ pub fn estadisticas_page() -> Html {
             <br/>
             <GenericButton text="Aplicar Filtros" onclick_event={update_stats}/>
             if let Some(est_v) = (*estadisticas_viejas).clone() {
-                <p> {crear_string_para_resp(&est_v)} </p>
-                <p> {format!("Cantidad de trueques finalizados: {}", est_v.cantidad_trueques_finalizados)} </p>
-                <p> {format!("Cantidad de trueques rechazados: {}", est_v.cantidad_trueques_rechazados)} </p>
-                <p> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </p>
-                <p> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </p>
-                <p> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </p>
-                <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </p>
-                <p> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </p>
-                <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </p>
-                <p> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </p>
+                if (est_v.cantidad_trueques_rechazados_o_finalizados != 0) {
+                    <p> {crear_string_para_resp(&est_v)} </p>
+                    <p> {format!("Cantidad de trueques finalizados: {}", est_v.cantidad_trueques_finalizados)} </p>
+                    <p> {format!("Cantidad de trueques rechazados: {}", est_v.cantidad_trueques_rechazados)} </p>
+                    <p> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </p>
+                    <p> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </p>
+                    <p> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </p>
+                    <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </p>
+                    <p> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </p>
+                    <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </p>
+                    <p> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </p>
+                } else {
+                    <h1>{"No existen trueques ni ventas"}</h1>
+                }
             }
         </>
     }
