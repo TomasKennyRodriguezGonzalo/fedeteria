@@ -304,7 +304,7 @@ impl Database {
         });
 
         //si el filtro de pausadas esta activo entonces elimino las pausadas del retorno
-        if query.filtro_pausadas{
+        let mut publicaciones: Vec<usize> = if query.filtro_pausadas{
             publicaciones
             .filter(|(_,publicacion)|{
                 !publicacion.pausada
@@ -315,8 +315,12 @@ impl Database {
             publicaciones
             .map(|(i, _)| *i)
             .collect()
-        }
-           
+        };
+        // publicaciones.sort_by(|&a, &b| {
+        //     let a = self.get_publicacion(a).unwrap().pr
+        // });
+
+        publicaciones
     }
     
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
