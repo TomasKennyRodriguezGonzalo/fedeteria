@@ -1193,7 +1193,7 @@ impl Database {
         if let Some (fecha) = query.fecha_exp{
             //chequear si la fecha está despues
             //chequear que no haya dos codigos iguales
-            if query.porcentaje > 1.0 && query.porcentaje < 0.0{
+            if query.porcentaje > 1.0 || query.porcentaje < 0.0{
                 return Err(ErrorCrearDescuento::PorcentajeInvalido);
             }
             let nuevo_descuento = Descuento{

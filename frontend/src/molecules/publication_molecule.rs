@@ -523,6 +523,8 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                     <div class="moderation-buttons">
                         if !publicacion.en_trueque || publicacion.intercambiada {
                             <GenericButton text="Eliminar Publicación" onclick_event={activate_delete_publication}/>
+                        }
+                        if !publicacion.en_trueque {
                             <Link<Route> to={Route::EditarPublicacion{id}}>
                                 {"Editar Publicación"}
                             </Link<Route>>
