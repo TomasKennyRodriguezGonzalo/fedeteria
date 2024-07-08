@@ -177,7 +177,7 @@ pub fn finish_trade_molecule () -> Html {
                     match e {
                         ErrorEnConcretacion::DescuentoOfertanteInvalido => {
                             log::error!("descuento ofertante invalido");
-                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe o ha vencido. "));
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe. "));
                         },
                         ErrorEnConcretacion::DescuentoOfertanteUtilizado => {
                             log::error!("descuento ofertante utilizado");
@@ -185,11 +185,27 @@ pub fn finish_trade_molecule () -> Html {
                         }
                         ErrorEnConcretacion::DescuentoReceptorInvalido => {
                             log::error!("descuento receptor invalido");
-                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe o ha vencido. "));
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe. "));
                         },
                         ErrorEnConcretacion::DescuentoReceptorUtilizado => {
                             log::error!("descuento receptor utilizado");
                             cloned_error_text_state.set(format!("El descuento ingresado para el receptor ya fue utilizado. "));
+                        },
+                        ErrorEnConcretacion::DescuentoOfertanteVencido => {
+                            log::error!("descuento ofertante vencido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante se encuentra vencido. "));
+                        },
+                        ErrorEnConcretacion::OfertanteNivelInsuficiente => {
+                            log::error!("ofertante nivel insuficiente");
+                            cloned_error_text_state.set(format!("El ofertante no cuenta con el nivel necesario para aplicar su descuento. "));                            
+                        },
+                        ErrorEnConcretacion::DescuentoReceptorVencido => {
+                            log::error!("descuento receptor vencido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor se encuentra vencido. "));
+                        },
+                        ErrorEnConcretacion::ReceptorNivelInsuficiente => {
+                            log::error!("receptor nivel insuficiente");
+                            cloned_error_text_state.set(format!("El receptor no cuenta con el nivel necesario para aplicar su descuento. "));       
                         }
                     }
                 } 
@@ -200,30 +216,95 @@ pub fn finish_trade_molecule () -> Html {
     });
 
     //rechazo el trueque
-    /*let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
-    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
     let descuento_ofertante_state_cloned = descuento_ofertante_state.clone();
-    let descuento_receptor_state_cloned = descuento_receptor_state.clone();*/
+    let descuento_receptor_state_cloned = descuento_receptor_state.clone();
+    let cloned_error_text_state = error_text_state.clone();
+    let ventas_ofertante_state_cloned = ventas_ofertante_state.clone();
+    let ventas_receptor_state_cloned = ventas_receptor_state.clone();
     let cloned_information_dispatch = information_dispatch.clone();
+    let cloned_finish_confirmation_state = finish_confirmation_state.clone();
     let cloned_abort_confirmation_state = abort_confirmation_state.clone();
     let cloned_trade_index_state = trade_index_state.clone();
     let cloned_show_trade_search_state = show_trade_search_state.clone();
     let abort_trade = Callback::from(move |_e| {
+        let cloned_abort_confirmation_state = cloned_abort_confirmation_state.clone();
+        let cloned_error_text_state = cloned_error_text_state.clone();
+        let cloned_finish_confirmation_state = cloned_finish_confirmation_state.clone();
+        let cloned_information_dispatch = cloned_information_dispatch.clone();
+        let cloned_show_trade_search_state = cloned_show_trade_search_state.clone();
+        let ventas_ofertante = *ventas_ofertante_state_cloned;
+        let ventas_receptor = *ventas_receptor_state_cloned;
         let query = QueryFinishTrade {
             estado: EstadoTrueque::Rechazado, 
             id_trueque: (&*cloned_trade_index_state).unwrap().clone(),
-            ventas_ofertante:0,//(&*ventas_ofertante_state_cloned).clone(),
-            ventas_receptor:0,//(&*ventas_receptor_state_cloned).clone(),
-            codigo_descuento_ofertante: None,//(&*descuento_ofertante_state_cloned).clone(),
-            codigo_descuento_receptor: None,//(&*descuento_receptor_state_cloned).clone(),
+            ventas_ofertante,
+            ventas_receptor,
+            codigo_descuento_ofertante: (*descuento_ofertante_state_cloned).clone(),
+            codigo_descuento_receptor: (*descuento_receptor_state_cloned).clone(),
         };
-        request_post("/api/finalizar_trueque", query, move |_respuesta: ResponseFinishTrade| {
+        request_post("/api/finalizar_trueque", query, move |respuesta: ResponseFinishTrade| {
+            log::info!("respuesta: {:?}", respuesta);
+            let cloned_finish_confirmation_state = cloned_finish_confirmation_state.clone();
+            let cloned_show_trade_search_state = cloned_show_trade_search_state.clone();
+            let cloned_information_dispatch = cloned_information_dispatch.clone();
+            match respuesta.respuesta {
+                Ok(estado) => {
+                    if estado {
+                        log::info!("entre al if del estado en true");
+                        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque rechazado!")));
+                        // Resultado exitoso del concretar trueque
+                        // - Informar por pantalla (feedback)
+                        cloned_show_trade_search_state.set(false);
+                        if let Some(window) = window() {
+                            window.location().reload().unwrap();
+                        }
+                    }
+                },
+                Err(e) => {
+                    match e {
+                        ErrorEnConcretacion::DescuentoOfertanteInvalido => {
+                            log::error!("descuento ofertante invalido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe o no se encuentra vigente. "));
+                        },
+                        ErrorEnConcretacion::DescuentoOfertanteUtilizado => {
+                            log::error!("descuento ofertante utilizado");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante ya fue utilizado. "));
+                        }
+                        ErrorEnConcretacion::DescuentoReceptorInvalido => {
+                            log::error!("descuento receptor invalido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe o no se encuentra vigente. "));
+                        },
+                        ErrorEnConcretacion::DescuentoReceptorUtilizado => {
+                            log::error!("descuento receptor utilizado");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor ya fue utilizado. "));
+                        },
+                        ErrorEnConcretacion::DescuentoOfertanteVencido => {
+                            log::error!("descuento ofertante vencido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante se encuentra vencido. "));
+                        },
+                        ErrorEnConcretacion::OfertanteNivelInsuficiente => {
+                            log::error!("ofertante nivel insuficiente");
+                            cloned_error_text_state.set(format!("El ofertante no cuenta con el nivel necesario para aplicar su descuento. "));                            
+                        },
+                        ErrorEnConcretacion::DescuentoReceptorVencido => {
+                            log::error!("descuento receptor vencido");
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor se encuentra vencido. "));
+                        },
+                        ErrorEnConcretacion::ReceptorNivelInsuficiente => {
+                            log::error!("receptor nivel insuficiente");
+                            cloned_error_text_state.set(format!("El receptor no cuenta con el nivel necesario para aplicar su descuento. "));       
+                        }
+                    }
+                } 
+            }
+            log::info!("termine el callback!!");
+            cloned_finish_confirmation_state.set(false);
+            cloned_abort_confirmation_state.set(false);
+ 
             // No hago nada porque se que me va a retornar vacio, esta implementacion del mismo metodo para dos cosas diferentes es medio extraña
         });
-        
-        cloned_show_trade_search_state.set(false);
-        cloned_abort_confirmation_state.set(false);
-        cloned_information_dispatch.reduce_mut(|store| store.messages.push(format!("Trueque rechazado!")));
+       
+
     });
 
     //cancelo operacion
@@ -331,9 +412,6 @@ pub fn finish_trade_molecule () -> Html {
             }
             if *abort_confirmation_state{
                 <ConfirmPromptButtonMolecule text = "¿Confirma el rechazo a este trueque?" confirm_func = {abort_trade} reject_func = {hide_abort_trade_confirmation}/>
-            }
-            if !(*error_text_state).clone().is_empty() {
-                <h1 class="error-text">{(*error_text_state).clone()}</h1>
             }
         </div>
     }

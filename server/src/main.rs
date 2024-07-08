@@ -22,6 +22,7 @@ use rust_decimal::prelude::FromPrimitive;
 use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio::net::TcpListener;
+use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::sync::RwLock;
 use tokio::task::spawn_local;
@@ -37,7 +38,7 @@ use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
 use mpago::payments::types::PaymentMethodId;
-
+use tokio::task;
 use crate::mail::send_email;
 use crate::state::ServerState;
 mod database;
@@ -744,13 +745,14 @@ Json(query): Json<QueryTruequesFiltrados>
     }
     Json(ResponseTruequePorCodigos {trueque_encontrado: None})
 }
-
+#[debug_handler]
 async fn finalizar_trueque (
     State(state): State<SharedState>,
     Json(query): Json<QueryFinishTrade>
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
     let mensajes = state.db.finalizar_trueque(query);
+    log::info!("respuesta de finalizar trueque: {:?}",mensajes);
     match mensajes{
         Ok(mensajes) =>{
             if mensajes.is_empty() {    
@@ -793,10 +795,23 @@ async fn finalizar_trueque (
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)})
         }
         Err(ErrorEnConcretacion::DescuentoOfertanteInvalido) =>{
+            log::info!("entre al descuento ofertante invalido");
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)})
         }
         Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado) =>{
             Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteVencido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteVencido)})
+        }
+        Err(ErrorEnConcretacion::OfertanteNivelInsuficiente) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::OfertanteNivelInsuficiente)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorVencido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorVencido)})
+        }
+        Err(ErrorEnConcretacion::ReceptorNivelInsuficiente) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::ReceptorNivelInsuficiente)})
         }
     }
 }

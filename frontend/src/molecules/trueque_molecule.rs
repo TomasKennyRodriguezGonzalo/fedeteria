@@ -458,13 +458,11 @@ pub fn trueque_molecule (props : &Props) -> Html {
         match parse_u64(calificacion) {
             Ok(n) => {
                 calificacion_ofertante_clone.set(Some(n));
-
             }
-            Err(e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
+            Err(_e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
         }
     });
 
-    let calificacion_ofertante_clone = calificacion_ofertante.clone();
     let calificacion_receptor:UseStateHandle<Option<u64>> = use_state(||None);
     let calificacion_receptor_clone = calificacion_receptor.clone();
     let cloned_error_state = error_state.clone();
@@ -472,9 +470,8 @@ pub fn trueque_molecule (props : &Props) -> Html {
         match parse_u64(calificacion) {
             Ok(n) => {
                 calificacion_receptor_clone.set(Some(n));
-
             }
-            Err(e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
+            Err(_e) => {cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())},
         }
     });
 
@@ -687,17 +684,25 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                         if trueque.oferta.0 == dni && trueque.calificacion_receptor.is_none(){
                                             <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
                                             <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_ofertante_changed} />
-                                            <GenericButton text = "Calificar Usuario" onclick_event = {(show_calification_button).clone()} />
-                                            if *calification_button{
-                                                <ConfirmPromptButtonMolecule text = "Confirmar calificacion" confirm_func = {calificate_ofertante} reject_func = {(hide_calification_button).clone()}  />
+                                            if (*calificacion_ofertante).is_some(){
+                                                <GenericButton text = "Calificar Usuario" onclick_event = {(show_calification_button).clone()} />
+                                            } else {
+                                                <button class="disabled-dyn-element">{"Calificar Usuario"}</button>
                                             }
+                                        if *calification_button{
+                                            <ConfirmPromptButtonMolecule text = "Confirmar calificacion" confirm_func = {calificate_ofertante} reject_func = {(hide_calification_button).clone()}  />
+                                        }
                                         } else if trueque.oferta.0 == dni{
                                             <h2>{format!("puntuaste a {} con {} puntos!", (&*receptor_username), trueque.calificacion_receptor.unwrap())}</h2>
                                         }
                                         if trueque.receptor.0 == dni && trueque.calificacion_ofertante.is_none(){
                                             <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
                                             <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_receptor_changed} />
-                                            <GenericButton text = "Calificar Usuario" onclick_event = {show_calification_button} />
+                                            if (*calificacion_receptor).is_some(){
+                                                <GenericButton text = "Calificar Usuario" onclick_event = {show_calification_button} />
+                                            }else{
+                                                <button class="disabled-dyn-element">{"Calificar Usuario"}</button>
+                                            }
                                             if *calification_button{
                                                 <ConfirmPromptButtonMolecule text = "Confirmar calificacion" confirm_func = {calificate_receptor} reject_func = {hide_calification_button}  />
                                             }
