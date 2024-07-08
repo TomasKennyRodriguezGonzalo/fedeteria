@@ -1459,7 +1459,7 @@ fn get_database_por_defecto() -> Database {
         ("Curita", 4, "Me lastimé me la prestas? :(", Some("hablame al mail")),
     ];
 
-    // publicaciones promocionadas...
+    // publicaciones promocionadas. se promocionan por 100 días, sin descontar de ninguna tarjeta en particular 
     let promocionadas = [
         "Heladera", "Sierra Grande", "Curita"
     ];
@@ -1484,11 +1484,13 @@ fn get_database_por_defecto() -> Database {
 
 
     // las personas van y se finaliza o rechaza el trueque, opcionalmente con ventas y codigo de descuento
-    // (id_trueque, es_finalizado, )
+    // (id_trueque, es_finalizado, ventas_ofertante, ventas_receptor, descuento_ofertante, descuento_receptor)
     // es_finalizado: true si fue finalizado, si fue rechazado entonces false
+    // las ventas pueden ser 0 para que no haya ventas. los descuentos pueden ser vacios para que no haya descuento
     let trueques_finalizados_o_rechazados = [
-      0  
+       (0, true, 1000, 2000, "", "N4VIDAD_2024")
     ];
+
 
     
     let tarjetas  = vec![
@@ -1538,7 +1540,7 @@ fn get_database_por_defecto() -> Database {
     for (dni_usuario, titulo, descripcion, precio, fotos) in publicaciones {
         let imagenes = fotos.iter().map(|nombre| {
             let from = format!("fotos_database_default/{}", nombre);
-            let relativo = format!("{}", nombre);
+            let relativo = nombre.to_string();
             let to = format!("db/imgs/{}", relativo);
             println!("from {from} to {to}");
             std::fs::copy(from, to).unwrap();
@@ -1571,7 +1573,7 @@ fn get_database_por_defecto() -> Database {
             pubs[0]
         }
 
-        pub fn promocionar_TEMP(&mut self, id: usize, fecha: DateTime<Local>) {
+        pub fn promocionar_facil(&mut self, id: usize, fecha: DateTime<Local>) {
             self.publicaciones.get_mut(&id).unwrap().promocionada_hasta = Some(fecha);
         }
     }
@@ -1593,7 +1595,7 @@ fn get_database_por_defecto() -> Database {
         let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
         let mut fecha = Local::now();
         fecha = fecha.checked_add_days(Days::new(100)).unwrap();
-        db.promocionar_TEMP(id_publicacion, fecha);
+        db.promocionar_facil(id_publicacion, fecha);
     }
 
     for (id, ofertadas, pedida) in ofertas {
@@ -1644,17 +1646,24 @@ fn get_database_por_defecto() -> Database {
         db.cambiar_trueque_a_definido(query);
     }
 
-    // for a in trueques_finalizados_o_rechazados {
-    //     let query = QueryFinishTrade { 
-    //         id_trueque,
-    //         estado,
-    //         ventas_ofertante,
-    //         ventas_receptor,
-    //         codigo_descuento_ofertante,
-    //         codigo_descuento_receptor
-    //     };
-    //     db.finalizar_trueque(query);
-    // }
+    for (id_trueque, es_finalizado,
+        ventas_ofertante, ventas_receptor,
+        codigo_descuento_ofertante, codigo_descuento_receptor
+    ) in trueques_finalizados_o_rechazados {
+        let estado = if es_finalizado {EstadoTrueque::Finalizado} else {EstadoTrueque::Rechazado};
+        let codigo_descuento_ofertante = if codigo_descuento_ofertante.is_empty() {None}  else {Some(codigo_descuento_ofertante.to_string())};
+        let codigo_descuento_receptor = if codigo_descuento_receptor.is_empty() {None}  else {Some(codigo_descuento_receptor.to_string())};
+        
+        let query = QueryFinishTrade { 
+            id_trueque,
+            estado,
+            ventas_ofertante,
+            ventas_receptor,
+            codigo_descuento_ofertante,
+            codigo_descuento_receptor
+        };
+        db.finalizar_trueque(query).unwrap();
+    }
 
     db
 }

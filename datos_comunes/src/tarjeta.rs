@@ -1,4 +1,3 @@
-use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -12,23 +11,14 @@ pub struct Tarjeta {
     pub monto: i64,
 }
 
+// PartialEq comparando todo menos el monto
 impl PartialEq for Tarjeta {
     fn eq(&self, other: &Self) -> bool {
-        return
-            self.codigo_seguridad == other.codigo_seguridad &&
+        self.codigo_seguridad == other.codigo_seguridad &&
             self.dni_titular == other.dni_titular &&
             self.anio_caducidad == other.anio_caducidad &&
             self.mes_caducidad == other.mes_caducidad &&
             self.nombre_titular == other.nombre_titular &&
-            self.numero_tarjeta == other.numero_tarjeta;
-    }
-    fn ne(&self, other: &Self) -> bool {
-        return
-            !(self.codigo_seguridad == other.codigo_seguridad &&
-            self.dni_titular == other.dni_titular &&
-            self.anio_caducidad == other.anio_caducidad &&
-            self.mes_caducidad == other.mes_caducidad &&
-            self.nombre_titular == other.nombre_titular &&
-            self.numero_tarjeta == other.numero_tarjeta);
+            self.numero_tarjeta == other.numero_tarjeta
     }
 }
