@@ -122,50 +122,52 @@ pub fn estadisticas_page() -> Html {
     });
 
     html!{
-        <>
-            <div>
-                <label> {"Desde esta fecha:"} </label>
-            </div>
-            <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_minima}/>
-            <div>
-                <label> {"Hasta esta fecha:"} </label>
-            </div>
-            <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_maxima}/>
-
-            if *role_state == Some(RolDeUsuario::Dueño) {
+        <div class="statistics">
+            <div class="filters">
                 <div>
-                    <label> {"En esta sucursal:"} </label>
-
-                    <select id="sucursales" onchange={on_sucursal_elegida}>
-                    <option value="-1">{"Ninguna"}</option>
-                    {
-                        (*lista_sucursales).iter().enumerate().map(|(index, sucursal)| html!{
-                            <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
-                        }).collect::<Html>()
-                    }
-                </select>
+                    <label> {"Desde esta fecha:"} </label>
                 </div>
-            }
+                <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_minima}/>
+                <div>
+                    <label> {"Hasta esta fecha:"} </label>
+                </div>
+                <input type="date" name="fecha_desde" onchange={on_cambiada_fecha_maxima}/>
 
-            <br/>
-            <GenericButton text="Aplicar Filtros" onclick_event={update_stats}/>
-            if let Some(est_v) = (*estadisticas_viejas).clone() {
-                if (est_v.cantidad_trueques_rechazados_o_finalizados != 0) {
-                    <p> {crear_string_para_resp(&est_v)} </p>
-                    <p> {format!("Cantidad de trueques finalizados: {}", est_v.cantidad_trueques_finalizados)} </p>
-                    <p> {format!("Cantidad de trueques rechazados: {}", est_v.cantidad_trueques_rechazados)} </p>
-                    <p> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </p>
-                    <p> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </p>
-                    <p> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </p>
-                    <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </p>
-                    <p> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </p>
-                    <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </p>
-                    <p> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </p>
-                } else {
-                    <h1>{"No existen trueques ni ventas"}</h1>
+                if *role_state == Some(RolDeUsuario::Dueño) {
+                    <div>
+                        <label> {"En esta sucursal:"} </label>
+
+                        <select id="sucursales" onchange={on_sucursal_elegida}>
+                        <option value="-1">{"Ninguna"}</option>
+                        {
+                            (*lista_sucursales).iter().enumerate().map(|(index, sucursal)| html!{
+                                <option value={index.to_string()}>{sucursal.nombre.clone()}</option>
+                            }).collect::<Html>()
+                        }
+                    </select>
+                    </div>
                 }
-            }
-        </>
+                <GenericButton text="Aplicar Filtros" onclick_event={update_stats}/>
+            </div>
+            <div class="info">
+                if let Some(est_v) = (*estadisticas_viejas).clone() {
+                    if est_v.cantidad_trueques_rechazados_o_finalizados != 0 {
+                        <h1> {crear_string_para_resp(&est_v)} </h1>
+                        <h1> {format!("Cantidad de trueques finalizados: {}", est_v.cantidad_trueques_finalizados)} </h1>
+                        <h1> {format!("Cantidad de trueques rechazados: {}", est_v.cantidad_trueques_rechazados)} </h1>
+                        <h1> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </h1>
+                        <h1> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </h1>
+                        <h1> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </h1>
+                        <h1> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </h1>
+                        <h1> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </h1>
+                        <h1> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </h1>
+                        <h1> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </h1>
+                    } else {
+                        <h1>{"No existen trueques ni ventas"}</h1>
+                    }
+                }
+            </div>
+        </div>
     }
 }
 
