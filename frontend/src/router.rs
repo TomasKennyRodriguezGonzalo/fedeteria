@@ -1,13 +1,18 @@
 use crate::pages::change_password_from_login_page::ChangePasswordFromLogInPage;
 use crate::pages::change_password_from_profile_page::ChangePasswordFromProfilePage;
 use crate::pages::edit_preferences_page::EditPreferencesPage;
+use crate::pages::allowed_discounts_page::AllowedDiscountsPage;
 use crate::pages::defined_trades_page::DefinedTradesPage;
+use crate::pages::discounts_page::DiscountsPage;
 use crate::pages::finish_trade_page::FinishTradePage;
 use crate::pages::my_completed_trades_page::MyCompletedTradesPage;
 use crate::pages::my_defined_trades_page::MyDefinedTradesPage;
 use crate::pages::my_pending_trades_page::MyPendingTradesPage;
 use crate::pages::my_trades_offers_page::MyTradesOffersPage;
 use crate::pages::my_trades_page::MyTradesPage;
+use crate::pages::pay_publication_promotion_page::PayPublicationPromotionPage;
+use crate::pages::promote_publication_from_profile_page::PromotePublicationFromProfilePage;
+//use crate::pages::promote_publication_from_office_page::PromotePublicationFromOfficePage;
 use crate::pages::search_trueques_page::SearchTruequesPage;
 use crate::pages::{notifications_page::NotificationsPage, trueque_page::TruequePage};
 use crate::pages::search_results_page::SearchResultsPage;
@@ -32,6 +37,7 @@ use crate::pages::{create_office_page::CreateOfficePage,
     my_publications_page::MyPublicationsPage,
     awaiting_price_publication::AwaitingPricePublicationPage,
     saved_publications_page::SavedPublicationsPage,
+    create_discount_page::CreateDiscountPage,
     estadisticas_page::EstadisticasPage,
     send_code_to_change_password_page::SendCodeToChangePasswordPage,
     //publication_trade_offers_page::PublicationTradeOffersPage,
@@ -70,6 +76,8 @@ pub enum Route {
     ChangePasswordFromProfile,
     #[at("/perfil/mis-preferencias")]
     MyPreferences,
+    #[at("/perfil/promocionar-publicacion-perfil")]
+    PromotePublicationFromProfile,
     #[at("/publicacion/:id")]
     Publication {id: usize},
     #[at("/editar_publicacion/:id")]
@@ -94,14 +102,24 @@ pub enum Route {
     FinishTrade,
     #[at("/acciones-privilegiadas/trueques-definidos")]
     DefinedTrades,
+    //#[at("/acciones-privilegiadas/promocionar-publicacion-sucursal")]
+    //PromotePublicationFromOffice,
+    #[at("/acciones-privilegiadas/crear-descuento")]
+    CreateDiscount,
+    #[at("/acciones-privilegiadas/ver-descuentos")]
+    SeeDiscounts,
     #[at("/resultados-busqueda")]
     SearchResults,
     #[at("/resultados-trueque")]
     SearchTrueques,
+    #[at("/ver-descuentos-usuario")]
+    AllowedDiscounts,
     #[at("/notificaciones")]
     Notifications,
     #[at("/publicaciones-guardadas")]
     SavedPublications,
+    #[at("/pagar-promocion-publicaciones")]
+    PayPublicationPromotion,
     //#[at("/ofertas-recibidas")]
     //PublicationTradeOffers,
     #[at("/estadisticas")]
@@ -131,12 +149,15 @@ pub fn switch(routes: Route) -> Html {
                 Route::MyTradesOffers => html! {<MyTradesOffersPage/>},
                 Route::MyPendingTrades => html! {<MyPendingTradesPage/>},
                 Route::MyDefinedTrades => html! {<MyDefinedTradesPage/>},
+                Route::CreateDiscount => html! {<CreateDiscountPage/>},
                 Route::MyCompletedTrades => html! {<MyCompletedTradesPage/>},
                 Route::PrivilegedActions => html! {<PrivilegedActionsPage/>},
                 Route::ChangeUserRole => html! {<ChangeUserRolePage/>},
                 Route::UnlockAccount => html!(<UnlockAccountPage/>), 
+                Route::SeeDiscounts => html!(<DiscountsPage/>), 
                 Route::SearchResults => html!(<SearchResultsPage/>),
                 Route::Notifications => html!(<NotificationsPage/>),
+                Route::AllowedDiscounts => html!(<AllowedDiscountsPage/>),
                 Route::AwaitingPricePublication => html!(<AwaitingPricePublicationPage/>),
                 //Route::PublicationTradeOffers => html!(<PublicationTradeOffersPage/>),
                 Route::Trueque { id } => html! { <TruequePage id={id}/>},
@@ -150,6 +171,9 @@ pub fn switch(routes: Route) -> Html {
                 Route::MyPreferences => html!{<EditPreferencesPage/>},
                 Route::ChangePasswordFromLogIn => html!{<ChangePasswordFromLogInPage/>},
                 Route::ChangePasswordFromProfile => html!{<ChangePasswordFromProfilePage/>},
+                //Route::PromotePublicationFromOffice => html!{<PromotePublicationFromOfficePage/>},
+                Route::PromotePublicationFromProfile => html!{<PromotePublicationFromProfilePage/>},
+                Route::PayPublicationPromotion => html!{<PayPublicationPromotionPage/>},
             }}
     </>}
 }
@@ -177,6 +201,7 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::MyTradesOffers => [false, true, true, true],
         Route::MyPendingTrades => [false, true, true, true],
         Route::MyDefinedTrades => [false, true, true, true],
+        Route::CreateDiscount => [false, false, false, true],
         Route::MyCompletedTrades => [false, true, true, true],
         Route::EditPersonalInfo => [false, true, true, true],
         // No registrado "puede acceder" pero la propia página lo redirige a la página de login con un mensaje especial
@@ -187,9 +212,11 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::PrivilegedActions => [false, false, true, true],
         Route::CreateOffice => [false, false, false, true],
         Route::DeleteOffice => [false, false, false, true],
+        Route::SeeDiscounts => [false, false, false, true],
         Route::UnlockAccount => [false, false, false, true],
         Route::ChangeUserRole => [false, false, false, true],
         Route::SearchResults => [true, true, true, true],
+        Route::AllowedDiscounts => [false, true, true, true],
         Route::SearchTrueques => [false, true, true, true],
         Route::NotFound => [true, true, true, true],
         Route::Notifications => [false, true, true, true],
@@ -206,6 +233,9 @@ pub fn privileged_actions_page(props: &RouteCheckPageProps) -> Html {
         Route::ChangePasswordFromLogIn => [true, false, false, false],
         Route::ChangePasswordFromProfile => [false, true, true, true],
         Route::EditarPublicacion { id: _ } => [false, true, true, true],
+        //Route::PromotePublicationFromOffice => [false, false, true, true],
+        Route::PromotePublicationFromProfile => [false, true, true, true],
+        Route::PayPublicationPromotion => [false, true, true, true],
     };
     let navigator = use_navigator().unwrap();
     use_effect(move || {

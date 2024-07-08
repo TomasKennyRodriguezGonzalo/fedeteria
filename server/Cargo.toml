@@ -23,5 +23,9 @@ futures = "0.3"
 lettre = "0.11.7"
 lettre_email = "0.9.4"
 rand = "0.8.5"
+mpago = { git = "https://github.com/vipago/mpago", branch = "main" }
+rust_decimal = "1.14"
+dotenvy = "*"
+
 
 datos_comunes = { path = "../datos_comunes" }

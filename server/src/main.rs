@@ -6,12 +6,19 @@ use axum::routing::post;
 use axum::Json;
 use axum::{body::Bytes, BoxError};
 use axum::{response::IntoResponse, routing::get, Router};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use futures::{Stream, TryStreamExt};
 use clap::Parser;
 use axum::debug_handler;
 use database::usuario::EstadoCuenta;
 use database::Database;
 use datos_comunes::*;
+use mpago::client::MercadoPagoClientBuilder;
+use mpago::payer::Payer;
+use mpago::payments::types::AdditionalInfo;
+use mpago::payments::PaymentCreateBuilder;
+use mpago::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 use tokio::fs::{self, File};
 use tokio::io::BufWriter;
 use tokio::net::TcpListener;
@@ -29,6 +36,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
+use mpago::payments::types::PaymentMethodId;
 
 use crate::mail::send_email;
 use crate::state::ServerState;
@@ -123,6 +131,12 @@ async fn main() {
         .route("/api/validar_cambio_contrasenia", post(validar_cambio_contrasenia))
         .route("/api/cambiar_contrasenia_login", post(cambiar_contrasenia_login))
         .route("/api/cambiar_contrasenia_perfil", post(cambiar_contrasenia_perfil))
+        .route("/api/crear_descuento", post(crear_descuento))
+        .route("/api/obtener_descuentos", post(obtener_descuentos))
+        .route("/api/eliminar_descuento", post(eliminar_descuento))
+        .route("/api/calificar_receptor", post(calificar_receptor))
+        .route("/api/calificar_ofertante", post(calificar_ofertante))
+        .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -459,7 +473,8 @@ Json(query): Json<QueryGetUserInfo>
             nombre_y_ap: usuario.nombre_y_apellido.clone(),
             email: usuario.email.clone(),
             nacimiento: usuario.nacimiento.clone(),
-            puntos: usuario.puntos
+            puntos: usuario.puntos,
+            promedio_calificaciones: state.db.calcular_promedio_calificaciones(query.dni),
         };
         Json(Some(response))
     } else {
@@ -735,38 +750,54 @@ async fn finalizar_trueque (
 ) -> Json<ResponseFinishTrade> {
     let mut state = state.write().await;
     let mensajes = state.db.finalizar_trueque(query);
-    if mensajes.is_empty() {    
-        return Json(ResponseFinishTrade {respuesta: false});
+    match mensajes{
+        Ok(mensajes) =>{
+            if mensajes.is_empty() {    
+                return Json(ResponseFinishTrade {respuesta: Ok(false)});
+            }
+            /* Contenido del Vec:
+            0 --> Nombre Receptor
+            1 --> Mail Receptor
+            2 --> Mensaje Receptor
+            3 --> Nombre Ofertante
+            4 --> Mail Ofertante
+            5 --> Mensaje Ofertante
+            */
+            let mensajes_c = mensajes.clone();
+            spawn(async move {
+                let mensajes = mensajes_c;
+                match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                        "Finalizacion de Trueque en Fedeteria".to_string(),
+                        mensajes.get(2).unwrap().clone()) {
+                        Ok(_) => log::info!("Mail enviado al receptor."),
+                        Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
+        
+            //envio mail al ofertante
+            spawn(async move {
+            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+                    "Finalizacion de Trueque en Fedeteria".to_string(),
+                    mensajes.get(5).unwrap().clone()) {
+                    Ok(_) => log::info!("Mail enviado al receptor."),
+                    Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
+            Json(ResponseFinishTrade {respuesta: Ok(true)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorInvalido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorInvalido)})
+        }
+        Err(ErrorEnConcretacion::DescuentoReceptorUtilizado) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteInvalido) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)})
+        }
+        Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado) =>{
+            Json(ResponseFinishTrade{respuesta:Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)})
+        }
     }
-    /* Contenido del Vec:
-    0 --> Nombre Receptor
-    1 --> Mail Receptor
-    2 --> Mensaje Receptor
-    3 --> Nombre Ofertante
-    4 --> Mail Ofertante
-    5 --> Mensaje Ofertante
-    */
-    let mensajes_c = mensajes.clone();
-    spawn_local(async move {
-        let mensajes = mensajes_c;
-        match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-                "Finalizacion de Trueque en Fedeteria".to_string(),
-                mensajes.get(2).unwrap().clone()) {
-                Ok(_) => log::info!("Mail enviado al receptor."),
-                Err(_) => log::error!("Error al enviar mail al receptor."),
-        }
-    });
-
-    //envio mail al ofertante
-    spawn_local(async move {
-    match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
-            "Finalizacion de Trueque en Fedeteria".to_string(),
-            mensajes.get(5).unwrap().clone()) {
-            Ok(_) => log::info!("Mail enviado al receptor."),
-            Err(_) => log::error!("Error al enviar mail al receptor."),
-        }
-    });
-    Json(ResponseFinishTrade {respuesta: true})
 }
 
 async fn preguntar( State(state): State<SharedState>,
@@ -900,3 +931,250 @@ async fn cambiar_contrasenia_perfil (
     let mut state = state.write().await;
     Json(ResponseCambioContrasenia{cambio: state.db.cambiar_contrasenia_perfil(query)})
 }
+
+
+async fn crear_descuento( State(state): State<SharedState>,
+Json(query): Json<QueryCreateDiscount>
+) -> Json<ResponseCreateDiscount>{
+    let mut state = state.write().await;
+    Json(ResponseCreateDiscount{ok : state.db.crear_descuento(query)})
+}
+
+async fn obtener_descuentos( State(state): State<SharedState>,
+Json(query): Json<QueryObtenerDescuentos>
+) -> Json<ResponseObtenerDescuentos>{
+    let mut state = state.write().await;
+    Json(ResponseObtenerDescuentos{descuentos : state.db.obtener_descuentos()})
+}
+
+async fn eliminar_descuento( State(state): State<SharedState>,
+Json(query): Json<QueryEliminarDescuento>
+) -> Json<ResponseEliminarDescuento>{
+    let mut state = state.write().await;
+    Json(ResponseEliminarDescuento{ok : state.db.eliminar_descuento(query)})
+}
+
+async fn obtener_descuentos_usuario( State(state): State<SharedState>,
+Json(query): Json<QueryGetUserDiscounts>
+) -> Json<ResponseGetUserDiscounts>{
+    let mut state = state.write().await;
+    Json(ResponseGetUserDiscounts{discounts : state.db.obtener_descuentos_usuario(query)})
+}
+
+async fn calificar_receptor( State(state): State<SharedState>,
+Json(query): Json<QueryCalificarReceptor>
+) -> Json<ResponseCalificarReceptor>{
+    let mut state = state.write().await;
+    Json(ResponseCalificarReceptor{ok : state.db.calificar_receptor(query)})
+}
+
+async fn calificar_ofertante( State(state): State<SharedState>,
+Json(query): Json<QueryCalificarOfertante>
+) -> Json<ResponseCalificarOfertante>{
+    let mut state = state.write().await;
+    Json(ResponseCalificarOfertante{ok : state.db.calificar_ofertante(query)})
+}
+
+
+
+
+
+async fn crear_pago(
+    State(state): State<Arc<SharedState>>,
+    Json(query): Json<QueryGetUserDiscounts>,
+) -> Json<Result<(), Box<dyn std::error::Error>>>{
+
+
+    let access_token = "TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+    let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+
+    let amount_in_ars: Decimal =
+        Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+
+    let naive_datetime =
+        NaiveDateTime::parse_from_str("2024-07-13 12:00:00", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+    let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+    let pago_result = PaymentCreateBuilder::create(
+        "Descripción del producto",
+        Payer {
+            email: "nico@mail.com".to_string(),
+            ..Default::default()
+        },
+        PaymentMethodId::Visa,
+        amount_in_ars,
+        Some(date_of_expiration),
+    )
+    .send(&mp_client)
+    .await;
+
+    match pago_result {
+        Ok(response) => {
+            println!("{:?}", response);
+            return Json(Ok(()));
+        }
+        Err(err) => {
+            panic!("Error al crear el pago: {:?}", err);
+        }
+    }
+
+}
+
+
+/*
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDateTime;
+    use chrono::Utc;
+    use rust_decimal::Decimal;
+    use mpago::payments::types::PaymentCreateOptions;
+    use mpago::client::MercadoPagoClientBuilder;
+    use mpago::payer::Payer;
+    use mpago::payments::types::PaymentMethodId;
+    use mpago::payments::PaymentCreateBuilder;
+
+    #[tokio::test]
+    async fn test_crear_pago() {
+        let access_token ="TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+        let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+
+        let amount_in_ars: Decimal =
+            Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+
+        let naive_datetime =
+            NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+                .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+        let pago_result = PaymentCreateBuilder::create(
+            "Descripción del producto",
+            Payer {
+                email: "nico@mail.com".to_string(),
+                ..Default::default()
+            },
+            PaymentMethodId::Visa,
+            amount_in_ars,
+            Some(date_of_expiration),
+        )
+        .send(&mp_client)
+        .await;
+
+        match pago_result {
+            Ok(response) => {
+                println!("{:?}", response)
+            }
+            Err(err) => {
+                panic!("Error al crear el pago: {:?}", err);
+            }
+        }
+    }
+
+
+    #[tokio::test]
+    async fn test_credenciales() {
+        let access_token ="TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948";
+        let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+        assert!(mp_client.check_credentials().await.is_ok());
+
+    }
+
+    #[cfg(test)]
+    pub fn get_test_payment_options() -> PaymentCreateOptions {
+
+        PaymentCreateOptions {
+            description: Some("Test".to_string()),
+            payer: Payer {
+                email: "nicolas@gmail.com".to_string(),
+                ..Default::default()
+            },
+            transaction_amount: Decimal::new(10, 0),
+            payment_method_id: PaymentMethodId::Pix,
+            token: Some("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948".to_string()),
+            installments: 1,
+            ..Default::default()
+        }
+    }
+
+    use mpago::client::MercadoPagoClient;
+    #[cfg(test)]
+    pub fn create_test_client() -> MercadoPagoClient {
+        dotenvy::dotenv().ok();
+
+        MercadoPagoClientBuilder::builder("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948").build()
+    }
+
+    #[tokio::test]
+    async fn payment_create() {
+        let mp_client = create_test_client();
+        let naive_datetime =
+        NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+
+
+        let mp_client = create_test_client();
+        let naive_datetime = NaiveDateTime::parse_from_str("2024-07-13 12:00:01", "%Y-%m-%d %H:%M:%S")
+            .expect("Error al parsear la fecha");
+        let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+    
+        let res = PaymentCreateBuilder::create(
+            "Descripción del producto",
+            get_test_payment_options().payer,
+            PaymentMethodId::Visa,
+            get_test_payment_options().transaction_amount,
+            Some(date_of_expiration),
+        )
+        .send(&mp_client)
+        .await;
+
+        println!("{res:?}");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+async fn crear_pago( State(state): State<SharedState>,
+Json(query): Json<QueryGetUserDiscounts>
+) -> Json<Result<(), Box<dyn std::error::Error>>> {
+    // Suponiendo que tienes la cantidad en f64 y necesitas convertirla a Decimal
+    let amount_in_brl: Decimal = Decimal::from_f64(200.0).expect("Error al convertir a Decimal");
+    
+    // Crear una fecha de expiración (por ejemplo, 7 días a partir de ahora)
+    let naive_datetime = NaiveDateTime::parse_from_str("2024-07-13 12:00:00", "%Y-%m-%d %H:%M:%S");
+    match naive_datetime{
+        Ok(naive_datetime) =>{
+            let date_of_expiration = Utc.from_utc_datetime(&naive_datetime).to_rfc3339();
+            
+            // Crear el cliente de MercadoPago (asegúrate de haber configurado correctamente tu access token)
+            let access_token = std::env::var("MERCADOPAGO_ACCESS_TOKEN").expect("MERCADOPAGO_ACCESS_TOKEN debe estar configurado");
+            let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+            
+            // Crear la solicitud de pago
+            let pago = mpago::payments::PaymentCreateBuilder(PaymentCreateOptions {
+                transaction_amount: amount_in_brl,
+                date_of_expiration: Some(date_of_expiration),
+                ..Default::default()
+            })
+            .send(&mp_client)
+            .await;
+        
+        Json(Ok(_))
+    }
+    Err(e)=>{   let error = io::Error::new(io::ErrorKind::Other, "Algo salió mal");
+    Json(Err(Box::new(error)))
+    
+                        }
+                    }
+                }
+*/

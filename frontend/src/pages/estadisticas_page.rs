@@ -1,3 +1,4 @@
+use crate::components::generic_button::GenericButton;
 use std::{cell::RefCell, rc::Rc};
 
 use chrono::{DateTime, Local, NaiveDate, TimeZone};
@@ -18,6 +19,7 @@ pub fn estadisticas_page() -> Html {
     let estadisticas_mostradas = use_state(|| {None});
     let lista_sucursales = use_state(|| vec![]);
 
+    let estadisticas_viejas = use_state(|| None);
 
     let role_state = use_state(|| None);
 
@@ -111,11 +113,16 @@ pub fn estadisticas_page() -> Html {
         calcular_estadisticas_c();
     });
 
+    let estadisticas_viejas_clone = estadisticas_viejas.clone();
+    let estadisticas_mostradas_c = estadisticas_mostradas.clone();
+    let update_stats = Callback::from(move|_|{
+        log::info!("ESTADISTICAS MOSTRADAS {:?}", (*estadisticas_mostradas_c).clone());
+        estadisticas_viejas_clone.set((*estadisticas_mostradas_c).clone());
+        log::info!("ESTADISTICAS VIEJAS {:?}", (*estadisticas_viejas_clone).clone());
+    });
+
     html!{
         <>
-            // <p>
-            // {format!("Hola!!!!, {dni:?}")}
-            // </p>
             <div>
                 <label> {"Desde esta fecha:"} </label>
             </div>
@@ -141,19 +148,18 @@ pub fn estadisticas_page() -> Html {
             }
 
             <br/>
-            if let Some(est) = (*estadisticas_mostradas).clone() {
-                <p> {crear_string_para_resp(&est)} </p>
-                <p> {format!("Cantidad de trueques finalizados: {}", est.cantidad_trueques_finalizados)} </p>
-                <p> {format!("Cantidad de trueques rechazados: {}", est.cantidad_trueques_rechazados)} </p>
-                <p> {format!("Cantidad de trueques total: {}", est.cantidad_trueques_rechazados_o_finalizados)} </p>
-                <p> {format!("Cantidad de trueques con ventas: {}", est.cantidad_trueques_con_ventas)} </p>
-                <p> {format!("Cantidad de trueques finalizados con ventas: {}", est.cantidad_trueques_finalizados_con_ventas)} </p>
-                <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est.pesos_trueques_finalizados)} </p>
-                <p> {format!("Cantidad de trueques rechazados con ventas: {}", est.cantidad_trueques_rechazados_con_ventas)} </p>
-                <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est.pesos_trueques_rechazados)} </p>
-                <p> {format!("Total recaudado por ventas: {}", est.pesos_trueques)} </p>
-            } else {
-                <p> {"Calculando..."} </p>
+            <GenericButton text="Aplicar Filtros" onclick_event={update_stats}/>
+            if let Some(est_v) = (*estadisticas_viejas).clone() {
+                <p> {crear_string_para_resp(&est_v)} </p>
+                <p> {format!("Cantidad de trueques finalizados: {}", est_v.cantidad_trueques_finalizados)} </p>
+                <p> {format!("Cantidad de trueques rechazados: {}", est_v.cantidad_trueques_rechazados)} </p>
+                <p> {format!("Cantidad de trueques total: {}", est_v.cantidad_trueques_rechazados_o_finalizados)} </p>
+                <p> {format!("Cantidad de trueques con ventas: {}", est_v.cantidad_trueques_con_ventas)} </p>
+                <p> {format!("Cantidad de trueques finalizados con ventas: {}", est_v.cantidad_trueques_finalizados_con_ventas)} </p>
+                <p> {format!("Pesos recaudados por ventas en trueques finalizados: {}", est_v.pesos_trueques_finalizados)} </p>
+                <p> {format!("Cantidad de trueques rechazados con ventas: {}", est_v.cantidad_trueques_rechazados_con_ventas)} </p>
+                <p> {format!("Pesos recaudados por ventas en trueques rechazados: {}", est_v.pesos_trueques_rechazados)} </p>
+                <p> {format!("Total recaudado por ventas: {}", est_v.pesos_trueques)} </p>
             }
         </>
     }

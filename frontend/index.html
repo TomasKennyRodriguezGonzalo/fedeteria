@@ -1171,6 +1171,23 @@
             justify-content: space-evenly;
         }
 
+        .finish-trade .sales-discounts {
+            display: flex;
+            flex-direction: row;
+            margin: 10px 0px;
+            justify-content: space-around;
+        }
+
+        .finish-trade .sales-discounts * {
+            margin: 0px 10px 0px 0px;
+        }
+
+        .finish-trade .operation-buttons {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
         /* --- question-answer --- */
 
         .question-answer-box .question-input, .answer-input {
@@ -1251,6 +1268,46 @@
             margin: 5px 2px;
         }
 
+        /* --- discount list --- */
+
+        .discount-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .discount-list .discount-item {
+            margin: 10px;
+            background: #0a271d;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .discount-list .discount-item > h1  {
+            background-color: beige;
+            border-radius: 10px;
+            padding: 2px 15px;
+            margin: 2px 0px;
+            color: black;
+        }
+
+        .discount-list .discount-item > button  {
+            margin: 5px 0px;
+        }
+
+        .discount-list {
+            background-color: #114232;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            margin: 0.4%;
+            margin-bottom: 1%;
+            padding: 10px;
+        }
+
+        .discount-list > * {
+            width: 80vw;
+        }
+        
     </style>
   </head>
   <body>loading...</body>

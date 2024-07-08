@@ -1,4 +1,4 @@
-use std::{collections::{HashMap, HashSet}, fs, path::Path};
+use std::{collections::{HashMap, HashSet}, fs, ops::Deref, path::Path};
 
 use chrono::{DateTime, Local, TimeZone};
 use date_component::date_component;
@@ -8,10 +8,19 @@ use serde::{Deserialize, Serialize};
 use rand::prelude::*;
 use tracing_subscriber::fmt::format;
 use crate::{hash_str, mail::send_email};
+use mpago::{client::MercadoPagoClientBuilder, payments::types::PaymentCreateOptions,payments::PaymentCreateBuilder};
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 
 use self::usuario::{EstadoCuenta, Usuario};
 
 pub mod usuario;
+
+
+
+
+
+
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Database {
@@ -28,6 +37,8 @@ pub struct Database {
     trueques: HashMap<usize, Trueque>,
 
     peticiones_cambio_contraseña: Vec<PeticionCambioContrasenia>,
+
+    descuentos:Vec<Descuento>,
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -418,6 +429,7 @@ impl Database {
 
         if let Some(publicacion) = publicacion {
             publicacion.precio = query.precio;
+            publicacion.pausada = false;
             self.guardar();  
             true
         } else {
@@ -452,6 +464,8 @@ impl Database {
                 valido: true,
                 ventas_ofertante:None,
                 ventas_receptor:None,
+                calificacion_ofertante:None,
+                calificacion_receptor:None,
             };
             let index = self.agregar_trueque(oferta);
 
@@ -547,22 +561,24 @@ impl Database {
         };
 
         for trueque in self.trueques.values() {
-            if let Some(fecha_trueque) = trueque.fecha_trueque {
-                if !fecha_entre(fecha_trueque) {continue;}
-                // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
-                if trueque.estado == EstadoTrueque::Finalizado {
-                    cantidad_trueques_finalizados += 1;
-                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
-                        cantidad_trueques_finalizados_con_ventas += 1;
+            if trueque.sucursal == query.id_sucursal || query.id_sucursal.is_none() {
+                if let Some(fecha_trueque) = trueque.fecha_trueque {
+                    if !fecha_entre(fecha_trueque) {continue;}
+                    // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
+                    if trueque.estado == EstadoTrueque::Finalizado {
+                        cantidad_trueques_finalizados += 1;
+                        if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                            cantidad_trueques_finalizados_con_ventas += 1;
+                        }
+                        pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                     }
-                    pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
-                }
-                if trueque.estado == EstadoTrueque::Rechazado {
-                    cantidad_trueques_rechazados += 1;
-                    if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
-                        cantidad_trueques_rechazados_con_ventas += 1;
+                    if trueque.estado == EstadoTrueque::Rechazado {
+                        cantidad_trueques_rechazados += 1;
+                        if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
+                            cantidad_trueques_rechazados_con_ventas += 1;
+                        }
+                        pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                     }
-                    pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
                 }
             }
         }
@@ -850,59 +866,116 @@ impl Database {
         respuesta
     }
     //puede concretarse o rechazarse
-    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Vec<String>{
-        //cambio el estado del trueque, guardo, y lo obtengo
+    pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Result<Vec<String>, ErrorEnConcretacion>{
+        log::info!("Query: {:?}", query);
+
+        //obtnego el trueque
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+
+        //verifico que este definido. De no ser asi (no debería pasar), salgo
         if trueque.estado != EstadoTrueque::Definido {
-            return vec![];
+            return Ok(vec![]);
         }
-        //actualizo la informacion del trueque
+
+        //actualizo la informacion del trueque y obtengo los datos necesarios para laburar
         trueque.estado = query.estado.clone();
         trueque.fecha_trueque = Some(Local::now());
-
-        //lo obtengo de vuelta por una cuestion de borrowing
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
-        trueque.ventas_ofertante = Some(query.ventas_ofertante);
-        trueque.ventas_receptor = Some(query.ventas_receptor);
+        let mut ventas_ofertante = Some(query.ventas_ofertante);
+        let mut ventas_receptor = Some(query.ventas_receptor);
+        let dni_receptor = trueque.receptor.0;
+        let dni_ofertante = trueque.oferta.0;
+        let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
+        let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
         
-        let trueque = self.trueques.get(&query.id_trueque).unwrap();
-        let ofertante = self.encontrar_dni(trueque.oferta.0).unwrap();
-        let receptor = self.encontrar_dni(trueque.receptor.0).unwrap();
-        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
-        //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
-        if (query.estado == EstadoTrueque::Finalizado) {
-            self.usuarios[ofertante].puntos += 1;
-            self.usuarios[receptor].puntos += 1;
-        }
-        else {
-            //cambio el booleano "en_trueque" de cada publicacion
-            for id_publicacion in trueque.get_publicaciones() {
-                self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+        //obtengo el trueque de vuelta por una cuestión de borrowing
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        
+        // Lógica que verifica que el usuario ofertante pueda aplicar el descuento
+        if let Some(codigo_descuento) = query.codigo_descuento_ofertante{
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
+                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                    if !(self.usuarios[index_ofertante].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                    }
+                } else {
+                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
+                }
+            } else {
+                return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
             }
         }
+        
+        // Lógica que verifica que el usuario receptor pueda aplicar el descuento
+        if let Some(codigo_descuento) = query.codigo_descuento_receptor {
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == codigo_descuento) {
+                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_receptor].puntos) && !descuento.esta_vencido() {
+                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                    if !(self.usuarios[index_receptor].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                        ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
+                    } else {
+                        return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                    }
+                } else {
+                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
+                }
+            } else {
+                return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
+            }
+        }
+
+        //aplico las ventas a los usuarios
+        trueque.ventas_ofertante = ventas_ofertante;
+        trueque.ventas_receptor = ventas_receptor;
+        
+        // Obtengo el trueque de vuelta por una cuestion de borrowing
+        //let trueque = self.trueques.get(&query.id_trueque).unwrap();
+
+        //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
+        //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
+        if query.estado == EstadoTrueque::Finalizado {
+            self.usuarios[index_ofertante].puntos += 1;
+            self.usuarios[index_receptor].puntos += 1;
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().intercambiada = true;
+            }
+        }
+        else {
+            //cambio el booleano "en_trueque" y "pausada" de cada publicacion
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+                self.publicaciones.get_mut(&id_publicacion).unwrap().pausada= false;
+            }
+        }
+
+        //guardo los cambios
         self.guardar();
-        let ofertante = &self.usuarios[ofertante];
-        let receptor = &self.usuarios[receptor];
-        //creo mail receptor
+
         let mail_receptor; 
         let mail_ofertante;
         if query.estado == EstadoTrueque::Finalizado {
+            //creo mail receptor
             mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
             //creo mail ofertante
             mail_ofertante = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+            self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_receptor].dni);
         }
         else {
+            //creo mail receptor
             mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    receptor.nombre_y_apellido, ofertante.nombre_y_apellido, ofertante.dni);
+            self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
             //creo mail ofertante
             mail_ofertante = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
-                    ofertante.nombre_y_apellido, receptor.nombre_y_apellido, receptor.dni);
+            self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_receptor].dni);
         }
         
+        // - Enviar notificaciones (puede incluir una opcion para calificar al usuario)
+
         //Creo un vec para pasarlo al main y enviarlo
         /* Contenido del Vec:
         0 --> Nombre Receptor
@@ -912,14 +985,16 @@ impl Database {
         4 --> Mail Ofertante
         5 --> Mensaje Ofertante
             */
+
+        log::info!("llegue hasta aca abajo");
         let mut contenidos_mensajes = Vec::new();
-        contenidos_mensajes.push(receptor.nombre_y_apellido.clone());
-        contenidos_mensajes.push(receptor.email.clone());
+        contenidos_mensajes.push(self.usuarios[index_receptor].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[index_receptor].email.clone());
         contenidos_mensajes.push(mail_receptor.clone());
-        contenidos_mensajes.push(ofertante.nombre_y_apellido.clone());
-        contenidos_mensajes.push(ofertante.email.clone());
+        contenidos_mensajes.push(self.usuarios[index_ofertante].nombre_y_apellido.clone());
+        contenidos_mensajes.push(self.usuarios[index_ofertante].email.clone());
         contenidos_mensajes.push(mail_ofertante.clone());
-        contenidos_mensajes
+        Ok(contenidos_mensajes)
     }
 
     pub fn preguntar(&mut self, query:QueryAskQuestion){
@@ -934,6 +1009,8 @@ impl Database {
         self.guardar();
     }
 
+
+
     pub fn responder(&mut self, query:QueryAnswerQuestion){
         let publicacion = self.publicaciones.get_mut(&query.id_publicacion);
         if let Some(publicacion) = publicacion{
@@ -942,8 +1019,8 @@ impl Database {
             }
         }
         self.guardar();
-    
     }
+    
     pub fn obtener_preferencias(&self, dni: u64) -> (Option<String>, Option<String>){
         self.usuarios.iter()
         .find(|u| u.dni == dni)
@@ -977,7 +1054,6 @@ impl Database {
         usuario.preferencias = nuevas_preferencias;
         self.guardar()
     }
-
 
     pub fn guardar_publicacion(&mut self, query:QueryAgregarAGuardados){
         let index = self.encontrar_dni(query.dni).unwrap();
@@ -1015,7 +1091,6 @@ impl Database {
                 return true
             }
         }
-
         false
     }
 
@@ -1113,6 +1188,116 @@ impl Database {
         }
         false
     }
+
+    pub fn crear_descuento(&mut self, query:QueryCreateDiscount)->Result<bool,ErrorCrearDescuento>{
+        if let Some (fecha) = query.fecha_exp{
+            //chequear si la fecha está despues
+            //chequear que no haya dos codigos iguales
+            if query.porcentaje > 1.0 && query.porcentaje < 0.0{
+                return Err(ErrorCrearDescuento::PorcentajeInvalido);
+            }
+            let nuevo_descuento = Descuento{
+                fecha_vencimiento : fecha,
+                porcentaje : query.porcentaje,
+                reintegro_maximo : query.reembolso_max,
+                nivel_minimo : query.nivel_min,
+                codigo : query.codigo_descuento,
+                vigente : true,
+            };
+            self.descuentos.push(nuevo_descuento);
+        }
+        self.guardar();
+
+        Ok(true)
+    }
+
+    pub fn obtener_descuentos(&self) -> Vec<Descuento>{
+        self.descuentos.clone()
+    }
+
+    pub fn eliminar_descuento(&mut self, query:QueryEliminarDescuento) -> bool{
+        let descuento = self.descuentos.get_mut(query.index);
+        if let Some(descuento) = descuento{
+            descuento.vigente = false;
+        }
+        self.descuentos.sort_by_key(|d| !d.vigente);
+        self.guardar();
+        true
+    }
+
+    pub fn obtener_descuentos_usuario(&self, query:QueryGetUserDiscounts)-> Vec<Descuento>{
+        let index = self.encontrar_dni(query.dni);
+        let usuario = self.usuarios.get(index.unwrap()).unwrap();
+        let descuentos: Vec<Descuento> = self.descuentos.iter()
+        .filter(|d| d.nivel_minimo <= (usuario.puntos / 5) as u64)
+        .cloned()
+        .collect();
+        descuentos
+    }
+
+    /*
+    pub fn enviar_dinero(amount:u64){
+        let access_token = std::env::var("TEST-6367565001372366-070612-1af9f8ba91b75e6d7ff8e4cc68c0c4d9-421443948").expect("MERCADOPAGO_ACCESS_TOKEN debe estar configurado");
+        let mp_client = MercadoPagoClientBuilder::builder(&access_token).build();
+        let float_value: f64 = 200.0;
+        let decimal_value = Decimal::from_f64(float_value).expect("Error al convertir a Decimal");
+        mpago::payments::PaymentCreateBuilder(PaymentCreateOptions {
+            transaction_amount: decimal_value,
+            date_of_expiration: Some(date_of_expiration),
+            ..Default::default()
+        })
+        .send(&mp_client)
+        .await?;
+    
+}
+*/
+
+
+//el ofertante califica al receptor
+pub fn calificar_ofertante(&mut self, query:QueryCalificarOfertante)-> bool{
+    let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+    if let Some(calificacion) = query.calificacion{
+        if calificacion > 10{
+            return false;
+        }
+        trueque.calificacion_receptor = Some(calificacion);
+    }
+    self.guardar();
+    true
+}
+
+//el receptor califica al ofertante
+pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
+    let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+    if let Some(calificacion) = query.calificacion{
+        if calificacion > 10{
+            return false;
+        }
+        trueque.calificacion_ofertante = Some(calificacion);
+    }
+    self.guardar();
+    true
+}
+
+    pub fn calcular_promedio_calificaciones (&self, dni: u64) -> f64 {
+        //obtengo las calificaciones del usuario (los trueques en los que no fue calificado, no se tienen en cuenta)
+        let calificaciones: Vec<u64> = self.trueques.iter()
+                            .filter(|(_, trueque)| trueque.usuario_participa(dni) && trueque.usuario_tiene_calificacion(dni))
+                            .map(|(_, trueque)| trueque.get_calificacion(dni).unwrap())
+                            .collect();
+
+        //si no hay calificaciones, salgo
+        if calificaciones.len() == 0 {
+            return 0.0;
+        }
+
+        //sumo las calificaciones y las divido por la cantidad que son
+        let calificiones_sumadas: u64 = calificaciones.iter().sum();
+        let promedio_calificaciones: f64 = (calificiones_sumadas / calificaciones.len() as u64) as f64;
+
+        return promedio_calificaciones;
+    }
+
 }
 
 fn get_database_por_defecto() -> Database {
@@ -1211,8 +1396,10 @@ fn get_database_por_defecto() -> Database {
             pausada: precio.is_none(),
             en_trueque:false,
             eliminada: false,
+            intercambiada: false,
             ofertas: vec![],
             preguntas: vec![],
+            promocionada_hasta: None,
         });
     }
 

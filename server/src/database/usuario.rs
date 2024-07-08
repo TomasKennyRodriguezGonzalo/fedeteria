@@ -17,6 +17,7 @@ pub struct Usuario {
     pub notificaciones: Vec<Notificacion>,
     pub puntos: i64,
     pub publicaciones_guardadas:Vec<usize>,
+    pub descuentos_utilizados: Vec<usize>, 
     pub preferencias: (Option<String>, Option<String>),
 }
 
@@ -78,7 +79,11 @@ impl Usuario {
             puntos : 0,
             publicaciones_guardadas:Vec::new(),
             preferencias: (None, None),
+            descuentos_utilizados:Vec::new(),
         }
+    }
+    pub fn sumar_punto(&mut self){
+        self.puntos+=1;
     }
 }
 
