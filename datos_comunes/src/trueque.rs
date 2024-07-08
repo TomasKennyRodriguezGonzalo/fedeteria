@@ -41,8 +41,9 @@ pub struct Trueque {
     //pub ganancias: u64,
     // Para el front end...
     pub valido: bool,
-    pub ventas_ofertante:Option<u64>,
-    pub ventas_receptor:Option<u64>,
+    // Ventas en bruto, Option<ventas tras aplicar descuento>
+    pub ventas_ofertante:Option<(u64, Option<u64>)>,
+    pub ventas_receptor:Option<(u64, Option<u64>)>,
     pub calificacion_ofertante:Option<u64>,
     pub calificacion_receptor:Option<u64>,
 }

@@ -126,7 +126,7 @@ pub struct ResponseGetUserInfo {
     pub nombre_y_ap: String,
     pub email: String,
     pub nacimiento: DateTime<Local>,
-    pub puntos: i64,
+    pub puntos: u64,
     pub promedio_calificaciones: f64,
 }
 

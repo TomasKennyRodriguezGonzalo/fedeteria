@@ -97,7 +97,6 @@ async fn main() {
         .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
         .route("/api/cambiar_rol_usuario", post(cambiar_rol_usuario))
         .route("/api/datos_publicacion", get(get_datos_publicacion))
-        .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .route("/api/cambiar_usuario", post(cambiar_usuario))
         .route("/api/alternar_pausa_publicacion", post(alternar_pausa_publicacion))
         .route("/api/obtener_publicaciones", post(obtener_publicaciones))
@@ -138,6 +137,7 @@ async fn main() {
         .route("/api/calificar_ofertante", post(calificar_ofertante))
         .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
         .route("/api/pagar", post(pagar))
+        .nest_service("/publication_images", ServeDir::new("db/imgs"))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {

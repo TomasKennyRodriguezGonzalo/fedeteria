@@ -14,12 +14,12 @@ pub struct DatosDeUsuario {
     pub nombre_completo: String,
     pub email: String,
     pub nacimiento: DateTime<Local>,
-    pub puntos: i64,
+    pub puntos: u64,
     pub promedio_calificaciones: f64,
 }
 
 impl DatosDeUsuario {
-    pub fn new(nombre_completo: String, email: String, nacimiento: DateTime<Local>, puntos: i64, promedio_calificaciones: f64) -> DatosDeUsuario {
+    pub fn new(nombre_completo: String, email: String, nacimiento: DateTime<Local>, puntos: u64, promedio_calificaciones: f64) -> DatosDeUsuario {
         DatosDeUsuario {nombre_completo, email, nacimiento, puntos, promedio_calificaciones}
     }
 }

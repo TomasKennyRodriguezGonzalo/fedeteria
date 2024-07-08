@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, HashSet}, fs, ops::Deref, path::Path};
 
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, Days, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
 use log::info;
@@ -643,15 +643,9 @@ impl Database {
                 self.publicaciones.get_mut(publi1).unwrap().pausada = true;
                 self.publicaciones.get_mut(publi1).unwrap().en_trueque = true;
             }
-            else {
-                log::info!("No hay publicacion 1");
-            }
             if let Some(publi2) = trueque.oferta.1.get(1) {
                 self.publicaciones.get_mut(publi2).unwrap().pausada = true;
                 self.publicaciones.get_mut(publi2).unwrap().en_trueque = true;
-            }
-            else {
-                log::info!("No hay publicacion 2");
             }
             trueque.estado = EstadoTrueque::Pendiente;
             for publicacion in trueque.get_publicaciones() {
@@ -892,6 +886,7 @@ impl Database {
         log::info!("RESPUESTA: {:?}", respuesta);
         respuesta
     }
+
     //puede concretarse o rechazarse
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Result<Vec<String>, ErrorEnConcretacion>{
         log::info!("Query: {:?}", query);
@@ -907,18 +902,26 @@ impl Database {
         //actualizo la informacion del trueque y obtengo los datos necesarios para laburar
         trueque.estado = query.estado.clone();
         trueque.fecha_trueque = Some(Local::now());
-        let mut ventas_ofertante = Some(query.ventas_ofertante);
-        let mut ventas_receptor = Some(query.ventas_receptor);
+        let mut ventas_ofertante = Some((query.ventas_ofertante, None));
+        let mut ventas_receptor = Some((query.ventas_receptor, None));
+        if query.ventas_receptor == 0 {
+            ventas_ofertante = None;
+        }
+        if query.ventas_receptor == 0 {
+            ventas_receptor = None;
+        }
         let dni_receptor = trueque.receptor.0;
         let dni_ofertante = trueque.oferta.0;
         let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
         let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
+        let descuento_utilizado_por_ofertante = None;
+        let descuento_utilizado_por_receptor = None;
         
         //obtengo el trueque de vuelta por una cuestión de borrowing
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
         // Lógica que verifica que el usuario ofertante pueda aplicar el descuento
-        if let Some(codigo_descuento) = query.codigo_descuento_ofertante{
+        if let Some(codigo_descuento) = query.codigo_descuento_ofertante {
             if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
                 if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos) && !descuento.esta_vencido() {
                     let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
@@ -956,6 +959,12 @@ impl Database {
         //aplico las ventas a los usuarios
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
+        if let Some(id_descuento) = descuento_utilizado_por_ofertante {
+            self.usuarios[index_ofertante].descuentos_utilizados.push(id_descuento);
+        }
+        if let Some(id_descuento) = descuento_utilizado_por_receptor {
+            self.usuarios[index_receptor].descuentos_utilizados.push(id_descuento);
+        }
         
         // Obtengo el trueque de vuelta por una cuestion de borrowing
         //let trueque = self.trueques.get(&query.id_trueque).unwrap();
@@ -1390,37 +1399,6 @@ fn get_database_por_defecto() -> Database {
         (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
 
-    /*
-    pub dni_titular: u64,
-    pub nombre_titular: String,
-    pub numero_tarjeta: u64,
-    pub codigo_seguridad: u64,
-    pub anio_caducidad: u64,
-    pub mes_caducidad: u64,
-    pub monto: i64,*/
-    let tarjetas  = vec![
-        Tarjeta {
-            dni_titular: 4,
-            nombre_titular: "Delfina".to_string(), 
-            numero_tarjeta: 12345678910 as u64, 
-            codigo_seguridad: 123, 
-            anio_caducidad: 2027, 
-            mes_caducidad: 5, 
-            monto: 6000
-        },
-        Tarjeta {
-            dni_titular: 5, 
-            nombre_titular: "Esteban".to_string(), 
-            numero_tarjeta: 10987654321 as u64, 
-            codigo_seguridad: 321, 
-            anio_caducidad: 2029, 
-            mes_caducidad: 9, 
-            monto: 10000
-        },
-    ];
-
-    db.tarjetas = tarjetas;
-
     // Ofertas para agregar
     // (id_oferta, nombre_publicaciones_ofertadas, nombre_publicacion_pedida)
     // el id se pone para que sea más fácil entender los siguientes datos y asegurarse que están bien
@@ -1441,14 +1419,65 @@ fn get_database_por_defecto() -> Database {
         ("Curita", 4, "Me lastimé me la prestas? :(", Some("hablame al mail")),
     ];
 
+    // publicaciones promocionadas...
     let promocionadas = [
         "Heladera", "Sierra Grande", "Curita"
     ];
 
-    // let ofertas_aceptadas = [
-    //     0
-    // ];
+    // las ofertas definidas anteriormente se aceptan y quedan en estado pendiente
+    let ofertas_aceptadas = [
+        0
+    ];
 
+    // las ofertas aceptadas anteriormente se definen con una fecha, a las 13:00, y sucursal
+    // (id_trueque, dias_desde_hoy, nombre_sucural)
+    // (si el trueque despues queda como ya finalizado, tal vez conviene que los dias sean en negativo
+    // así queda como que fue en el pasado)
+    let trueques_definidos = [
+        (0, -5, "La Plata 1 y 50"),
+    ];
+
+    // (codigo, porcentaje, reembolso_max, nivel_min, Option<offset_dias>) 
+    let descuentos = [
+        ("N4VIDAD_2024", 0.2, 5000, 5, Some(31)),
+    ];
+
+
+    // las personas van y se finaliza o rechaza el trueque, opcionalmente con ventas y codigo de descuento
+    // (id_trueque, es_finalizado, )
+    // es_finalizado: true si fue finalizado, si fue rechazado entonces false
+    let trueques_finalizados_o_rechazados = [
+        
+    ];
+
+    
+    let tarjetas  = vec![
+        Tarjeta {
+            dni_titular: 4,
+            nombre_titular: "Delfina".to_string(), 
+            numero_tarjeta: 12345678910, 
+            codigo_seguridad: 123, 
+            anio_caducidad: 2027, 
+            mes_caducidad: 5, 
+            monto: 6000
+        },
+        Tarjeta {
+            dni_titular: 5, 
+            nombre_titular: "Esteban".to_string(), 
+            numero_tarjeta: 10987654321, 
+            codigo_seguridad: 321, 
+            anio_caducidad: 2029, 
+            mes_caducidad: 9, 
+            monto: 10000
+        },
+    ];
+
+    
+    
+    
+    // Ahora todos estos vectores se cargan en la base de datos
+
+    db.tarjetas = tarjetas;
     
     for sucursal in sucursales {
         db.agregar_sucursal(QueryAddOffice { office_to_add: sucursal.to_string() });
@@ -1523,7 +1552,7 @@ fn get_database_por_defecto() -> Database {
     for nombre_publicacion in promocionadas {
         let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
         let mut fecha = Local::now();
-        fecha = fecha.checked_add_days(chrono::Days::new(100)).unwrap();
+        fecha = fecha.checked_add_days(Days::new(100)).unwrap();
         db.promocionar_TEMP(id_publicacion, fecha);
     }
 
@@ -1538,6 +1567,53 @@ fn get_database_por_defecto() -> Database {
         let query = QueryCrearOferta { 
             dni_ofertante, publicaciones_ofertadas, dni_receptor, publicacion_receptora };
         assert_eq!(db.crear_oferta(query), Some(id));
+    }
+
+    for (codigo_descuento, porcentaje, reembolso_max, nivel_min, offset_dias) in descuentos {
+        let codigo_descuento = codigo_descuento.to_string();
+        let fecha_exp = offset_dias.map(|o: i64| {
+            if o >= 0 {
+                Local::now().checked_add_days(Days::new(o as u64)).unwrap()
+            } else {
+                Local::now().checked_sub_days(Days::new((-o) as u64)).unwrap()
+            }
+        });
+        let query = QueryCreateDiscount { codigo_descuento, porcentaje, reembolso_max, nivel_min, fecha_exp };
+        db.crear_descuento(query).unwrap();
+    }
+    
+    for oferta_aceptada in ofertas_aceptadas {
+        assert!(db.aceptar_oferta(oferta_aceptada));
+    }
+
+    for (id, dias_desde_hoy, nombre_sucursal) in trueques_definidos {
+        let fecha = {
+            if dias_desde_hoy >= 0 {
+                Local::now().checked_add_days(Days::new(dias_desde_hoy as u64)).unwrap()
+            } else {
+                Local::now().checked_sub_days(Days::new((-dias_desde_hoy) as u64)).unwrap()
+            }
+        };
+        let sucursal = db.obtener_sucursales_activas().iter().find(|s| s.nombre == nombre_sucursal).unwrap().id;
+        let query = QueryCambiarTruequeADefinido {
+            id,
+            sucursal,
+            fecha,
+            hora: "13".to_string(),
+            minutos: "0".to_string() };
+        db.cambiar_trueque_a_definido(query);
+    }
+
+    for a in trueques_finalizados_o_rechazados {
+        let query = QueryFinishTrade { 
+            id_trueque,
+            estado,
+            ventas_ofertante,
+            ventas_receptor,
+            codigo_descuento_ofertante,
+            codigo_descuento_receptor
+        };
+        db.finalizar_trueque(query);
     }
 
     db

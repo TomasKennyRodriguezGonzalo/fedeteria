@@ -13,25 +13,23 @@ pub struct Descuento{
 }
 
 impl Descuento{
-    pub fn aplicar_descuento(&self, dinero:u64)->u64{
-        let dinero_porcentaje = dinero as f64 * self.porcentaje;
-        if dinero_porcentaje >= self.reintegro_maximo as f64{
-            let dinero_descontado = dinero-self.reintegro_maximo;
-            return dinero_descontado;
-        }
-        dinero - ((dinero as f64) * self.porcentaje).round() as u64
+    pub fn aplicar_descuento(&self, dinero: u64) -> u64{
+        assert!(self.porcentaje > 0.0 && self.porcentaje <= 1.0);
+        let dinero_porcentaje = (dinero as f64 * self.porcentaje).ceil() as u64;
+        let descuento = dinero_porcentaje.min(self.reintegro_maximo);
+        dinero - descuento
     }
 
-    pub fn alcanza_nivel(&self, cant_trueques:i64)->bool{
-        let nivel = (cant_trueques as f32 / 5.0) as u64;
-        if nivel >= self.nivel_minimo{
+    pub fn alcanza_nivel(&self, cant_trueques: u64) -> bool{
+        let nivel = cant_trueques / 5;
+        if nivel >= self.nivel_minimo {
             return true;
         }
         false
     }
 
     pub fn esta_vencido(&self) -> bool {
-        return Local::now() >= self.fecha_vencimiento 
+        Local::now() > self.fecha_vencimiento 
     }
 }
 
