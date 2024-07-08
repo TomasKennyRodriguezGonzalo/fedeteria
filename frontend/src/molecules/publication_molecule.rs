@@ -457,7 +457,6 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                     </div> 
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
-                    <div class="text">
                     if publicacion.dni_usuario != dni.unwrap() {
                         <Link<Route, DniURLQuery> to={Route::Profile} query={
                             DniURLQuery {
@@ -465,6 +464,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                             }
                         }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>
                     }
+                    <div class="text">
                     // <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{

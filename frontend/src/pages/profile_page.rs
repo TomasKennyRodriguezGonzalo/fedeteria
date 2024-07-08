@@ -96,6 +96,7 @@ pub fn profile_page() -> Html {
                 <h2 class="information-text">{"Promedio de calificaciones: "} {format!("{:.1}", user_state.promedio_calificaciones)}</h2>
                 if informacion_propia {
                     <h2 class="information-text">{"Puntos: "} {user_state.puntos}</h2>
+                    <h1 class="information-text">{"Nivel: "}{user_state.puntos / 5}</h1>
                 }
             </div>
         <div class="profile-actions-box">

@@ -541,8 +541,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
         });
     });
 
-
-
     let sucursal = (&*sucursal_state).clone();
 
     html! {
@@ -552,16 +550,16 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         {
                             match trueque.estado {
                                 datos_comunes::EstadoTrueque::Oferta => html!{  
-                                        <h1 class="title">{"Oferta"}</h1>    
+                                    <h1 class="title">{"Oferta"}</h1>    
                                 },
                                 datos_comunes::EstadoTrueque::Pendiente => html! {   
-                                        <h1 class="title">{"Trueque Pendiente"}</h1>
+                                    <h1 class="title">{"Trueque Pendiente"}</h1>
                                 },
                                 datos_comunes::EstadoTrueque::Definido => html! {  
-                                        <h1 class="title">{"Trueque Definido"}</h1>
+                                    <h1 class="title">{"Trueque Definido"}</h1>
                                 },
                                 datos_comunes::EstadoTrueque::Finalizado => html! {  
-                                        <h1 class="title">{"Trueque Finalizado"}</h1>
+                                    <h1 class="title">{"Trueque Finalizado"}</h1>
                                 },
                                 datos_comunes::EstadoTrueque::Rechazado => html! {  
                                     <h1 class="title">{"Trueque Rechazado"}</h1>
@@ -574,6 +572,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                         <div class="publications-container">
                             <div class="publications">
                             <h1>{format!("{}", (&*ofertante_username))}</h1>
+                            <h2>{"Ofertante"}</h2>
                             <h2>{"ofrece:"}</h2>
                                 <ul>
                                     <li><PublicationThumbnail id={trueque.oferta.1.get(0).unwrap()}/></li>
@@ -588,6 +587,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                             </div>
                             <div class="publications">
                                 <h1>{format!("{}", (&*receptor_username))}</h1>
+                                <h2>{"Receptor"}</h2>
                                 <h2>{"ofrece:"}</h2>
                                 <ul>
                                     <li><PublicationThumbnail id={trueque.receptor.1}/></li>

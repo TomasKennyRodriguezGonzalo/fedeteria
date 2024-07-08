@@ -140,25 +140,19 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
     });
 
     html!(
-        <div> //pagos box
-            <h1>{"Seccion pagos Fedeteria"}</h1>
-            <br/>
+        <div class="pay-promotion-section"> //pagos box
+            <h1 class="title">{"Seccion pagos Fedeteria"}</h1>
             <h2>{"Todos los datos ingresados deben coincidir con una tarjeta existente y vigente, de lo contrario, no se realizará la transacción"}</h2>
-            <br/>
             <h2>{format!("Monto a pagar: ${}", query.precio)}</h2>
-            <div class="edit-personal-info-box">
+            <div class="data-inputs">
                 <h2>{"Ingrese DNi del titular de la tarjeta"}</h2>
                 <DniInputField dni = "DNI" tipo = "number" handle_on_change = {dni_onchange} />
-                <br/>
                 <h2>{"Ingrese el nombre del titular de la tarjeta, tal cual se indica en la tarjeta"}</h2>
                 <CheckedInputField name="Nombre Titular" placeholder="Nombre Titular" tipo="text" on_change={titular_name_onchange}/>
-                <br/>
                 <h2>{"Ingrese el número de la tarjeta"}</h2>
                 <DniInputField dni = "Numero Tarjeta" tipo = "number" handle_on_change = {card_number_onchange} />
-                <br/>
                 <h2>{"Ingrese el código de seguridad de la tarjeta"}</h2>
                 <DniInputField dni = "Codigo de Seguridad" tipo = "number" handle_on_change = {card_security_code_onchange} />
-                <br/>
                 <h2>{"Ingrese la fecha de caducidad de la tarjeta"}</h2>
                 <h3>{"Año"}</h3>
                 <DniInputField dni = "Anio" tipo = "number" handle_on_change = {anio_onchange} />
