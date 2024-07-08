@@ -39,6 +39,8 @@ pub struct Database {
     peticiones_cambio_contraseña: Vec<PeticionCambioContrasenia>,
 
     descuentos:Vec<Descuento>,
+
+    tarjetas: Vec<Tarjeta>
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -1250,6 +1252,32 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
         return promedio_calificaciones;
     }
 
+    pub fn pagar_promocion (&mut self, query: QueryPagarPromocion) -> bool {
+        //busco la tarjeta
+        let hay_coincidencia = self.tarjetas.iter()
+                        .position(|tarjeta_vec| tarjeta_vec == &query.tarjeta);
+
+        //si la encontre, hago las verificaciones necesarias, sino, salgo
+        if let Some(id_tarjeta) = hay_coincidencia {
+            
+            //si no tiene fondos suficientes, salgo
+            if (self.tarjetas[id_tarjeta].monto - query.precio as i64) >= 0 {
+
+                //actualizo el monto
+                self.tarjetas[id_tarjeta].monto -= query.precio as i64;
+
+                //promociono las publicaciones
+                for publicacion in query.publicaciones {
+                    self.publicaciones.get_mut(&publicacion).unwrap().promocionada_hasta = Some(query.fecha_limite_promocion);
+                }
+                self.guardar();
+
+                return true;
+            } 
+            return false;
+        }
+        false
+    }
 }
 
 fn get_database_por_defecto() -> Database {
@@ -1288,6 +1316,37 @@ fn get_database_por_defecto() -> Database {
         (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
         (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
+
+    /*
+    pub dni_titular: u64,
+    pub nombre_titular: String,
+    pub numero_tarjeta: u64,
+    pub codigo_seguridad: u64,
+    pub anio_caducidad: u64,
+    pub mes_caducidad: u64,
+    pub monto: i64,*/
+    let tarjetas  = vec![
+        Tarjeta {
+            dni_titular: 4,
+            nombre_titular: "Delfina".to_string(), 
+            numero_tarjeta: 12345678910 as usize, 
+            codigo_seguridad: 123, 
+            anio_caducidad: 2027, 
+            mes_caducidad: 5, 
+            monto: 6000
+        },
+        Tarjeta {
+            dni_titular: 5, 
+            nombre_titular: "Esteban".to_string(), 
+            numero_tarjeta: 10987654321 as usize, 
+            codigo_seguridad: 321, 
+            anio_caducidad: 2029, 
+            mes_caducidad: 9, 
+            monto: 10000
+        },
+    ];
+
+    db.tarjetas = tarjetas;
     
     for sucursal in sucursales {
         db.agregar_sucursal(QueryAddOffice { office_to_add: sucursal.to_string() });

@@ -136,6 +136,7 @@ async fn main() {
         .route("/api/calificar_receptor", post(calificar_receptor))
         .route("/api/calificar_ofertante", post(calificar_ofertante))
         .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
+        .route("/api/pagar", post(pagar))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -918,6 +919,12 @@ Json(query): Json<QueryCalificarOfertante>
     Json(ResponseCalificarOfertante{ok : state.db.calificar_ofertante(query)})
 }
 
+async fn pagar( State(state): State<SharedState>,
+Json(query): Json<QueryPagarPromocion>
+) -> Json<ResponsePagarPromocion>{
+    let mut state = state.write().await;
+    Json(ResponsePagarPromocion{pago : state.db.pagar_promocion(query)})
+}
 
 
 
