@@ -1,5 +1,6 @@
 use std::{collections::{HashMap, HashSet}, fs, ops::Deref, path::Path};
 
+use axum::Error;
 use chrono::{DateTime, Days, Local, TimeZone};
 use date_component::date_component;
 use datos_comunes::*;
@@ -923,33 +924,50 @@ impl Database {
         // Lógica que verifica que el usuario ofertante pueda aplicar el descuento
         if let Some(codigo_descuento) = query.codigo_descuento_ofertante {
             if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
-                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos) && !descuento.esta_vencido() {
-                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
-                    if !(self.usuarios[index_ofertante].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                        ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
-                    } else {
-                        return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
-                    }
+                if descuento.vigente{
+                    if descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos){
+                        let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                        if !(self.usuarios[index_ofertante].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                            if !descuento.esta_vencido() {
+                                ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
+                                self.usuarios[index_ofertante].descuentos_utilizados.push(index_descuento_ingresado.unwrap());
+                            } else{
+                                return Err(ErrorEnConcretacion::DescuentoOfertanteVencido);
+                            }
+                        } else {
+                            return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
+                        }
+                    } else{
+                        return Err(ErrorEnConcretacion::OfertanteNivelInsuficiente);
+                    } 
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
+                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido);
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
             }
         }
-        
-        // Lógica que verifica que el usuario receptor pueda aplicar el descuento
-        if let Some(codigo_descuento) = query.codigo_descuento_receptor {
-            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo == codigo_descuento) {
-                if descuento.vigente && descuento.alcanza_nivel(self.usuarios[index_receptor].puntos) && !descuento.esta_vencido() {
-                    let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
-                    if !(self.usuarios[index_receptor].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                        ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
-                    } else {
-                        return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
-                    }
+         // Lógica que verifica que el usuario receptor pueda aplicar el descuento
+        if let Some(codigo_descuento) = query.codigo_descuento_receptor{
+            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
+                if descuento.vigente{
+                    if descuento.alcanza_nivel(self.usuarios[index_receptor].puntos){
+                        let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
+                        if !(self.usuarios[index_receptor].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
+                            if !descuento.esta_vencido() {
+                                ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
+                                self.usuarios[index_receptor].descuentos_utilizados.push(index_descuento_ingresado.unwrap());
+                            } else{
+                                return Err(ErrorEnConcretacion::DescuentoReceptorVencido);
+                            }
+                        } else {
+                            return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
+                        }
+                    } else{
+                        return Err(ErrorEnConcretacion::ReceptorNivelInsuficiente);
+                    } 
                 } else {
-                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
+                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido);
                 }
             } else {
                 return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
@@ -986,7 +1004,12 @@ impl Database {
             }
         }
 
-        //guardo los cambios
+        // Enviamos notificaciones para la calificacion
+        let url = "/trueque/".to_string() + &(query.id_trueque).to_string();
+        self.enviar_notificacion(index_ofertante, "Califica tu trueque!".to_string(), "Enhorabuena! Terminaste tu trueque, puntuá a la persona con la que intercambiaste haciendo click aqui.".to_string(), (url).clone());
+        self.enviar_notificacion(index_receptor, "Califica tu trueque!".to_string(), "Enhorabuena! Terminaste tu trueque, puntuá a la persona con la que intercambiaste haciendo click aqui.".to_string(), url);
+
+        // Enviamos mails
         self.guardar();
 
         let mail_receptor; 
@@ -1030,6 +1053,10 @@ impl Database {
         contenidos_mensajes.push(self.usuarios[index_ofertante].nombre_y_apellido.clone());
         contenidos_mensajes.push(self.usuarios[index_ofertante].email.clone());
         contenidos_mensajes.push(mail_ofertante.clone());
+        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        log::info!("Trueque: {:?}", trueque);
+        trueque.estado = query.estado.clone();
+        self.guardar();
         Ok(contenidos_mensajes)
     }
 
@@ -1038,6 +1065,10 @@ impl Database {
         if let Some(publicacion) = publicacion{
             let pregunta = PregYRta {dni_preguntante : query.dni_preguntante, pregunta:query.pregunta, respuesta:None};
             publicacion.preguntas.push(pregunta);
+            let dni_duenio = publicacion.dni_usuario;
+            let indice_usuario_receptor = self.encontrar_dni(dni_duenio);
+            let url = "/publicacion/".to_string() + &(query.id_publicacion).to_string();
+            self.enviar_notificacion(indice_usuario_receptor.unwrap(), "Nueva Pregunta".to_string(), "Parece que alguien tiene dudas sobre tu publicación. Cliquea aquí para contestarle".to_string(), url);
             self.guardar();
         }else{
             log::error!("error al buscar la publicacion (no deberia pasar)");
@@ -1050,8 +1081,12 @@ impl Database {
     pub fn responder(&mut self, query:QueryAnswerQuestion){
         let publicacion = self.publicaciones.get_mut(&query.id_publicacion);
         if let Some(publicacion) = publicacion{
-            if let Some(pregunta)=publicacion.preguntas.get_mut(query.indice_pregunta){
+            if let Some(pregunta) = publicacion.preguntas.get_mut(query.indice_pregunta){
                 pregunta.respuesta = Some(query.respuesta);
+                let dni = pregunta.dni_preguntante;
+                let indice_usuario_receptor = self.encontrar_dni(dni).clone().unwrap();
+                let url = "/publicacion/".to_string() + &(query.id_publicacion).to_string();
+                self.enviar_notificacion(indice_usuario_receptor, "Respuesta recibida!".to_string(), "Han respondido tu pregunta. Cliquea para ver que te dijeron.".to_string(), (url).clone());
             }
         }
         self.guardar();
@@ -1225,13 +1260,8 @@ impl Database {
         false
     }
 
-    pub fn crear_descuento(&mut self, query:QueryCreateDiscount)->Result<bool,ErrorCrearDescuento>{
+    pub fn crear_descuento(&mut self, query:QueryCreateDiscount)->bool{
         if let Some (fecha) = query.fecha_exp{
-            //chequear si la fecha está despues
-            //chequear que no haya dos codigos iguales
-            if query.porcentaje > 1.0 || query.porcentaje < 0.0{
-                return Err(ErrorCrearDescuento::PorcentajeInvalido);
-            }
             let nuevo_descuento = Descuento{
                 fecha_vencimiento : fecha,
                 porcentaje : query.porcentaje,
@@ -1241,14 +1271,20 @@ impl Database {
                 vigente : true,
             };
             self.descuentos.push(nuevo_descuento);
+            for u in (self.usuarios).clone(){
+                if u.puntos >= query.nivel_min as i64{
+                    let indice_usuario_receptor = self.encontrar_dni(u.dni).unwrap();
+                    self.enviar_notificacion(indice_usuario_receptor, "Nuevo Descuento Disponible!".to_string(), "un nuevo descuento se encuentra disponible".to_string(), "/ver-descuentos-usuario".to_string());
+                }
+            }
         }
         self.guardar();
 
-        Ok(true)
+        true
     }
 
-    pub fn obtener_descuentos(&self) -> Vec<Descuento>{
-        self.descuentos.clone()
+    pub fn obtener_descuentos(&self) -> Vec<(usize, Descuento)>{
+        self.descuentos.iter().enumerate().map(|d| (d.0, d.1.clone())).collect::<Vec<(usize, Descuento)>>().clone()
     }
 
     pub fn eliminar_descuento(&mut self, query:QueryEliminarDescuento) -> bool{
@@ -1256,7 +1292,6 @@ impl Database {
         if let Some(descuento) = descuento{
             descuento.vigente = false;
         }
-        self.descuentos.sort_by_key(|d| !d.vigente);
         self.guardar();
         true
     }
@@ -1265,7 +1300,7 @@ impl Database {
         let index = self.encontrar_dni(query.dni);
         let usuario = self.usuarios.get(index.unwrap()).unwrap();
         let descuentos: Vec<Descuento> = self.descuentos.iter()
-        .filter(|d| d.nivel_minimo <= (usuario.puntos / 5) as u64)
+        .filter(|d| d.nivel_minimo <= (usuario.puntos / 5) as u64 && !d.esta_vencido() && d.vigente)
         .cloned()
         .collect();
         descuentos

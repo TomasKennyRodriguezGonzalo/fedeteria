@@ -432,9 +432,6 @@ pub fn publication_molecule(real_props : &Props) -> Html {
         }
     });
 
-
-
-
     html!{
         <div class="publication-box">
             if let Some(publicacion) = &*datos_publicacion {
@@ -505,19 +502,21 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>
                     </div>
                     </div>
-                if !publicacion.eliminada {
+                if !publicacion.eliminada{
+                    if publicacion.precio.is_some() {
                     // Seccion de propuesta de oferta
-                    <div class="publication-selector-container">
-                        if publicacion.dni_usuario != dni.clone().unwrap() {
-                            if publicacion.precio.is_some() && !publicacion.intercambiada {
-                                <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                        <div class="publication-selector-container">
+                            if publicacion.dni_usuario != dni.clone().unwrap() {
+                                if publicacion.precio.is_some() && !publicacion.intercambiada {
+                                    <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
+                                }
+                                if *show_selector_state { 
+                                    <GenericButton text="X" onclick_event={hide_selector.clone()}/>
+                                    <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
+                                }
                             }
-                            if *show_selector_state { 
-                                <GenericButton text="X" onclick_event={hide_selector.clone()}/>
-                                <PublicationSelectorMolecule price={publicacion.precio.unwrap()} confirmed={create_offer} rejected={hide_selector}/>
-                            }
-                        }
-                    </div>
+                        </div>
+                    }
                     // Seccion de moderacion de publicacion propia
                     if publicacion.dni_usuario == dni.clone().unwrap() {
                     <div class="moderation-buttons">
