@@ -1363,15 +1363,15 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
                             .collect();
 
         //si no hay calificaciones, salgo
-        if calificaciones.len() == 0 {
+        if calificaciones.is_empty() {
             return 0.0;
         }
 
         //sumo las calificaciones y las divido por la cantidad que son
         let calificiones_sumadas: u64 = calificaciones.iter().sum();
-        let promedio_calificaciones: f64 = (calificiones_sumadas / calificaciones.len() as u64) as f64;
+        
 
-        return promedio_calificaciones;
+        (calificiones_sumadas as f64) / (calificaciones.len() as f64)
     }
 
     pub fn pagar_promocion (&mut self, query: QueryPagarPromocion) -> bool {
