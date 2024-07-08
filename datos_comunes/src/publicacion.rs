@@ -22,6 +22,7 @@ pub struct Publicacion {
     pub pausada: bool,
     pub en_trueque: bool,
     pub eliminada: bool,
+    pub intercambiada: bool,
     //indice de las ofertas/trueques en el vec de la database
     pub ofertas: Vec<usize>,
     pub preguntas:Vec<PregYRta>,
@@ -38,6 +39,7 @@ impl Publicacion {
             precio: None,
             pausada: true,
             en_trueque: false,
+            intercambiada: false,
             eliminada: false,
             ofertas: Vec::new(),
             preguntas: Vec::new(),
@@ -47,6 +49,16 @@ impl Publicacion {
 
     pub fn alternar_pausa(&mut self){
         self.pausada = !(self.pausada);
+    }
+
+    pub fn esta_promocionada(&self) -> bool {
+        if let Some(promocionada_hasta) = self.promocionada_hasta {
+            let ahora = Local::now();
+            if ahora < promocionada_hasta {
+                return true;
+            }
+        }
+        false
     }
 }
 
@@ -74,7 +86,7 @@ pub struct QueryPublicacionesFiltradas {
     pub filtro_fecha_min: Option<()>,
     pub filtro_fecha_max: Option<()>,
     pub filtro_pausadas:bool,
-    pub filtro_promocionadas: bool,
+    pub excluir_promocionadas: bool,
 }
 
 

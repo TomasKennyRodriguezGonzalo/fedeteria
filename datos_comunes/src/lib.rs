@@ -16,6 +16,8 @@ mod estadisticas;
 pub use estadisticas::*;
 mod descuento;
 pub use descuento::*;
+mod tarjeta;
+pub use tarjeta::*;
 
 
 
@@ -125,6 +127,7 @@ pub struct ResponseGetUserInfo {
     pub email: String,
     pub nacimiento: DateTime<Local>,
     pub puntos: i64,
+    pub promedio_calificaciones: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -522,9 +525,9 @@ pub struct ResponseCambioContrasenia{
 
 #[derive(Debug, Serialize, Deserialize ,PartialEq)]
 pub struct QueryPagarPromocionPublicaciones {
-    pub publicaciones: Vec<usize>,
+    pub publicaciones: String,
     pub fecha_fin_promocion: DateTime<Local>,
-    pub cant_dias: i64,
+    pub precio: u64,
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ErrorEnConcretacion {
@@ -613,4 +616,17 @@ pub struct QueryCalificarReceptor{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseCalificarReceptor{
     pub ok:bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryPagarPromocion {
+    pub tarjeta: Tarjeta,
+    pub precio: u64,
+    pub publicaciones: Vec<usize>,
+    pub fecha_limite_promocion: DateTime<Local>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResponsePagarPromocion {
+    pub pago: bool,
 }

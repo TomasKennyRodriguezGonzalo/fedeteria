@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, ops::Deref, path::Path};
+use std::{collections::{HashMap, HashSet}, fs, ops::Deref, path::Path};
 
 use axum::Error;
 use chrono::{DateTime, Local, TimeZone};
@@ -40,6 +40,8 @@ pub struct Database {
     peticiones_cambio_contraseña: Vec<PeticionCambioContrasenia>,
 
     descuentos:Vec<Descuento>,
+
+    tarjetas: Vec<Tarjeta>
 }
 
 pub const BASE_DIR: &str = "./db/";
@@ -145,9 +147,53 @@ impl Database {
         self.guardar();
     }
 
-    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) {
+    pub fn agregar_publicacion(&mut self, publicacion: Publicacion) -> usize {
         self.publicaciones.insert(self.publicaciones_auto_incremental, publicacion);
         self.publicaciones_auto_incremental += 1;
+        self.guardar();
+        self.publicaciones_auto_incremental - 1
+    }
+
+    pub fn editar_publicacion(&mut self, id: usize, titulo: String, descripcion: String, imagenes: Vec<String>) {
+        let publicacion = self.publicaciones.get_mut(&id).unwrap();
+        let mut cambios = vec![];
+        if !titulo.is_empty() && publicacion.titulo != titulo {
+            publicacion.titulo = titulo;
+            cambios.push("título");
+        }
+        if !descripcion.is_empty() && publicacion.descripcion != descripcion {
+            publicacion.descripcion = descripcion;
+            cambios.push("descripción");
+        }
+        if !imagenes.is_empty() && publicacion.imagenes != imagenes {
+            publicacion.imagenes = imagenes;
+            cambios.push("imágenes");
+        }
+        if !cambios.is_empty() {
+            let mut str_cambios = "Una publicación a la que hiciste una oferta tuvo los siguientes cambios: ".to_string();
+            let agregar = match cambios.len() {
+                1 => {cambios[0].to_string()},
+                2 => {format!("{} y {}", cambios[0], cambios[1])},
+                _ => {format!("{}, {} e {}", cambios[0], cambios[1], cambios[2])},
+            };
+            str_cambios += &agregar;
+            str_cambios += ".";
+            let url = format!("/publicacion/{id}");
+            let titulo = "Cambios en publicación ofertada.";
+            
+            let ofertas = publicacion.ofertas.clone();
+            let mut usuarios = HashSet::new();
+            for id_oferta in ofertas {
+                if let Some(oferta) = self.get_trueque(id_oferta) {
+                    let dni_ofertante = oferta.oferta.0;
+                    usuarios.insert(dni_ofertante);
+                }
+            }
+            for usuario in usuarios {
+                let indice = self.encontrar_dni(usuario).unwrap();
+                self.enviar_notificacion(indice, titulo.to_string(), str_cambios.clone(), url.clone());
+            }
+        }
         self.guardar();
     }
 
@@ -237,7 +283,7 @@ impl Database {
         }
     }
 
-    pub fn obtener_publicaciones(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
+    pub fn obtener_publicaciones<'a>(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         let publicaciones = self.publicaciones.iter()
         .filter(|(_, p)| !p.eliminada)
         .filter(|(_, p)| {
@@ -269,10 +315,27 @@ impl Database {
                     }
                 }
             ).unwrap_or(true)
+        })
+        .filter(|(_, publication)| {
+            if query.excluir_promocionadas {
+                !publication.esta_promocionada()
+            }
+            else {
+                true
+            }
         });
 
+        /*
+        .filter(|(_, publication)| {
+            query.filtro_promocionadas.as_ref().map(
+                |_booleano| {
+                    !publication.esta_promocionada()
+                }
+            ).unwrap_or(true)
+        }); */
+
         //si el filtro de pausadas esta activo entonces elimino las pausadas del retorno
-        if query.filtro_pausadas{
+        let mut publicaciones: Vec<usize> = if query.filtro_pausadas{
             publicaciones
             .filter(|(_,publicacion)|{
                 !publicacion.pausada
@@ -283,8 +346,20 @@ impl Database {
             publicaciones
             .map(|(i, _)| *i)
             .collect()
+        };
+
+        if !query.excluir_promocionadas {
+            publicaciones.sort_by(|&a, &b| {
+                let a = self.get_publicacion(a).unwrap().esta_promocionada();
+                let b = self.get_publicacion(b).unwrap().esta_promocionada();
+                // las promocionadas van a ser 0 así que van a quedar primero (porque se sortea de menor a mayor)
+                let a = if a {0} else {1};
+                let b = if b {0} else {1};
+                a.cmp(&b)
+            });
         }
-           
+
+        publicaciones
     }
     
     pub fn obtener_usuarios_bloqueados (&self) -> Vec<BlockedUser> {
@@ -822,27 +897,28 @@ impl Database {
     pub fn finalizar_trueque (&mut self, query: QueryFinishTrade) -> Result<Vec<String>, ErrorEnConcretacion>{
         log::info!("Query: {:?}", query);
 
-        
+        //obtnego el trueque
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
-        let dni_receptor = trueque.receptor.0;
-        let dni_ofertante = trueque.oferta.0;
-        
-        let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
-        let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
 
-        //cambio el estado del trueque, guardo, y lo obtengo
-        let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
+        //verifico que este definido. De no ser asi (no debería pasar), salgo
         if trueque.estado != EstadoTrueque::Definido {
             return Ok(vec![]);
         }
-        //actualizo la informacion del trueque
+
+        //actualizo la informacion del trueque y obtengo los datos necesarios para laburar
+        trueque.estado = query.estado.clone();
         trueque.fecha_trueque = Some(Local::now());
         let mut ventas_ofertante = Some(query.ventas_ofertante);
         let mut ventas_receptor = Some(query.ventas_receptor);
-     
-        // Lógica que verifica que el usuario pueda aplicar el descuento
+        let dni_receptor = trueque.receptor.0;
+        let dni_ofertante = trueque.oferta.0;
+        let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
+        let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
+        
+        //obtengo el trueque de vuelta por una cuestión de borrowing
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
+        // Lógica que verifica que el usuario ofertante pueda aplicar el descuento
         if let Some(codigo_descuento) = query.codigo_descuento_ofertante{
             if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
                 if descuento.vigente{
@@ -868,6 +944,7 @@ impl Database {
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
             }
         }
+         // Lógica que verifica que el usuario receptor pueda aplicar el descuento
         if let Some(codigo_descuento) = query.codigo_descuento_receptor{
             if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
                 if descuento.vigente{
@@ -894,26 +971,27 @@ impl Database {
             }
         }
 
-        log::info!("llegue hasta almacenar las ventas en la db");
-        log::info!("las ventas del ofertante a almacenar son {:?}",ventas_ofertante);
-        trueque.estado = query.estado.clone();
-
+        //aplico las ventas a los usuarios
         trueque.ventas_ofertante = ventas_ofertante;
         trueque.ventas_receptor = ventas_receptor;
         
-        // Enviar mail (Se piden denuevo los datos...)
-        let trueque = self.trueques.get(&query.id_trueque).unwrap();
-        
+        // Obtengo el trueque de vuelta por una cuestion de borrowing
+        //let trueque = self.trueques.get(&query.id_trueque).unwrap();
+
         //si el estado es "Finalizado", es decir, se concretó, aumento los puntos a los usuarios
         //de lo contrario, habilito a que se puedan realizar trueques con las publicaciones
         if query.estado == EstadoTrueque::Finalizado {
             self.usuarios[index_ofertante].puntos += 1;
             self.usuarios[index_receptor].puntos += 1;
+            for id_publicacion in trueque.get_publicaciones() {
+                self.publicaciones.get_mut(&id_publicacion).unwrap().intercambiada = true;
+            }
         }
         else {
-            //cambio el booleano "en_trueque" de cada publicacion
+            //cambio el booleano "en_trueque" y "pausada" de cada publicacion
             for id_publicacion in trueque.get_publicaciones() {
                 self.publicaciones.get_mut(&id_publicacion).unwrap().en_trueque = false;
+                self.publicaciones.get_mut(&id_publicacion).unwrap().pausada= false;
             }
         }
 
@@ -924,12 +1002,11 @@ impl Database {
 
         // Enviamos mails
         self.guardar();
-        let ofertante = &self.usuarios[index_ofertante];
-        let receptor = &self.usuarios[index_receptor];
-        //creo mail receptor
+
         let mail_receptor; 
         let mail_ofertante;
         if query.estado == EstadoTrueque::Finalizado {
+            //creo mail receptor
             mail_receptor = format!("Hola {}!\nUsted ha concretado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
             self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
@@ -938,6 +1015,7 @@ impl Database {
             self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_receptor].dni);
         }
         else {
+            //creo mail receptor
             mail_receptor = format!("Hola {}!\nUsted ha rechazado un Trueque, junto al usuario {}, con DNI {}. \n Si cree que esto es un error, por favor contacte a un administrador.", 
             self.usuarios[index_receptor].nombre_y_apellido, self.usuarios[index_ofertante].nombre_y_apellido, self.usuarios[index_ofertante].dni);
             
@@ -1263,8 +1341,51 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
     true
 }
 
+    pub fn calcular_promedio_calificaciones (&self, dni: u64) -> f64 {
+        //obtengo las calificaciones del usuario (los trueques en los que no fue calificado, no se tienen en cuenta)
+        let calificaciones: Vec<u64> = self.trueques.iter()
+                            .filter(|(_, trueque)| trueque.usuario_participa(dni) && trueque.usuario_tiene_calificacion(dni))
+                            .map(|(_, trueque)| trueque.get_calificacion(dni).unwrap())
+                            .collect();
 
+        //si no hay calificaciones, salgo
+        if calificaciones.len() == 0 {
+            return 0.0;
+        }
 
+        //sumo las calificaciones y las divido por la cantidad que son
+        let calificiones_sumadas: u64 = calificaciones.iter().sum();
+        let promedio_calificaciones: f64 = (calificiones_sumadas / calificaciones.len() as u64) as f64;
+
+        return promedio_calificaciones;
+    }
+
+    pub fn pagar_promocion (&mut self, query: QueryPagarPromocion) -> bool {
+        //busco la tarjeta
+        let hay_coincidencia = self.tarjetas.iter()
+                        .position(|tarjeta_vec| tarjeta_vec == &query.tarjeta);
+
+        //si la encontre, hago las verificaciones necesarias, sino, salgo
+        if let Some(id_tarjeta) = hay_coincidencia {
+            
+            //si no tiene fondos suficientes, salgo
+            if (self.tarjetas[id_tarjeta].monto - query.precio as i64) >= 0 {
+
+                //actualizo el monto
+                self.tarjetas[id_tarjeta].monto -= query.precio as i64;
+
+                //promociono las publicaciones
+                for publicacion in query.publicaciones {
+                    self.publicaciones.get_mut(&publicacion).unwrap().promocionada_hasta = Some(query.fecha_limite_promocion);
+                }
+                self.guardar();
+
+                return true;
+            } 
+            return false;
+        }
+        false
+    }
 }
 
 fn get_database_por_defecto() -> Database {
@@ -1303,6 +1424,66 @@ fn get_database_por_defecto() -> Database {
         (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
         (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
     ];
+
+    /*
+    pub dni_titular: u64,
+    pub nombre_titular: String,
+    pub numero_tarjeta: u64,
+    pub codigo_seguridad: u64,
+    pub anio_caducidad: u64,
+    pub mes_caducidad: u64,
+    pub monto: i64,*/
+    let tarjetas  = vec![
+        Tarjeta {
+            dni_titular: 4,
+            nombre_titular: "Delfina".to_string(), 
+            numero_tarjeta: 12345678910 as u64, 
+            codigo_seguridad: 123, 
+            anio_caducidad: 2027, 
+            mes_caducidad: 5, 
+            monto: 6000
+        },
+        Tarjeta {
+            dni_titular: 5, 
+            nombre_titular: "Esteban".to_string(), 
+            numero_tarjeta: 10987654321 as u64, 
+            codigo_seguridad: 321, 
+            anio_caducidad: 2029, 
+            mes_caducidad: 9, 
+            monto: 10000
+        },
+    ];
+
+    db.tarjetas = tarjetas;
+
+    // Ofertas para agregar
+    // (id_oferta, nombre_publicaciones_ofertadas, nombre_publicacion_pedida)
+    // el id se pone para que sea más fácil entender los siguientes datos y asegurarse que están bien
+    let ofertas = [
+        (0, vec!["Sierra Grande"], "Casa"),
+        (1, vec!["Reloj", "Papel"], "Martillo"),
+        (2, vec!["Hamaca"], "Martillo"),
+        (3, vec!["Destornillador", "Esponja"], "Curita"),
+        (4, vec!["Tenedor"], "Mancha"),
+    ];
+
+    // (nombre publicacion, dni_preguntante, pregunta, Option<respuesta>)
+    let preguntas_y_respuestas = [
+        ("Sierra Grande", 2, "Está medio cara no?", Some("Es el precio de mercado.")),
+        ("Heladera", 3, "Qué le pasó?", Some("se quemó, ahí dice")),
+        ("Heladera", 4, "Pero cómo se quemó?", None),
+        ("Heladera", 3, "Por lo menos funciona???", Some("no amigo no")),
+        ("Curita", 4, "Me lastimé me la prestas? :(", Some("hablame al mail")),
+    ];
+
+    let promocionadas = [
+        "Heladera", "Sierra Grande", "Curita"
+    ];
+
+    // let ofertas_aceptadas = [
+    //     0
+    // ];
+
     
     for sucursal in sucursales {
         db.agregar_sucursal(QueryAddOffice { office_to_add: sucursal.to_string() });
@@ -1323,7 +1504,6 @@ fn get_database_por_defecto() -> Database {
     for (dni_usuario, titulo, descripcion, precio, fotos) in publicaciones {
         let imagenes = fotos.iter().map(|nombre| {
             let from = format!("fotos_database_default/{}", nombre);
-            // TODO: Que realmente se guarde en carpetas xd
             let relativo = format!("{}", nombre);
             let to = format!("db/imgs/{}", relativo);
             println!("from {from} to {to}");
@@ -1339,10 +1519,60 @@ fn get_database_por_defecto() -> Database {
             pausada: precio.is_none(),
             en_trueque:false,
             eliminada: false,
+            intercambiada: false,
             ofertas: vec![],
             preguntas: vec![],
             promocionada_hasta: None,
         });
+    }
+
+    impl Database {
+        pub fn encontrar_publicacion(&self, nombre: &str) -> usize {
+            let query = QueryPublicacionesFiltradas {
+                filtro_nombre: Some(nombre.to_string()), 
+                ..Default::default()
+            };
+            let pubs = self.obtener_publicaciones(query);
+            assert_eq!(pubs.len(), 1);
+            pubs[0]
+        }
+
+        pub fn promocionar_TEMP(&mut self, id: usize, fecha: DateTime<Local>) {
+            self.publicaciones.get_mut(&id).unwrap().promocionada_hasta = Some(fecha);
+        }
+    }
+
+    for (nombre_publicacion, dni_preguntante, pregunta, respuesta) in preguntas_y_respuestas {
+        let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
+        let pregunta = pregunta.to_string();
+        let query = QueryAskQuestion { dni_preguntante, pregunta , id_publicacion };
+        db.preguntar(query);
+        if let Some(respuesta) = respuesta {
+            let respuesta = respuesta.to_string();
+            let indice_pregunta = db.get_publicacion(id_publicacion).unwrap().preguntas.len() - 1;
+            let query = QueryAnswerQuestion { indice_pregunta, id_publicacion, respuesta };
+            db.responder(query);
+        }
+    }
+
+    for nombre_publicacion in promocionadas {
+        let id_publicacion = db.encontrar_publicacion(nombre_publicacion);
+        let mut fecha = Local::now();
+        fecha = fecha.checked_add_days(chrono::Days::new(100)).unwrap();
+        db.promocionar_TEMP(id_publicacion, fecha);
+    }
+
+    for (id, ofertadas, pedida) in ofertas {
+        let publicaciones_ofertadas: Vec<usize> = ofertadas.into_iter().map(|n| db.encontrar_publicacion(n)).collect();
+        let publicacion_receptora = db.encontrar_publicacion(pedida);
+        let dni_ofertante = db.get_publicacion(publicaciones_ofertadas[0]).unwrap().dni_usuario;
+        for id in publicaciones_ofertadas.iter() {
+            assert_eq!(db.get_publicacion(*id).unwrap().dni_usuario, dni_ofertante);
+        }
+        let dni_receptor = db.get_publicacion(publicacion_receptora).unwrap().dni_usuario;
+        let query = QueryCrearOferta { 
+            dni_ofertante, publicaciones_ofertadas, dni_receptor, publicacion_receptora };
+        assert_eq!(db.crear_oferta(query), Some(id));
     }
 
     db

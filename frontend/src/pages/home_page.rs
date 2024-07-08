@@ -78,13 +78,13 @@ pub fn home_page() -> Html {
                 if let Some(preference_a) = (*preferences_state.clone()).0.clone() {
                     <div>
                         <h1 class="title">{format!("Porque buscas {}...", preference_a)}</h1>
-                        <PublicationGridMolecule quantity=5 query={QueryPublicacionesFiltradas{filtro_nombre:Some(preference_a), filtro_dni:None, filtro_fecha_max:None, filtro_fecha_min: None, filtro_pausadas: true, filtro_precio_max: None, filtro_precio_min: None, filtro_promocionadas: false,}}/>
+                        <PublicationGridMolecule quantity=5 query={QueryPublicacionesFiltradas{filtro_nombre:Some(preference_a), filtro_dni:None, filtro_fecha_max:None, filtro_fecha_min: None, filtro_pausadas: true, filtro_precio_max: None, filtro_precio_min: None, excluir_promocionadas: false,}}/>
                     </div>
                 }
                 if let Some(preference_b) = (*preferences_state.clone()).1.clone() {
                     <div>
                         <h1 class="title">{format!("Porque buscas {}...", preference_b)}</h1>
-                        <PublicationGridMolecule quantity=5 query={QueryPublicacionesFiltradas{filtro_nombre:Some(preference_b), filtro_dni:None, filtro_fecha_max:None, filtro_fecha_min: None, filtro_pausadas: true, filtro_precio_max: None, filtro_precio_min: None, filtro_promocionadas: false,}}/>
+                        <PublicationGridMolecule quantity=5 query={QueryPublicacionesFiltradas{filtro_nombre:Some(preference_b), filtro_dni:None, filtro_fecha_max:None, filtro_fecha_min: None, filtro_pausadas: true, filtro_precio_max: None, filtro_precio_min: None, excluir_promocionadas: false,}}/>
                     </div>
                 }
                 <div>

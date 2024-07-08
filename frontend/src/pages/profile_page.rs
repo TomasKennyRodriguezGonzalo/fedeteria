@@ -15,11 +15,12 @@ pub struct DatosDeUsuario {
     pub email: String,
     pub nacimiento: DateTime<Local>,
     pub puntos: i64,
+    pub promedio_calificaciones: f64,
 }
 
 impl DatosDeUsuario {
-    pub fn new(nombre_completo: String, email: String, nacimiento: DateTime<Local>, puntos: i64) -> DatosDeUsuario {
-        DatosDeUsuario {nombre_completo, email, nacimiento, puntos}
+    pub fn new(nombre_completo: String, email: String, nacimiento: DateTime<Local>, puntos: i64, promedio_calificaciones: f64) -> DatosDeUsuario {
+        DatosDeUsuario {nombre_completo, email, nacimiento, puntos, promedio_calificaciones}
     }
 }
 
@@ -70,7 +71,8 @@ pub fn profile_page() -> Html {
                     respuesta.nombre_y_ap,
                     respuesta.email,
                     respuesta.nacimiento,
-                    respuesta.puntos);
+                    respuesta.puntos,
+                    respuesta.promedio_calificaciones);
                 cloned_user_state.set(user_info);
             } else {
                 log::error!("Usuario no encontrado!");
@@ -91,6 +93,7 @@ pub fn profile_page() -> Html {
                 <h2 class="information-text">{"Email: "} {&*user_state.email}</h2>
                 <h2 class="information-text">{"DNI: "} {dni_query}</h2>
                 <h2 class="information-text">{"Fecha de nacimiento: "} {user_state.nacimiento.format("%Y-%m-%d")}</h2>
+                <h2 class="information-text">{"Promedio de calificaciones: "} {format!("{:.1}", user_state.promedio_calificaciones)}</h2>
                 if informacion_propia {
                     <h2 class="information-text">{"Puntos: "} {user_state.puntos}</h2>
                 }
@@ -114,7 +117,7 @@ pub fn profile_page() -> Html {
                     <li><Link<Route> to={Route::SavedPublications}>{"Publicaciones Guardadas"}</Link<Route>></li>
                     <li><Link<Route> to={Route::AllowedDiscounts}>{"Descuentos Disponibles"}</Link<Route>></li>
                     <li><Link<Route> to={Route::MyPreferences}>{"Editar Preferencias"}</Link<Route>></li>
-                    //<li><Link<Route> to={Route::PromotePublicationFromProfile}>{"Promocionar Publicaciones"}</Link<Route>></li>
+                    <li><Link<Route> to={Route::PromotePublicationFromProfile}>{"Promocionar Publicaciones"}</Link<Route>></li>
                 }
             </ul>
         </div>

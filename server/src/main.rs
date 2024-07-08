@@ -92,6 +92,7 @@ async fn main() {
         .route("/api/obtener_sucursales", get(obtener_sucursales))
         .route("/api/obtener_rol", post(obtener_rol))
         .route("/api/crear_publicacion", post(crear_publicacion))
+        .route("/api/editar_publicacion", post(editar_publicacion))
         .route("/api/get_user_info", post(get_user_info))
         .route("/api/obtener_cuentas_bloqueadas", get(obtener_cuentas_bloqueadas))
         .route("/api/desbloquear_cuenta", post(desbloquear_cuenta))
@@ -137,6 +138,7 @@ async fn main() {
         .route("/api/calificar_receptor", post(calificar_receptor))
         .route("/api/calificar_ofertante", post(calificar_ofertante))
         .route("/api/obtener_descuentos_usuario", post(obtener_descuentos_usuario))
+        .route("/api/pagar", post(pagar))
         .fallback(get(|req| async move {
             let res = ServeDir::new(&opt.static_dir).oneshot(req).await;
             match res {
@@ -365,7 +367,63 @@ async fn crear_publicacion (
     }
     let publicacion = Publicacion::new(titulo, descripcion, imagenes, dni);
     let mut state = state.write().await;
-    state.db.agregar_publicacion(publicacion);
+    let id = state.db.agregar_publicacion(publicacion);
+    Ok(id.to_string())
+}
+
+async fn editar_publicacion(
+    State(state): State<SharedState>,
+    mut multipart: Multipart,
+) -> Result<String, ()> {
+    
+    let mut titulo = None;
+    let mut descripcion = None;
+    let mut id: Option<usize> = None;
+    let mut dni_str = None;
+    let mut imagenes = vec![];
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        match field.name().unwrap() {
+            "Titulo" => {
+                titulo = Some(field.text().await.unwrap());
+            },
+            "Descripción" => {
+                descripcion = Some(field.text().await.unwrap());
+            },
+            "id" => {
+                let id_str = field.text().await.unwrap();
+                id = Some(id_str.parse().unwrap());
+            }
+            "dni" => {
+                dni_str = Some(field.text().await.unwrap());
+            }
+            "url_original" => {
+                imagenes.push(field.text().await.unwrap());
+            },
+            "blob" => {
+                let file_name = if let Some(file_name) = field.file_name() {
+                    file_name.to_owned()
+                } else {
+                    continue;
+                };
+                let dni_str = dni_str.as_ref().unwrap();
+                log::info!("Recibido archivo: {file_name}");
+                let path = Path::new(database::IMGS_DIR).join(dni_str);
+                std::fs::create_dir_all(&path).unwrap();
+                let path = path.join(&file_name);
+                let relative_path = Path::new(dni_str).join(&file_name);
+                imagenes.push(relative_path.to_str().unwrap().to_string());
+                stream_to_file(path, field).await.unwrap();
+            }
+            _ => {},
+        }
+    }
+
+    let titulo = titulo.unwrap();
+    let descripcion = descripcion.unwrap();
+    let id = id.unwrap();
+    let mut state = state.write().await;
+    state.db.editar_publicacion(id, titulo, descripcion, imagenes);
     Ok("OK".to_string())
 }
 
@@ -417,7 +475,8 @@ Json(query): Json<QueryGetUserInfo>
             nombre_y_ap: usuario.nombre_y_apellido.clone(),
             email: usuario.email.clone(),
             nacimiento: usuario.nacimiento.clone(),
-            puntos: usuario.puntos
+            puntos: usuario.puntos,
+            promedio_calificaciones: state.db.calcular_promedio_calificaciones(query.dni),
         };
         Json(Some(response))
     } else {
@@ -707,37 +766,26 @@ async fn finalizar_trueque (
             4 --> Mail Ofertante
             5 --> Mensaje Ofertante
             */
-            
-            tokio::task::spawn_blocking(move || {
-                let local = task::LocalSet::new();
-                let rt  = Runtime::new().unwrap();
-                let mensajes_c = mensajes.clone();
-                rt.block_on( async {
-                    local.run_until(async move {
-                        spawn_local(async move {
-                            let mensajes = mensajes_c;
-                            match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
-                                    "Finalizacion de Trueque en Fedeteria".to_string(),
-                                    mensajes.get(2).unwrap().clone()) {
-                                    Ok(_) => log::info!("Mail enviado al receptor."),
-                                    Err(_) => log::error!("Error al enviar mail al receptor."),
-                            }
-                        });
-                    }).await;
-                    //envio mail al ofertante
-                    local.run_until(async move {
-                        spawn_local(async move {
-                            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
-                            "Finalizacion de Trueque en Fedeteria".to_string(),
-                            mensajes.get(5).unwrap().clone()) {
-                                Ok(_) => log::info!("Mail enviado al receptor."),
-                                Err(_) => log::error!("Error al enviar mail al receptor."),
-                            }
-                        });
-                    }).await;
-                });
-            }).await.expect("Task panicked");
-
+            let mensajes_c = mensajes.clone();
+            spawn(async move {
+                let mensajes = mensajes_c;
+                match send_email(mensajes.get(0).unwrap().clone(), mensajes.get(1).unwrap().clone(),
+                        "Finalizacion de Trueque en Fedeteria".to_string(),
+                        mensajes.get(2).unwrap().clone()) {
+                        Ok(_) => log::info!("Mail enviado al receptor."),
+                        Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
+        
+            //envio mail al ofertante
+            spawn(async move {
+            match send_email(mensajes.get(3).unwrap().clone(), mensajes.get(4).unwrap().clone(),
+                    "Finalizacion de Trueque en Fedeteria".to_string(),
+                    mensajes.get(5).unwrap().clone()) {
+                    Ok(_) => log::info!("Mail enviado al receptor."),
+                    Err(_) => log::error!("Error al enviar mail al receptor."),
+                }
+            });
             Json(ResponseFinishTrade {respuesta: Ok(true)})
         }
         Err(ErrorEnConcretacion::DescuentoReceptorInvalido) =>{
@@ -943,6 +991,12 @@ Json(query): Json<QueryCalificarOfertante>
     Json(ResponseCalificarOfertante{ok : state.db.calificar_ofertante(query)})
 }
 
+async fn pagar( State(state): State<SharedState>,
+Json(query): Json<QueryPagarPromocion>
+) -> Json<ResponsePagarPromocion>{
+    let mut state = state.write().await;
+    Json(ResponsePagarPromocion{pago : state.db.pagar_promocion(query)})
+}
 
 
 

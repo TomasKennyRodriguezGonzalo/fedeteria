@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{components::checked_input_field::CheckedInputField, convenient_request::request_get, information_store::InformationStore, router::Route};
 use datos_comunes::ResponsePublicacion;
+use serde::Serialize;
 use yew_hooks::use_effect_once;
 use yew_router::hooks::use_navigator;
 use yewdux::use_store;
@@ -16,15 +17,17 @@ pub struct Props {
     pub id : usize
 }
 
+#[derive(Debug, Clone)]
 struct DatosImagen {
     vnode: VNode,
     // Si no hay "File" es porque es una imagen ya subida.
     file: Option<File>,
     url: String,
+    url_original: Option<String>,
 }
 
 impl DatosImagen {
-    pub fn new(file: Option<File>, url: String, image_list: UseStateHandle<Rc<RefCell<Vec<DatosImagen>>>>) -> DatosImagen {
+    pub fn new(file: Option<File>, url: String, image_list: UseStateHandle<Rc<RefCell<Vec<DatosImagen>>>>, url_original: Option<String>) -> DatosImagen {
 
         let on_borrar = {
             let url_c = url.clone();
@@ -46,7 +49,7 @@ impl DatosImagen {
             <button onclick={on_borrar}> {"Borrar"} </button>
         </>};
         DatosImagen {
-            vnode: node, url, file
+            vnode: node, url, file, url_original
         }
     } 
 }
@@ -88,9 +91,9 @@ pub fn editar_publicacion_page(props : &Props) -> Html {
                 }
                 i += 1;
             }
-            for url in respuesta.imagenes {
-                let url = format!("/publication_images/{url}");
-                image_list.borrow_mut().push(DatosImagen::new(None, url, image_list.clone()));
+            for url_original in respuesta.imagenes {
+                let url = format!("/publication_images/{url_original}");
+                image_list.borrow_mut().push(DatosImagen::new(None, url, image_list.clone(), Some(url_original)));
             }
             image_list.set((*image_list).clone());
         });
@@ -113,7 +116,7 @@ pub fn editar_publicacion_page(props : &Props) -> Html {
 
                 let result = web_sys::Url::create_object_url_with_blob(&file);
                 if let Ok(url) = result {
-                    image_list.borrow_mut().push(DatosImagen::new(Some(file), url, image_list.clone()));
+                    image_list.borrow_mut().push(DatosImagen::new(Some(file), url, image_list.clone(), None));
                 } else {
                     panic!();
                 }
@@ -135,28 +138,29 @@ pub fn editar_publicacion_page(props : &Props) -> Html {
             log::info!("enviando publicacion!!!");
             event.prevent_default();
             let navigator = navigator.clone();
-            let information_dispatch = information_dispatch.clone();
 
             let form = form_ref.cast::<HtmlFormElement>().unwrap();
 
             let form_data = FormData::new_with_form(&form).unwrap();
 
-            // form_data.append_with_str("dni", &store.dni.unwrap().to_string()).unwrap();
-            // for blob in image_list.borrow().iter().map(|datos| datos.file) {
-            //     form_data.append_with_blob("", blob).unwrap();
-            // }
+            form_data.append_with_str("id", &id.to_string()).unwrap();
+            form_data.append_with_str("dni", &store.dni.unwrap().to_string()).unwrap();
+            for datos in image_list.borrow().iter() {
+                if let Some(blob) = &datos.file.clone() {
+                    form_data.append_with_blob("blob", blob).unwrap();
+                } else if let Some(url_original) = &datos.url_original {
+                    form_data.append_with_str("url_original", url_original).unwrap();
+                }
+            }
 
             spawn_local(async move {
-            
-                let res = Request::post("/api/crear_publicacion")
+                let res = Request::post("/api/editar_publicacion")
                     .body(form_data)
                     .send().await;
                 let res = res.unwrap();
                 let res = res.text().await.unwrap();
                 if res == "OK" {
-
-                    navigator.push(&Route::Home);
-                    information_dispatch.reduce_mut(|store| store.messages.push("Publicación creada con éxito.".to_string()))
+                    navigator.push(&Route::Publication { id });
                 }
             });
         })
@@ -191,7 +195,7 @@ pub fn editar_publicacion_page(props : &Props) -> Html {
                 </div>
                 <div class="submit_button">
                     // if !(title_state.is_empty()) && !(description_state.is_empty()) && !(image_list.borrow().is_empty()) {
-                    //     <button onclick={on_confirmar}>{"Confirmar"}</button>
+                    <button onclick={on_confirmar}>{"Confirmar"}</button>
                     // } else { 
                     //     <button class="disabled-dyn-element">{"Confirmar"}</button>
                     // }

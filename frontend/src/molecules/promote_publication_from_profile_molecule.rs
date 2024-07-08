@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use chrono::{DateTime, Local, NaiveDate, TimeZone};
-use datos_comunes::{QueryPagarPromocionPublicaciones, QueryPublicacionesFiltradas, ResponsePublicacion, ResponsePublicacionesFiltradas};
+use datos_comunes::{Publicacion, QueryPagarPromocionPublicaciones, QueryPublicacionesFiltradas, ResponsePublicacion, ResponsePublicacionesFiltradas};
 use reqwasm::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -11,7 +11,7 @@ use yew_hooks::use_effect_once;
 use yewdux::use_store;
 use yew_router::{components::Link, hooks::use_navigator};
 
-use crate::{components::{generic_button::GenericButton, indexed_button::IndexedButton, publication_thumbnail::PublicationThumbnail}, information_store::InformationStore, request_post, router::Route, store::UserStore};
+use crate::{components::{generic_button::GenericButton, indexed_button::IndexedButton, publication_thumbnail::PublicationThumbnail}, information_store::InformationStore, molecules::confirm_prompt_button_molecule::ConfirmPromptButtonMolecule, request_post, router::Route, store::UserStore};
 
 #[function_component(PromotePublicationFromProfileMolecule)]
 pub fn promote_publication_from_profile_molecule () -> Html {
@@ -20,6 +20,10 @@ pub fn promote_publication_from_profile_molecule () -> Html {
     let navigator = use_navigator().unwrap();
     let (store, _dispatch) = use_store::<UserStore>();
     let dni = store.dni;
+
+    //precio acumulado
+    let total_to_pay = use_state(|| 0);
+    let total_to_pay_cloned = total_to_pay.clone();
 
     //logica selector
     let filtered_publications = use_state(|| Vec::new());
@@ -30,6 +34,7 @@ pub fn promote_publication_from_profile_molecule () -> Html {
         log::info!("Indice recibido {id}");
         let mut new_vec = cloned_selected_publications_list_state.deref().clone();
         let index = id.clone();
+        let total_to_pay_cloned = total_to_pay_cloned.clone();
         spawn_local(async move {
             let respuesta = Request::get(&format!("/api/datos_publicacion?id={index}")).send().await;
             match respuesta{
@@ -55,14 +60,17 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             }
         });
         new_vec.push(id);
-        cloned_selected_publications_list_state.set(new_vec);
+        cloned_selected_publications_list_state.set(new_vec.clone());
+        total_to_pay_cloned.set(new_vec.len() as u64 * 1000);
     });
 
+    let total_to_pay_cloned = total_to_pay.clone();
     let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
     let publication_unselected = Callback::from( move|id : usize| {
         log::info!("Indice recibido {id}");
         let mut new_vec = cloned_selected_publications_list_state.deref().clone();
         let i = id.clone();
+        let total_to_pay_cloned = total_to_pay_cloned.clone();
         if let Some(index) = new_vec.iter().position(|index| *index == id) {
             spawn_local(async move {
                 let respuesta = Request::get(&format!("/api/datos_publicacion?id={i}")).send().await;
@@ -92,7 +100,8 @@ pub fn promote_publication_from_profile_molecule () -> Html {
         } else {
 
         }
-        cloned_selected_publications_list_state.set(new_vec);
+        cloned_selected_publications_list_state.set(new_vec.clone());
+        total_to_pay_cloned.set(new_vec.len() as u64 * 1000);
     });
 
     //buscador publicaciones
@@ -111,7 +120,7 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             filtro_fecha_max : None,
             filtro_fecha_min : None,
             filtro_pausadas : true,
-            filtro_promocionadas : false,
+            excluir_promocionadas : true,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
@@ -124,7 +133,6 @@ pub fn promote_publication_from_profile_molecule () -> Html {
     //estado fecha
     let fecha_state = use_state(|| "".to_string());
     let fecha_state_cloned = fecha_state.clone();
-    let information_dispatch_cloned = information_dispatch.clone();
     let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
     let date_changed = Callback::from(move |event : Event| {
         let target = event.target().unwrap();
@@ -133,21 +141,16 @@ pub fn promote_publication_from_profile_molecule () -> Html {
         fecha_state_cloned.set(input_value);
     });
 
-
-    let filtered_publications_cloned = filtered_publications.clone();
-    
-    //PARA LAS CUENTAS, USAR selected_publications_list_state, NO EL CLONE DE ESTE
-    //para las cuentas: 1000 por publicacion, 200 por la cantidad de dias a partir de la actual
-    //voy a pagar
+    //botones de confirmacion de pago
+    let information_dispatch_cloned = information_dispatch.clone();
     let fecha_state_cloned = fecha_state.clone();
-    let navigator_cloned = navigator.clone();
-    let go_to_pay = Callback::from(move |()| {
-
-        let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = cloned_selected_publications_list_state.clone();
-
+    let confirm_button = use_state(||false);
+    let confirm_button_clone = confirm_button.clone();
+    let total_to_pay_cloned = total_to_pay.clone();
+    let show_confirm_button = Callback::from(move|_|{
         //obtengo la fecha en DateTime
-        //let fecha_seleccionada = (&*fecha_state_cloned).clone();
-        let fecha_seleccionada = "2024-07-18".to_string();
+        let fecha_seleccionada = (&*fecha_state_cloned).clone();
+        let fecha_seleccionada = fecha_seleccionada.to_string();
         log::info!("FECHA {:?}", fecha_seleccionada);
         let fecha_seleccionada = NaiveDate::parse_from_str(&fecha_seleccionada, "%Y-%m-%d").unwrap();
         let fecha_seleccionada = Local.from_local_datetime(&fecha_seleccionada.into()).unwrap();
@@ -158,24 +161,52 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             //obtengo la cantidad de dias
             // Calcula la diferencia
             let cant_dias_promocion = fecha_seleccionada.signed_duration_since(fecha_actual).num_days();
-
-            let query = QueryPagarPromocionPublicaciones {
-                publicaciones: (&*cloned_selected_publications_list_state).clone(),
-                fecha_fin_promocion: fecha_seleccionada,
-                cant_dias: cant_dias_promocion,
-            };
-
-            log::info!("QUERY: {:?}", query);
-            let _ = navigator_cloned.push_with_query(&Route::PayPublicationPromotion, &query);
-            log::info!("Voy a pagar");
+            let precio_a_setear = (&*total_to_pay_cloned).clone() + (cant_dias_promocion as u64 * 200);
+            total_to_pay_cloned.set(precio_a_setear);
+            confirm_button_clone.set(true);
         }
         else {
             information_dispatch_cloned.reduce_mut( |store| store.messages.push(format!("La fecha ingresada debe ser mayor a la actual")));
         }
+    });
 
+    let filtered_publications_cloned = filtered_publications.clone();
+    
+    //PARA LAS CUENTAS, USAR selected_publications_list_state, NO EL CLONE DE ESTE
+    //para las cuentas: 1000 por publicacion, 200 por la cantidad de dias a partir de la actual
+    //voy a pagar
+    let total_to_pay_cloned = total_to_pay.clone();
+    let fecha_state_cloned = fecha_state.clone();
+    let navigator_cloned = navigator.clone();
+    let go_to_pay = Callback::from(move |_e| {
+
+        let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = cloned_selected_publications_list_state.clone();
+
+        //obtengo la fecha en DateTime
+        let fecha_seleccionada = (&*fecha_state_cloned).clone();
+        let fecha_seleccionada = fecha_seleccionada.to_string();
+        log::info!("FECHA {:?}", fecha_seleccionada);
+        let fecha_seleccionada = NaiveDate::parse_from_str(&fecha_seleccionada, "%Y-%m-%d").unwrap();
+        let fecha_seleccionada = Local.from_local_datetime(&fecha_seleccionada.into()).unwrap();
+        let vec_string = serde_json::to_string(&*cloned_selected_publications_list_state).unwrap();
+        let query = QueryPagarPromocionPublicaciones {
+            publicaciones: vec_string,
+            fecha_fin_promocion: fecha_seleccionada,
+            precio: (&*total_to_pay_cloned).clone(),
+        };
+        let _ = navigator_cloned.push_with_query(&Route::PayPublicationPromotion, &query);
+    });
+
+    let confirm_button_clone = confirm_button.clone();
+    let hide_confirm_button = Callback::from(move|_|{
+        confirm_button_clone.set(false);
     });
     
     let cloned_selected_publications_list_state: UseStateHandle<Vec<usize>> = selected_publications_list_state.clone();
+
+    let total_to_pay_cloned = total_to_pay.clone();
+    let mensaje = format!("¿Seguro que desea promocionar las publicaciones seleccionadas por ${}?", (&*total_to_pay_cloned).clone());
+
 
     html!(
         <div> //promocionar publicacion box
@@ -208,13 +239,16 @@ pub fn promote_publication_from_profile_molecule () -> Html {
                 }
             </div>
             if !(&*cloned_selected_publications_list_state.clone()).is_empty() {
-                    <div class="publication-selector-box">
-                        <h2>{"Ingrese la fecha hasta la que desea promocionar las publicaciones seleccionadas"}</h2>
-                        <input type="date" name="fecha-trueque" onchange={date_changed}/>
-                        <br/>
-                        <GenericButton text="Pagar Promoción de Publicaciones Seleccionadas" onclick_event={go_to_pay}/>
-                    </div>
-                }
+                <div class="publication-selector-box">
+                    <h2>{"Ingrese la fecha hasta la que desea promocionar las publicaciones seleccionadas"}</h2>
+                    <input type="date" name="fecha-trueque" onchange={date_changed}/>
+                    <br/>
+                    <GenericButton text="Pagar Promoción de Publicaciones Seleccionadas" onclick_event={show_confirm_button}/>
+                </div>
+            }
+            if *confirm_button{
+                <ConfirmPromptButtonMolecule text={mensaje} confirm_func={go_to_pay} reject_func={hide_confirm_button} />
+            }
         </div>
     )
 }
