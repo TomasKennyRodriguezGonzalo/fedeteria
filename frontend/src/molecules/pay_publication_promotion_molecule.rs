@@ -74,6 +74,9 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
         log::info!("Select mes changed to {}", value)
     });
     
+    let error_state = use_state(||"".to_string());
+    let error_state_c = error_state.clone();
+
     //pago
     let precio = query.precio;
     let fecha_limite_promocion = query.fecha_fin_promocion;
@@ -87,6 +90,7 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
     let anio_state_cloned = anio_state.clone();
     let indices_publicaciones_cloned = indices_publicaciones.clone();
     let pay = Callback::from(move |_e| {
+        let error_state_c = error_state_c.clone();
         let precio = precio.clone();
         let meses = obtener_meses();
         let indice_mes = (&*cloned_select_mes_value_state).clone() as usize;
@@ -114,18 +118,20 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
         };
 
         request_post("/api/pagar", query, move |respuesta:ResponsePagarPromocion| {
-            if respuesta.pago {
+            if respuesta.pago.is_empty() {
                 information_dispatch_cloned.reduce_mut(|store| store.messages.push(format!("El pago se ha realizado correctamente!")));
                 let _ = navigator_cloned.push(&Route::Home);
             }
             else {
-                information_dispatch_cloned.reduce_mut(|store| store.messages.push(format!("La tarjeta ingresada no es válida o cuenta con fondos insuficientes")));
-                if let Some(window) = window() {
-                    window.location().reload().unwrap();
-                }
+                error_state_c.set((respuesta.pago).clone());
+               // information_dispatch_cloned.reduce_mut(|store| store.messages.push(format!("{}",respuesta.pago)));
+               // if let Some(window) = window() {
+                   // window.location().reload().unwrap();
+                //}
             }
         });
     });
+
 
     //botones de confirmacion de pago
     let confirm_buttons_state = use_state(|| false);
@@ -171,6 +177,9 @@ pub fn pay_publication_promotion_molecule (props: &Props) -> Html {
             </div>
             if (&*confirm_buttons_state).clone() {
                 <ConfirmPromptButtonMolecule text={format!("¿Desea realizar el pago por ${}", query.precio)} confirm_func={pay} reject_func={reject_func} />
+            }
+            if !(&*error_state).is_empty(){
+                <h2 class="error-text">{(*error_state).clone()}</h2>
             }
         </div>
     )

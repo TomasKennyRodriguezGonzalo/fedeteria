@@ -611,6 +611,8 @@ pub struct ResponseGetUserDiscounts{
     pub discounts : Vec<Descuento>,
 }
 
+
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryCalificarOfertante{
     pub dni:u64,
@@ -643,7 +645,14 @@ pub struct QueryPagarPromocion {
     pub fecha_limite_promocion: DateTime<Local>,
 }
 
+
+
+pub enum ErrorPagarPromocion{
+
+}
+
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponsePagarPromocion {
-    pub pago: bool,
+    pub pago: String,
 }

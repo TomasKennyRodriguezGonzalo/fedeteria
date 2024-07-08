@@ -1395,7 +1395,7 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
         (calificiones_sumadas as f64) / (calificaciones.len() as f64)
     }
 
-    pub fn pagar_promocion (&mut self, query: QueryPagarPromocion) -> bool {
+    pub fn pagar_promocion (&mut self, query: QueryPagarPromocion) -> String {
         //busco la tarjeta
         let hay_coincidencia = self.tarjetas.iter()
                         .position(|tarjeta_vec| tarjeta_vec == &query.tarjeta);
@@ -1415,12 +1415,12 @@ pub fn calificar_receptor(&mut self, query:QueryCalificarReceptor)-> bool{
                 }
                 self.guardar();
 
-                return true;
+                return "".to_string();
             }
             log::info!("ESTA VENCIDA");
-            return false;
+            return "La tarjeta se encuentra vencida".to_string();
         }
-        false
+        "La tarjeta ingresada no es válida o cuenta con fondos insuficientes".to_string()
     }
 }
 

@@ -506,7 +506,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                     // Seccion de propuesta de oferta
                         <div class="publication-selector-container">
                             if publicacion.dni_usuario != dni.clone().unwrap() {
-                                if publicacion.precio.is_some() && !publicacion.intercambiada {
+                                if publicacion.precio.is_some() && !publicacion.intercambiada && !publicacion.pausada {
                                     <GenericButton text="Proponer Trueque" onclick_event={show_selector}/>
                                 }
                                 if *show_selector_state { 
@@ -577,7 +577,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                             <div class="question-answer-box">
                             <h1 class="title">{"Preguntas y respuestas"}</h1>
                             <div class="question-input">
-                                    if (publicacion.dni_usuario != dni.unwrap()) && (!publicacion.eliminada) {
+                                    if (publicacion.dni_usuario != dni.unwrap()) && (!publicacion.eliminada) && (!publicacion.en_trueque) {
                                         <CheckedInputField name = "question-field" placeholder="Escriba su pregunta" tipo = "text" on_change={question_text_changed}/>
                                         <GenericButton text="Enviar pregunta" onclick_event={show_question_prompt}/>
                                     }
@@ -617,11 +617,13 @@ pub fn publication_molecule(real_props : &Props) -> Html {
     
                     //guardar publicacion
                     if publicacion.dni_usuario != dni.unwrap(){
-                        if !*is_in_saved_state{
-                            //entonces agregar publicacion a guardados  
-                            <GenericButton text="Agregar publicacion a guardados" onclick_event={guardar_publicacion}/>
-                        } else{
-                            <GenericButton text="Eliminar publicacion de guardados" onclick_event={desguardar_publicacion}/>
+                        if !publicacion.en_trueque{
+                            if !*is_in_saved_state{
+                                //entonces agregar publicacion a guardados  
+                                <GenericButton text="Agregar publicacion a guardados" onclick_event={guardar_publicacion}/>
+                            } else{
+                                <GenericButton text="Eliminar publicacion de guardados" onclick_event={desguardar_publicacion}/>
+                            }
                         }
                     }
                 }
