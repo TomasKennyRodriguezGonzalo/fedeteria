@@ -285,7 +285,6 @@ impl Database {
 
     pub fn obtener_publicaciones<'a>(&self, query: QueryPublicacionesFiltradas) -> Vec<usize> {
         let publicaciones = self.publicaciones.iter()
-        .filter(|(_, p)| !p.eliminada)
         .filter(|(_, p)| {
             query.filtro_dni.map(|dni| dni == p.dni_usuario).unwrap_or(true)
         })
@@ -329,6 +328,17 @@ impl Database {
                 !publication.en_trueque
             }
             else {
+                true
+            }
+        })
+        .filter(|(_, publication)| {
+            if query.excluir_eliminadas {
+                if publication.eliminada {
+                    false
+                } else {
+                    true
+                }
+            } else {
                 true
             }
         });
@@ -452,6 +462,7 @@ impl Database {
         let lista = self.publicaciones
             .iter()
             .filter(|(_, publicacion)| publicacion.precio.is_none())
+            .filter(|(_, publicacion)| !publicacion.eliminada)
             .map(|(i, _)| *i)
             .collect();
         log::info!("{lista:?}");
@@ -626,6 +637,7 @@ impl Database {
                         if let Some(cantidad_tras_descuento) = venta.1 {
                             cantidad_ahorrado_en_descuentos += pesos - cantidad_tras_descuento;
                             pesos = cantidad_tras_descuento;
+                            cantidad_descuentos += 1;
                         }
                         *pesos_trueques_tras_descuentos += pesos;
                     }
@@ -925,11 +937,9 @@ impl Database {
         }
 
         //actualizo la informacion del trueque y obtengo los datos necesarios para laburar
-        trueque.estado = query.estado.clone();
-        trueque.fecha_trueque = Some(Local::now());
         let mut ventas_ofertante = Some((query.ventas_ofertante, None));
         let mut ventas_receptor = Some((query.ventas_receptor, None));
-        if query.ventas_receptor == 0 {
+        if query.ventas_ofertante == 0 {
             ventas_ofertante = None;
         }
         if query.ventas_receptor == 0 {
@@ -965,11 +975,13 @@ impl Database {
             let descuento = self.descuentos.iter().enumerate().find(|(_i, d)| {
                 d.codigo.trim() == codigo_descuento.trim()
             });
+            log::info!("estoy en finalizar trueque, el descuento ingresado es es: {:?} la variable es receptor contiene: {}", descuento, es_receptor);
             if descuento.is_none() {
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido.traducir_a_receptor(es_receptor))
             }
             let (indice_descuento, descuento) = descuento.unwrap();
             if !descuento.vigente {
+                log::info!("estoy dentro del if !descuento.vigente");
                 return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido.traducir_a_receptor(es_receptor))
             }
             if descuento.esta_vencido() {
@@ -1068,6 +1080,7 @@ impl Database {
         contenidos_mensajes.push(mail_ofertante.clone());
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         log::info!("Trueque: {:?}", trueque);
+        trueque.fecha_trueque = Some(Local::now());
         trueque.estado = query.estado.clone();
         self.guardar();
         Ok(contenidos_mensajes)

@@ -28,6 +28,7 @@ pub fn my_publications_page() -> Html {
             filtro_pausadas: false,
             excluir_promocionadas: false,
             excluir_en_trueque: false,
+            excluir_eliminadas: false,
         };
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {
             let publicaciones = respuesta;

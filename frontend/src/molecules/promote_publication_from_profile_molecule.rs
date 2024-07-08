@@ -122,6 +122,7 @@ pub fn promote_publication_from_profile_molecule () -> Html {
             filtro_pausadas : false,
             excluir_promocionadas : true,
             excluir_en_trueque : true,
+            excluir_eliminadas: true,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {

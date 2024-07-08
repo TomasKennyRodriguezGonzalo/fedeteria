@@ -49,6 +49,7 @@ pub fn publication_selector_molecule (props: &Props) -> Html {
             filtro_pausadas : true,
             excluir_promocionadas : false,
             excluir_en_trueque : false,
+            excluir_eliminadas: true,
         };
         
         request_post("/api/obtener_publicaciones", query, move |respuesta: ResponsePublicacionesFiltradas| {

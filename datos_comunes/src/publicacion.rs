@@ -88,6 +88,7 @@ pub struct QueryPublicacionesFiltradas {
     pub filtro_pausadas:bool,
     pub excluir_promocionadas: bool,
     pub excluir_en_trueque: bool,
+    pub excluir_eliminadas: bool,
 }
 
 

@@ -184,6 +184,7 @@ pub fn navbar() -> Html{
             filtro_pausadas : true,
             excluir_promocionadas: false,
             excluir_en_trueque: false,
+            excluir_eliminadas: true
         };
         let _ = navigator_cloned.push_with_query(&Route::SearchResults, &search_query);
 

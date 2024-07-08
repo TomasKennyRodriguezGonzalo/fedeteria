@@ -39,6 +39,7 @@ pub fn publication_grid_molecule(props: &Props) -> Html {
             filtro_pausadas : true,
             excluir_promocionadas: false,
             excluir_en_trueque : false,
+            excluir_eliminadas: true
         };
         if let Some(query_options) = props_clone.query.clone() {
             query = query_options;

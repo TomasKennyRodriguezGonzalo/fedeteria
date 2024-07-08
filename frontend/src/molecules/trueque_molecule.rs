@@ -508,7 +508,6 @@ pub fn trueque_molecule (props : &Props) -> Html {
                     window.location().reload().unwrap();
                 }
             } else {
-                
                 cloned_error_state.set("el numero ingresado debe estar entre 0 y 10".to_string())
             }
             calification_button_clone.set(false);
@@ -696,7 +695,7 @@ pub fn trueque_molecule (props : &Props) -> Html {
                                             <h2>{format!("puntuaste a {} con {} puntos!", (&*receptor_username), trueque.calificacion_receptor.unwrap())}</h2>
                                         }
                                         if trueque.receptor.0 == dni && trueque.calificacion_ofertante.is_none(){
-                                            <h2>{"califique del 1 al 10 a la persona con la que realizó el trueque"}</h2>
+                                            <h2>{"califique del 0 al 10 a la persona con la que realizó el trueque"}</h2>
                                             <DniInputField dni = "Calificacion" label="Calificacion" tipo = "number" handle_on_change = {calificacion_receptor_changed} />
                                             if (*calificacion_receptor).is_some(){
                                                 <GenericButton text = "Calificar Usuario" onclick_event = {show_calification_button} />

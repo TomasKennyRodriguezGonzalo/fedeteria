@@ -154,13 +154,12 @@ pub fn publication_molecule(real_props : &Props) -> Html {
             }
             else {
                 let information_dispatch = information_dispatch.clone();
-                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas. Rechazelas si desea eliminar la publicación".to_string()));
+                information_dispatch.reduce_mut(|store| store.messages.push("No es posible eliminar la publicacion, ya que cuenta con ofertas. Cancelelas si desea eliminar la publicación.".to_string()));
             }
             log::info!("resultado de eliminar publicacion : {}", respuesta.ok);
         });
     });
 
-    
     let cloned_datos_publicacion = datos_publicacion.clone();
     let cloned_information_dispatch = information_dispatch.clone();
     let toggle_publication_pause = Callback::from(move |()| {
@@ -412,11 +411,6 @@ pub fn publication_molecule(real_props : &Props) -> Html {
         }
     });
 
-  
-
-
-
-
     let cloned_datos_publicacion = datos_publicacion.clone();
     let answer_text_state_cloned = answer_text_state.clone();
     let answer_question = Callback::from(move |index|{
@@ -457,6 +451,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                     </div> 
                 // Seccion de Titulo, Precio y descripcion
                 </div> 
+                <div class="text">
                     if publicacion.dni_usuario != dni.unwrap() {
                         <Link<Route, DniURLQuery> to={Route::Profile} query={
                             DniURLQuery {
@@ -464,7 +459,7 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                             }
                         }>{"Ver perfil del dueño"}</Link<Route, DniURLQuery>>
                     }
-                    <div class="text">
+                    <br/>
                     // <h3> {format!("DNI del dueño: {}", publicacion.dni_usuario) } </h3>
                     <h4 class="publication-name">{publicacion.titulo.clone()}</h4>
                     <h2 class="publication-price">{
@@ -496,7 +491,11 @@ pub fn publication_molecule(real_props : &Props) -> Html {
                                 get_string_de_rango(precio, incluir)
                             }
                         } else {
-                            "Sin Tasar".to_string()
+                            if !publicacion.eliminada {
+                                "Sin Tasar".to_string()
+                            } else {
+                                "Publicación Eliminada".to_string()
+                            }
                         }
                         }</h2>
                         <h5 class="description">{publicacion.descripcion.clone()}</h5>

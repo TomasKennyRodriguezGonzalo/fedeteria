@@ -18,7 +18,7 @@ mod descuento;
 pub use descuento::*;
 mod tarjeta;
 pub use tarjeta::*;
-
+use log::info;
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -543,11 +543,12 @@ pub enum ErrorEnConcretacion {
 
 impl ErrorEnConcretacion {
     pub fn traducir_a_receptor(self, traducir: bool) -> ErrorEnConcretacion {
+        log::info!("traducir: {}",traducir);
         if traducir {
             match self {
-                ErrorEnConcretacion::DescuentoOfertanteInvalido => ErrorEnConcretacion::DescuentoReceptorUtilizado,
-                ErrorEnConcretacion::DescuentoOfertanteUtilizado => ErrorEnConcretacion::DescuentoReceptorVencido,
-                ErrorEnConcretacion::DescuentoOfertanteVencido => ErrorEnConcretacion::DescuentoReceptorInvalido,
+                ErrorEnConcretacion::DescuentoOfertanteInvalido => {ErrorEnConcretacion::DescuentoReceptorInvalido},
+                ErrorEnConcretacion::DescuentoOfertanteUtilizado => ErrorEnConcretacion::DescuentoReceptorUtilizado,
+                ErrorEnConcretacion::DescuentoOfertanteVencido => ErrorEnConcretacion::DescuentoReceptorVencido,
                 ErrorEnConcretacion::OfertanteNivelInsuficiente => ErrorEnConcretacion::ReceptorNivelInsuficiente,
                 _ => panic!("AAAA"),
             }

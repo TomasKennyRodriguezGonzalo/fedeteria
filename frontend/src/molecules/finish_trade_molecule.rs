@@ -177,7 +177,7 @@ pub fn finish_trade_molecule () -> Html {
                     match e {
                         ErrorEnConcretacion::DescuentoOfertanteInvalido => {
                             log::error!("descuento ofertante invalido");
-                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe. "));
+                            cloned_error_text_state.set(format!("El descuento ingresado para el ofertante no existe o no está vigente. "));
                         },
                         ErrorEnConcretacion::DescuentoOfertanteUtilizado => {
                             log::error!("descuento ofertante utilizado");
@@ -185,7 +185,7 @@ pub fn finish_trade_molecule () -> Html {
                         }
                         ErrorEnConcretacion::DescuentoReceptorInvalido => {
                             log::error!("descuento receptor invalido");
-                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe. "));
+                            cloned_error_text_state.set(format!("El descuento ingresado para el receptor no existe o no está vigente. "));
                         },
                         ErrorEnConcretacion::DescuentoReceptorUtilizado => {
                             log::error!("descuento receptor utilizado");

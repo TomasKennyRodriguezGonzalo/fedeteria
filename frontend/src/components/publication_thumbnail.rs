@@ -81,44 +81,85 @@ pub fn publication_thumbnail(props: &PublicationThumbnailProps) -> Html {
     
     html! {
         if !(props.linkless) {
-            <Link<Route> to={Route::Publication{id}}>
-                <div class="publication-thumbnail">
-                    if let Some(publicacion) = datos_publicacion.deref() {
-                        <img src={
-                            format!("/publication_images/{}", publicacion.imagenes[0])
-                        }/>
-                        <div class="info">
-                            <h4 class="name">{publicacion.titulo.clone()}</h4>
-                            <h2 class="price">{
-                                if let Some(precio) = publicacion.precio {
-                                    let mut incluir = false;
-                                    if let Some(dni) = dni {
-                                        if publicacion.dni_usuario == dni {
-                                            incluir = true;
-                                        }
-                                        if let Some(role) = &*role_state {
-                                            match role { 
-                                                RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+            if let Some(publicacion) = datos_publicacion.deref(){
+                if !publicacion.eliminada{
+                    <Link<Route> to={Route::Publication{id}}>
+                        <div class="publication-thumbnail">
+                            if let Some(publicacion) = datos_publicacion.deref() {
+                                <img src={
+                                    format!("/publication_images/{}", publicacion.imagenes[0])
+                                }/>
+                                <div class="info">
+                                    <h4 class="name">{publicacion.titulo.clone()}</h4>
+                                    <h2 class="price">{
+                                        if let Some(precio) = publicacion.precio {
+                                            let mut incluir = false;
+                                            if let Some(dni) = dni {
+                                                if publicacion.dni_usuario == dni {
                                                     incluir = true;
-                                                },
-                                                _ => {}
+                                                }
+                                                if let Some(role) = &*role_state {
+                                                    match role { 
+                                                        RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                            incluir = true;
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                }
+                                            }
+                                            get_string_de_rango(precio, incluir)
+                                        }
+                                        else {
+                                            "Sin Tasar".to_string()
+                                        }
+                                    }</h2>
+                                </div>
+                            } else {
+                                {"Cargando..."}
+                            }
+                        </div>
+                    </Link<Route>>
+                } else{
+                    <Link<Route> to={Route::Publication{id}}>
+                    <div class="log-down publication-thumbnail">
+                        if let Some(publicacion) = datos_publicacion.deref() {
+                            <img src={
+                                format!("/publication_images/{}", publicacion.imagenes[0])
+                            }/>
+                            <div class="info">
+                                <h4 class="name">{publicacion.titulo.clone()}</h4>
+                                <h2 class="price">{
+                                    if let Some(precio) = publicacion.precio {
+                                        let mut incluir = false;
+                                        if let Some(dni) = dni {
+                                            if publicacion.dni_usuario == dni {
+                                                incluir = true;
+                                            }
+                                            if let Some(role) = &*role_state {
+                                                match role { 
+                                                    RolDeUsuario::Dueño | RolDeUsuario::Empleado{sucursal : _} => {
+                                                        incluir = true;
+                                                    },
+                                                    _ => {}
+                                                }
                                             }
                                         }
+                                        get_string_de_rango(precio, incluir)
                                     }
-                                    get_string_de_rango(precio, incluir)
-                                }
-                                else {
-                                    "Sin Tasar".to_string()
-                                }
-                            }</h2>
-                        </div>
-                    } else {
-                        {"Cargando..."}
-                    }
-                </div>
-            </Link<Route>>
+                                    else {
+                                        "Sin Tasar".to_string()
+                                    }
+                                }</h2>
+                            </div>
+                        } else {
+                            {"Cargando..."}
+                        }
+                    </div>
+                </Link<Route>>
+                }
+            }
         } else {
-            <div class="publication-thumbnail">
+            <div class="publication-thumbnail ">
                 if let Some(publicacion) = datos_publicacion.deref() {
                     <img src={
                         format!("/publication_images/{}", publicacion.imagenes[0])
