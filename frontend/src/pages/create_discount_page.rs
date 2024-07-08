@@ -137,9 +137,6 @@ pub fn create_discount_page() -> Html {
         cloned_show_button_state.set(false);
     });
 
-    let error_state_c = error_state.clone();
-
-
     let cloned_discounts_list = discounts_list_state.clone();
     let cloned_show_button_state = show_button_state.clone();
     let cloned_discount_code = discount_code.clone();
@@ -199,8 +196,6 @@ pub fn create_discount_page() -> Html {
         </div>
     )
 }
-
-
 
 
 fn detectar_errores(exp_date:Option<DateTime<Local>>, percentage:Option<f64>, max_refund:Option<i64>, min_level:Option<i64>, discount_code:Option<String>, discount_list: Option<Vec<Descuento>>) -> String {
