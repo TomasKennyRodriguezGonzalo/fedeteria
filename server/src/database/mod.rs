@@ -570,9 +570,13 @@ impl Database {
         let mut cantidad_trueques_rechazados = 0;
         let mut cantidad_trueques_finalizados = 0;
         let mut cantidad_trueques_rechazados_con_ventas = 0;
-        let mut pesos_trueques_rechazados = 0;
         let mut cantidad_trueques_finalizados_con_ventas = 0;
-        let mut pesos_trueques_finalizados = 0;
+
+        let mut cantidad_descuentos = 0;
+        let mut cantidad_ahorrado_en_descuentos = 0;
+
+        let mut pesos_trueques_rechazados_tras_descuento = 0;
+        let mut pesos_trueques_finalizados_tras_descuento = 0;
 
         let fecha_entre = |fecha| {
             if let Some(fecha_min) = query.fecha_inicial {
@@ -592,20 +596,30 @@ impl Database {
             if trueque.sucursal == query.id_sucursal || query.id_sucursal.is_none() {
                 if let Some(fecha_trueque) = trueque.fecha_trueque {
                     if !fecha_entre(fecha_trueque) {continue;}
-                    // EY. ATENCIÓN: Se deberían tener en cuenta los trueques rechazados pero con ventas?
+                    let pesos_trueques_tras_descuentos;
                     if trueque.estado == EstadoTrueque::Finalizado {
                         cantidad_trueques_finalizados += 1;
                         if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
                             cantidad_trueques_finalizados_con_ventas += 1;
                         }
-                        pesos_trueques_finalizados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                        pesos_trueques_tras_descuentos = &mut pesos_trueques_finalizados_tras_descuento;
                     }
-                    if trueque.estado == EstadoTrueque::Rechazado {
+                    else if trueque.estado == EstadoTrueque::Rechazado {
                         cantidad_trueques_rechazados += 1;
                         if trueque.ventas_ofertante.is_some() || trueque.ventas_receptor.is_some() {
                             cantidad_trueques_rechazados_con_ventas += 1;
                         }
-                        pesos_trueques_rechazados += trueque.ventas_ofertante.unwrap_or(0) + trueque.ventas_receptor.unwrap_or(0);
+                        pesos_trueques_tras_descuentos = &mut pesos_trueques_rechazados_tras_descuento;
+                    } else {
+                        continue;
+                    }
+                    for venta in [trueque.ventas_ofertante, trueque.ventas_receptor].into_iter().flatten() {
+                        let mut pesos = venta.0;
+                        if let Some(cantidad_tras_descuento) = venta.1 {
+                            cantidad_ahorrado_en_descuentos += pesos - cantidad_tras_descuento;
+                            pesos = cantidad_tras_descuento;
+                        }
+                        *pesos_trueques_tras_descuentos += pesos;
                     }
                 }
             }
@@ -620,12 +634,14 @@ impl Database {
             cantidad_trueques_finalizados_con_ventas,
             cantidad_trueques_rechazados_con_ventas,
             cantidad_trueques_con_ventas: cantidad_trueques_rechazados_con_ventas + cantidad_trueques_finalizados_con_ventas,
-            pesos_trueques_rechazados,
-            pesos_trueques_finalizados,
-            pesos_trueques: pesos_trueques_rechazados + pesos_trueques_finalizados,
+            pesos_trueques_rechazados_tras_descuento,
+            pesos_trueques_finalizados_tras_descuento,
+            pesos_trueques_tras_descuento: pesos_trueques_rechazados_tras_descuento + pesos_trueques_finalizados_tras_descuento,
             query_fecha_inicial: query.fecha_inicial,
             query_fecha_final: query.fecha_final,
             query_nombre_sucursal,
+            cantidad_descuentos,
+            cantidad_ahorrado_en_descuentos,
         })
     }
 
@@ -915,63 +931,52 @@ impl Database {
         let dni_ofertante = trueque.oferta.0;
         let index_receptor = self.encontrar_dni(dni_receptor).unwrap();
         let index_ofertante = self.encontrar_dni(dni_ofertante).unwrap();
-        let descuento_utilizado_por_ofertante = None;
-        let descuento_utilizado_por_receptor = None;
+        let mut descuento_utilizado_por_ofertante = None;
+        let mut descuento_utilizado_por_receptor = None;
         
         //obtengo el trueque de vuelta por una cuestión de borrowing
         let trueque = self.trueques.get_mut(&query.id_trueque).unwrap();
         
-        // Lógica que verifica que el usuario ofertante pueda aplicar el descuento
-        if let Some(codigo_descuento) = query.codigo_descuento_ofertante {
-            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
-                if descuento.vigente{
-                    if descuento.alcanza_nivel(self.usuarios[index_ofertante].puntos){
-                        let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
-                        if !(self.usuarios[index_ofertante].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                            if !descuento.esta_vencido() {
-                                ventas_ofertante = Some(descuento.aplicar_descuento(ventas_ofertante.unwrap()));
-                                self.usuarios[index_ofertante].descuentos_utilizados.push(index_descuento_ingresado.unwrap());
-                            } else{
-                                return Err(ErrorEnConcretacion::DescuentoOfertanteVencido);
-                            }
-                        } else {
-                            return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado)
-                        }
-                    } else{
-                        return Err(ErrorEnConcretacion::OfertanteNivelInsuficiente);
-                    } 
-                } else {
-                    return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido);
-                }
-            } else {
-                return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido)
+        for (
+            ventas,
+            codigo_descuento,
+            descuento_utilizado,
+            es_receptor,
+            indice,
+        ) in [
+            (&mut ventas_ofertante, query.codigo_descuento_ofertante, &mut descuento_utilizado_por_ofertante, false, index_ofertante),
+            (&mut ventas_receptor, query.codigo_descuento_receptor, &mut descuento_utilizado_por_receptor, true, index_receptor),
+        ] {
+            // si no hay ventas o descuento, no hay logica
+            if ventas.is_none() { continue; }
+            let ventas = ventas.as_mut().unwrap();
+            if codigo_descuento.is_none() { continue; }
+            let codigo_descuento = codigo_descuento.unwrap();
+
+            // Intentemos aplicar el descuento, pero hay varios errores posibles.
+            let descuento = self.descuentos.iter().enumerate().find(|(_i, d)| {
+                d.codigo.trim() == codigo_descuento.trim()
+            });
+            if descuento.is_none() {
+                return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido.traducir_a_receptor(es_receptor))
             }
-        }
-         // Lógica que verifica que el usuario receptor pueda aplicar el descuento
-        if let Some(codigo_descuento) = query.codigo_descuento_receptor{
-            if let Some(descuento) = self.descuentos.iter().find(|d| d.codigo.trim() == codigo_descuento.trim()) {
-                if descuento.vigente{
-                    if descuento.alcanza_nivel(self.usuarios[index_receptor].puntos){
-                        let index_descuento_ingresado = self.descuentos.iter().position(|d| d.codigo == codigo_descuento);
-                        if !(self.usuarios[index_receptor].descuentos_utilizados.contains(&index_descuento_ingresado.unwrap())){
-                            if !descuento.esta_vencido() {
-                                ventas_receptor = Some(descuento.aplicar_descuento(ventas_receptor.unwrap()));
-                                self.usuarios[index_receptor].descuentos_utilizados.push(index_descuento_ingresado.unwrap());
-                            } else{
-                                return Err(ErrorEnConcretacion::DescuentoReceptorVencido);
-                            }
-                        } else {
-                            return Err(ErrorEnConcretacion::DescuentoReceptorUtilizado)
-                        }
-                    } else{
-                        return Err(ErrorEnConcretacion::ReceptorNivelInsuficiente);
-                    } 
-                } else {
-                    return Err(ErrorEnConcretacion::DescuentoReceptorInvalido);
-                }
-            } else {
-                return Err(ErrorEnConcretacion::DescuentoReceptorInvalido)
+            let (indice_descuento, descuento) = descuento.unwrap();
+            if !descuento.vigente {
+                return Err(ErrorEnConcretacion::DescuentoOfertanteInvalido.traducir_a_receptor(es_receptor))
             }
+            if descuento.esta_vencido() {
+                return Err(ErrorEnConcretacion::DescuentoOfertanteVencido.traducir_a_receptor(es_receptor))
+            }
+            if !descuento.alcanza_nivel(self.usuarios[indice].puntos) {
+                return Err(ErrorEnConcretacion::OfertanteNivelInsuficiente.traducir_a_receptor(es_receptor))
+            }
+            if self.usuarios[indice].descuentos_utilizados.contains(&indice_descuento) {
+                return Err(ErrorEnConcretacion::DescuentoOfertanteUtilizado.traducir_a_receptor(es_receptor))
+            }
+
+            // Ok, estamos seguros que se puede aplicar el descuento.
+            *descuento_utilizado = Some(indice_descuento);
+            (*ventas).1 = Some(descuento.aplicar_descuento(ventas.0));
         }
 
         //aplico las ventas a los usuarios
@@ -1272,7 +1277,7 @@ impl Database {
             };
             self.descuentos.push(nuevo_descuento);
             for u in (self.usuarios).clone(){
-                if u.puntos >= query.nivel_min as i64{
+                if u.puntos >= query.nivel_min {
                     let indice_usuario_receptor = self.encontrar_dni(u.dni).unwrap();
                     self.enviar_notificacion(indice_usuario_receptor, "Nuevo Descuento Disponible!".to_string(), "un nuevo descuento se encuentra disponible".to_string(), "/ver-descuentos-usuario".to_string());
                 }
@@ -1482,7 +1487,7 @@ fn get_database_por_defecto() -> Database {
     // (id_trueque, es_finalizado, )
     // es_finalizado: true si fue finalizado, si fue rechazado entonces false
     let trueques_finalizados_o_rechazados = [
-        
+      0  
     ];
 
     
@@ -1614,7 +1619,7 @@ fn get_database_por_defecto() -> Database {
             }
         });
         let query = QueryCreateDiscount { codigo_descuento, porcentaje, reembolso_max, nivel_min, fecha_exp };
-        db.crear_descuento(query).unwrap();
+        assert!(db.crear_descuento(query));
     }
     
     for oferta_aceptada in ofertas_aceptadas {
@@ -1639,17 +1644,17 @@ fn get_database_por_defecto() -> Database {
         db.cambiar_trueque_a_definido(query);
     }
 
-    for a in trueques_finalizados_o_rechazados {
-        let query = QueryFinishTrade { 
-            id_trueque,
-            estado,
-            ventas_ofertante,
-            ventas_receptor,
-            codigo_descuento_ofertante,
-            codigo_descuento_receptor
-        };
-        db.finalizar_trueque(query);
-    }
+    // for a in trueques_finalizados_o_rechazados {
+    //     let query = QueryFinishTrade { 
+    //         id_trueque,
+    //         estado,
+    //         ventas_ofertante,
+    //         ventas_receptor,
+    //         codigo_descuento_ofertante,
+    //         codigo_descuento_receptor
+    //     };
+    //     db.finalizar_trueque(query);
+    // }
 
     db
 }

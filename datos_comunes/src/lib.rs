@@ -529,7 +529,7 @@ pub struct QueryPagarPromocionPublicaciones {
     pub fecha_fin_promocion: DateTime<Local>,
     pub precio: u64,
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum ErrorEnConcretacion {
     DescuentoOfertanteInvalido,
     DescuentoOfertanteUtilizado,
@@ -539,6 +539,22 @@ pub enum ErrorEnConcretacion {
     DescuentoReceptorVencido,
     DescuentoReceptorInvalido,
     ReceptorNivelInsuficiente,
+}
+
+impl ErrorEnConcretacion {
+    pub fn traducir_a_receptor(self, traducir: bool) -> ErrorEnConcretacion {
+        if traducir {
+            match self {
+                ErrorEnConcretacion::DescuentoOfertanteInvalido => ErrorEnConcretacion::DescuentoReceptorUtilizado,
+                ErrorEnConcretacion::DescuentoOfertanteUtilizado => ErrorEnConcretacion::DescuentoReceptorVencido,
+                ErrorEnConcretacion::DescuentoOfertanteVencido => ErrorEnConcretacion::DescuentoReceptorInvalido,
+                ErrorEnConcretacion::OfertanteNivelInsuficiente => ErrorEnConcretacion::ReceptorNivelInsuficiente,
+                _ => panic!("AAAA"),
+            }
+        } else {
+            self
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
