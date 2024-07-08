@@ -626,6 +626,7 @@ impl Database {
                         if let Some(cantidad_tras_descuento) = venta.1 {
                             cantidad_ahorrado_en_descuentos += pesos - cantidad_tras_descuento;
                             pesos = cantidad_tras_descuento;
+                            cantidad_descuentos += 1;
                         }
                         *pesos_trueques_tras_descuentos += pesos;
                     }
@@ -1415,8 +1416,9 @@ fn get_database_por_defecto() -> Database {
     use RolDeUsuario::*;
     let mut db: Database = Default::default();
     let sucursales = [
-        "La Plata 1 y 50",
-        "La Plata 3 y 33",
+        "La Plata 1 y 50", // 1 empleado
+        "La Plata 3 y 33", // 1 empleado
+        "Brandsen", // sin empleados
     ];
     // (nombre, dni, rol). la contraseña es igual al dni. el email se genera en base al nombre
     let usuarios = [
@@ -1429,23 +1431,30 @@ fn get_database_por_defecto() -> Database {
 
     // (dni del dueño, nombre, descripcion, Option<precio>, vec![fotos])
     let publicaciones = [
-        (3, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
-        (5, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
+        // Esperando a ser tasadas
         (5, "Mouse", "Un mouse. Anda bien", None, vec!["mouse.jpg"]),
+        (5, "Tenedor", "Tenedor. lo usé para comer milanesa.", None, vec!["tenedor.jpg"]),
+        // Falta de ortografía
+        (4, "DestornilladOOr", "Destornillador que podes usar para destornillar o bien para atornillar", Some(300), vec!["destornillador.jpg"]),
+        
+        (5, "Sierra grande", "Mi linda sierra", Some(9_000_000), vec!["sierra.jpg"]),
+        (5, "Heladera", "Se me quemó", Some(600), vec!["heladera quemada.jpg"]),
         (5, "Teclado", "Teclado tikitiki", Some(650), vec!["teclado.jpg"]),
         (5, "Curita", "Curita para sanar :)", Some(800), vec!["curita.jpg"]),
-        (5, "Tenedor", "Tenedor. lo usé para comer milanesa.", Some(299), vec!["tenedor.jpg"]),
         (5, "Cuchara", "No es comestible", Some(300), vec!["cuchara.jpg"]),
         (5, "Martillo", "Un martillo normal. Ya no lo uso.", Some(1500), vec!["martillo.jpg", "martillin2.jpg"]),
         (4, "Tornillo", "Un tornillo sin usar jeje", Some(400), vec!["tornillo.jpg"]),
         (4, "Avena Danesa", "Riquísima avena que traje de Dinamarca. Es medio agresiva.", Some(900), vec!["solgryn.png"]),
-        (4, "Destornillador", "Destornillador que podes usar para destornillar o bien para atornillar", Some(300), vec!["destornillador.jpg"]),
         (4, "Papel", "Papel SIN ESCRIBIR", Some(630), vec!["papel.jpg"]),
         (4, "Mancha", "Una mancha porfavor saquenla de mi piso", Some(370), vec!["mancha.jpg"]),
         (4, "Esponja", "Limpien no sean vagos dale", Some(230), vec!["esponja.jpg"]),
         (4, "Reloj", "Un reloj les juro que se mueve", Some(900), vec!["reloj.jpg"]),
         (4, "Hamaca", "Wiiiii", Some(1300), vec!["hamaca.jpg"]),
         (4, "Casa", "Perro y coche no incluidos. El pibe sí.", Some(6_000_000), vec!["casa.jpg"]),
+    ];
+
+    let publicaciones_a_pausar = [
+        "Tornillo",
     ];
 
     // Ofertas para agregar
@@ -1455,7 +1464,7 @@ fn get_database_por_defecto() -> Database {
         (0, vec!["Sierra Grande"], "Casa"),
         (1, vec!["Reloj", "Papel"], "Martillo"),
         (2, vec!["Hamaca"], "Martillo"),
-        (3, vec!["Destornillador", "Esponja"], "Curita"),
+        (3, vec!["DestornilladOOr", "Esponja"], "Curita"),
         (4, vec!["Tenedor"], "Mancha"),
     ];
 
@@ -1475,29 +1484,35 @@ fn get_database_por_defecto() -> Database {
 
     // las ofertas definidas anteriormente se aceptan y quedan en estado pendiente
     let ofertas_aceptadas = [
-        0
+        0, 1, 3, 4
     ];
 
     // las ofertas aceptadas anteriormente se definen con una fecha, a las 13:00, y sucursal
     // (id_trueque, dias_desde_hoy, nombre_sucural)
     // (si el trueque despues queda como ya finalizado, tal vez conviene que los dias sean en negativo
     // así queda como que fue en el pasado)
-    let trueques_definidos = [
+    let trueques_definidos: [(usize, i32, &str); 4] = [
         (0, -5, "La Plata 1 y 50"),
+        (3, 0, "La Plata 1 y 50"),
+        (4, 7, "La Plata 1 y 50"),
+        (1, 30, "La Plata 3 y 33"),
     ];
 
     // (codigo, porcentaje, reembolso_max, nivel_min, Option<offset_dias>) 
     let descuentos = [
-        ("N4VIDAD_2024", 0.2, 5000, 5, Some(31)),
+        ("apertura_fedeteria", 0.1, 1000, 1, Some(31)),
+        ("super_promo", 0.99, 50000, 10, Some(-31)),
+        ("demo3", 0.2, 5000, 3, Some(31)),
+        ("promo_usada", 0.3, 1000, 1, Some(31)),
     ];
 
 
     // las personas van y se finaliza o rechaza el trueque, opcionalmente con ventas y codigo de descuento
-    // (id_trueque, es_finalizado, ventas_ofertante, ventas_receptor, descuento_ofertante, descuento_receptor)
+    // (id_trueque, es_finalizado, ventas_ofertante, ventas_receptor, descuento_ofertante, descuento_receptor, dias_offset)
     // es_finalizado: true si fue finalizado, si fue rechazado entonces false
     // las ventas pueden ser 0 para que no haya ventas. los descuentos pueden ser vacios para que no haya descuento
     let trueques_finalizados_o_rechazados = [
-       (0, true, 1000, 2000, "", "N4VIDAD_2024")
+       (0, true, 200, 100, "promo_usada", "promo_usada", -4),
     ];
 
 
@@ -1508,9 +1523,9 @@ fn get_database_por_defecto() -> Database {
             nombre_titular: "Delfina".to_string(), 
             numero_tarjeta: 12345678910, 
             codigo_seguridad: 123, 
-            anio_caducidad: 2027, 
+            anio_caducidad: 2024, 
             mes_caducidad: 5, 
-            monto: 6000
+            monto: 6000000
         },
         Tarjeta {
             dni_titular: 5, 
@@ -1519,11 +1534,16 @@ fn get_database_por_defecto() -> Database {
             codigo_seguridad: 321, 
             anio_caducidad: 2029, 
             mes_caducidad: 9, 
-            monto: 10000
+            monto: 6000
         },
     ];
 
-    
+    let usuarios_set_puntos = vec![
+        (1, 30),
+        (2, 5),
+        (4, 15),
+        (5, 5),
+    ];
     
     
     // Ahora todos estos vectores se cargan en la base de datos
@@ -1585,6 +1605,20 @@ fn get_database_por_defecto() -> Database {
         pub fn promocionar_facil(&mut self, id: usize, fecha: DateTime<Local>) {
             self.publicaciones.get_mut(&id).unwrap().promocionada_hasta = Some(fecha);
         }
+
+        pub fn set_puntos_usuario(&mut self, dni: u64, puntos: u64) {
+            let id = self.encontrar_dni(dni).unwrap();
+            self.usuarios[id].puntos = puntos;
+        }
+    }
+
+    for (dni, puntos) in usuarios_set_puntos {
+        db.set_puntos_usuario(dni, puntos);
+    }
+
+    for nombre_pub in publicaciones_a_pausar {
+        let id = db.encontrar_publicacion(nombre_pub);
+        db.alternar_pausa_publicacion(&id);
     }
 
     for (nombre_publicacion, dni_preguntante, pregunta, respuesta) in preguntas_y_respuestas {
@@ -1608,6 +1642,7 @@ fn get_database_por_defecto() -> Database {
     }
 
     for (id, ofertadas, pedida) in ofertas {
+        println!("{ofertadas:?}");
         let publicaciones_ofertadas: Vec<usize> = ofertadas.into_iter().map(|n| db.encontrar_publicacion(n)).collect();
         let publicacion_receptora = db.encontrar_publicacion(pedida);
         let dni_ofertante = db.get_publicacion(publicaciones_ofertadas[0]).unwrap().dni_usuario;
@@ -1655,10 +1690,24 @@ fn get_database_por_defecto() -> Database {
         db.cambiar_trueque_a_definido(query);
     }
 
-    /*for (id_trueque, es_finalizado,
+    impl Database {
+        pub fn set_fecha_trueque(&mut self, id: usize, fecha: DateTime<Local>) {
+            self.trueques.get_mut(&id).unwrap().fecha_trueque = Some(fecha);
+        }
+    }
+
+    for (id_trueque, es_finalizado,
         ventas_ofertante, ventas_receptor,
-        codigo_descuento_ofertante, codigo_descuento_receptor
+        codigo_descuento_ofertante, codigo_descuento_receptor,
+        dias_offset
     ) in trueques_finalizados_o_rechazados {
+        let fecha = {
+            if dias_offset >= 0 {
+                Local::now().checked_add_days(Days::new(dias_offset as u64)).unwrap()
+            } else {
+                Local::now().checked_sub_days(Days::new((-dias_offset) as u64)).unwrap()
+            }
+        };
         let estado = if es_finalizado {EstadoTrueque::Finalizado} else {EstadoTrueque::Rechazado};
         let codigo_descuento_ofertante = if codigo_descuento_ofertante.is_empty() {None}  else {Some(codigo_descuento_ofertante.to_string())};
         let codigo_descuento_receptor = if codigo_descuento_receptor.is_empty() {None}  else {Some(codigo_descuento_receptor.to_string())};
@@ -1672,7 +1721,14 @@ fn get_database_por_defecto() -> Database {
             codigo_descuento_receptor
         };
         db.finalizar_trueque(query).unwrap();
-    }*/
+        db.set_fecha_trueque(id_trueque, fecha);
+    }
+
+    // COMPROBACIONES
+    assert!(db.tarjetas[0].esta_vencida());
+    assert!(!db.tarjetas[1].esta_vencida());
+
+
 
     db
 }
